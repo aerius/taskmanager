@@ -1,0 +1,15 @@
+{
+  "workerQueueName": "register",
+  "queues": [
+    {
+      "queueName": "permit",
+      "priority": 1,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "register_export",
+      "priority": 1,
+      "maxCapacityUse": 0.8
+    }
+  ]
+}

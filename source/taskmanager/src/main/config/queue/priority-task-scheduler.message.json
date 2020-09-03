@@ -1,0 +1,10 @@
+{
+  "workerQueueName": "message",
+  "queues": [
+    {
+      "queueName": "message",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    }
+  ]
+}

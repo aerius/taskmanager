@@ -1,0 +1,15 @@
+{
+  "workerQueueName": "connect",
+  "queues": [
+    {
+      "queueName": "connect_paa_export",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "connect_gml_export",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    }
+  ]
+}
