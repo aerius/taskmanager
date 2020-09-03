@@ -1,0 +1,10 @@
+{
+  "workerQueueName": "melding",
+  "queues": [
+    {
+      "queueName": "melding",
+      "priority": 2,
+      "maxCapacityUse": 0.8
+    }
+  ]
+}

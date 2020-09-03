@@ -1,0 +1,45 @@
+{
+  "workerQueueName": "asrm2",
+  "queues": [
+    {
+      "queueName": "calculation_ui",
+      "priority": 2,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "paa_export",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "connect_paa_export",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "gml_export",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "connect_gml_export",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "custom_jobs",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "permit",
+      "priority": 1,
+      "maxCapacityUse": 0.8
+    },
+    {
+      "queueName": "melding",
+      "priority": 3,
+      "maxCapacityUse": 0.8
+    }
+  ]
+}

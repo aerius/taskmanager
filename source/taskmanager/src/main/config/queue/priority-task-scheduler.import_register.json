@@ -1,0 +1,10 @@
+{
+  "workerQueueName": "import_register",
+  "queues": [
+    {
+      "queueName": "import",
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    }
+  ]
+}
