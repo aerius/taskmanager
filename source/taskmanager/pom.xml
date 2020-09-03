@@ -16,73 +16,84 @@
     along with this program.  If not, see http://www.gnu.org/licenses/.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
-    <groupId>nl.overheid.aerius</groupId>
-    <artifactId>aerius-parent</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <groupId>nl.aerius</groupId>
+    <artifactId>taskmanager-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>aerius-taskmanager</artifactId>
+
+  <artifactId>taskmanager</artifactId>
   <name>AERIUS taskmanager</name>
   <description>AERIUS Taskmanager actual manager/scheduler (standalone)</description>
   <packaging>jar</packaging>
 
-  <properties>
-    <checkstyle.basedir>${project.basedir}/..</checkstyle.basedir>
-  </properties>
-
   <dependencies>
     <dependency>
-      <groupId>nl.overheid.aerius.bom</groupId>
-      <artifactId>bom.legacy.postgresql</artifactId>
-      <version>${project.version}</version>
-      <type>pom</type>
-      <exclusions>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>nl.overheid.aerius</groupId>
-      <artifactId>commons-taskmanager-client</artifactId>
+      <groupId>nl.aerius</groupId>
+      <artifactId>taskmanager-client</artifactId>
       <version>${project.version}</version>
     </dependency>
+  
+    <!-- RabbitMQ -->
     <dependency>
-      <groupId>nl.overheid.aerius.bom</groupId>
-      <artifactId>bom.source.logging</artifactId>
-      <version>${project.version}</version>
-      <type>pom</type>
+      <groupId>com.rabbitmq</groupId>
+      <artifactId>amqp-client</artifactId>
+    </dependency>
+        
+    <!-- json -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+    
+    <!-- CLI -->
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+    </dependency>
+  
+    <!-- Logging -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
     </dependency>
     <dependency>
-      <groupId>nl.overheid.aerius</groupId>
-      <artifactId>aerius-taskmanager-client</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>nl.overheid.aerius.bom</groupId>
-      <artifactId>bom.legacy.test</artifactId>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>nl.aerius</groupId>
+      <artifactId>taskmanager-client</artifactId>
       <version>${project.version}</version>
-      <type>pom</type>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-      </plugin>
-    
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -94,10 +105,10 @@
           </archive>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>1.3.1</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -113,26 +124,9 @@
                   </manifestEntries>
                 </transformer>
                 <!-- Merge the various META-INF/services files (required for GeoTools) -->
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
               </transformers>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <configuration>
-        <!-- The destination file for the code coverage report has to be set to the same value
-             in the parent pom and in each module pom. Then JaCoCo will add up information in
-             the same report, so that, it will give the cross-module code coverage. -->
-          <destFile>${sonar.jacoco.reportPath}</destFile>
-        </configuration>
-        <executions>
-          <execution>
-            <id>post-test</id>
-            <configuration>
-              <skip>true</skip>
             </configuration>
           </execution>
         </executions>

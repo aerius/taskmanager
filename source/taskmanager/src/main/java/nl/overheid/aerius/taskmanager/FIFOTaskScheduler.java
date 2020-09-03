@@ -19,16 +19,12 @@ package nl.overheid.aerius.taskmanager;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.annotation.concurrent.ThreadSafe;
-
 import nl.overheid.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.overheid.aerius.taskmanager.domain.PriorityTaskSchedule;
-
 
 /**
  * FIFO implementation of the task scheduler.
  */
-@ThreadSafe
 class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
 
   private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<Task>();

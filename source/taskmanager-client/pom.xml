@@ -17,45 +17,95 @@
     along with this program.  If not, see http://www.gnu.org/licenses/.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>nl.overheid.aerius</groupId>
-    <artifactId>commons</artifactId>
-    <version>3.0-SNAPSHOT</version>
+    <groupId>nl.aerius</groupId>
+    <artifactId>taskmanager-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>commons-taskmanager-client</artifactId>
 
-  <name>Commons :: Taskmanager Client Library</name>
-  <description>The Commons Library for Taskmanager Client code</description>
+  <artifactId>taskmanager-client</artifactId>
+
+  <name>Taskmanager Client Library</name>
+  <description>The Library for Taskmanager Client code</description>
 
   <packaging>jar</packaging>
 
   <dependencies>
+    <!-- RabbitMQ -->
     <dependency>
-      <groupId>nl.overheid.aerius.bom</groupId>
-      <artifactId>bom.legacy.commons</artifactId>
-      <version>${project.version}</version>
-      <type>pom</type>
+      <groupId>com.rabbitmq</groupId>
+      <artifactId>amqp-client</artifactId>
+    </dependency>
+
+    <!-- json -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+
+    <!-- Commons -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
     </dependency>
     <dependency>
-      <groupId>nl.overheid.aerius.bom</groupId>
-      <artifactId>bom.legacy.rabbitmq</artifactId>
-      <version>${project.version}</version>
-      <type>pom</type>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+    
+    <!-- Auto-value -->
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value-annotations</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>nl.overheid.aerius.bom</groupId>
-      <artifactId>bom.source.logging</artifactId>
-      <version>${project.version}</version>
-      <type>pom</type>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value</artifactId>
     </dependency>
     <dependency>
-      <groupId>nl.overheid.aerius.bom</groupId>
-      <artifactId>bom.legacy.test</artifactId>
-      <version>${project.version}</version>
-      <type>pom</type>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auto</groupId>
+      <artifactId>auto-common</artifactId>
+    </dependency>
+
+    <!-- Metrics -->
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-graphite</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard.metrics</groupId>
+      <artifactId>metrics-jvm</artifactId>
+    </dependency>
+
+    <!-- Logging -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
+    
+    <!-- Testing -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -63,8 +113,29 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.auto.value</groupId>
+              <artifactId>auto-value</artifactId>
+              <version>${auto-value.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

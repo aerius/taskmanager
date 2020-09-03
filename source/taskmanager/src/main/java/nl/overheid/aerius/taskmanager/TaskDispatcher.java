@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
-import javax.annotation.concurrent.ThreadSafe;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +31,6 @@ import nl.overheid.aerius.taskmanager.exception.TaskAlreadySentException;
 /**
  * Control center for processing tasks. Task
  */
-@ThreadSafe
 class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskDispatcher.class);

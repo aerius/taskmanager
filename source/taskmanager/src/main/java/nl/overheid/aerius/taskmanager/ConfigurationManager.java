@@ -31,7 +31,6 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,7 +158,7 @@ final class ConfigurationManager {
       throws SQLException {
     try {
       return DriverManager.getConnection(jdbcURL, dbUsername, dbPassword);
-    } catch (final PSQLException e) {
+    } catch (final SQLException e) {
       LOG.warn("Connection to the database failed. Retrying. Message: {}", e.getMessage());
       try {
         Thread.sleep(TimeUnit.SECONDS.toMillis(retry));
