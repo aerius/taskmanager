@@ -19,7 +19,6 @@ package nl.overheid.aerius.taskmanager;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Properties;
 
 import org.junit.Before;
@@ -41,7 +40,7 @@ public class ConfigurationManagerTest {
   }
 
   @Test(timeout = 2000)
-  public void testLoadConfiguration() throws IOException, SQLException {
+  public void testLoadConfiguration() throws IOException {
     final TaskManagerConfiguration tmc = ConfigurationManager.loadConfiguration(properties);
 
     assertNotNull("No username could be read from configuration file", tmc.getBrokerConfiguration().getBrokerUsername());

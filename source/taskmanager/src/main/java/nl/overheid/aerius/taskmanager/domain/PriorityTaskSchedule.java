@@ -18,37 +18,18 @@ package nl.overheid.aerius.taskmanager.domain;
 
 import java.io.Serializable;
 
-import com.google.gson.annotations.Expose;
-
 /**
  * The configuration of a TaskScheduler.
  */
 public class PriorityTaskSchedule extends TaskSchedule<PriorityTaskQueue> implements Serializable {
 
-  private static final long serialVersionUID = 1L;
-
-  // configured with DB
-  @Expose(serialize = false)
-  private Integer id;
+  private static final long serialVersionUID = 2L;
 
   /**
-   * @param id The (database) ID.
+   * @param id The ID.
    * @param workerQueueName worker type
    */
-  public PriorityTaskSchedule(final Integer id, final String workerQueueName) {
-    this.id = id;
+  public PriorityTaskSchedule(final String workerQueueName) {
     setWorkerQueueName(workerQueueName);
-  }
-
-  public Integer getId() {
-    return id;
-  }
-
-  public void setId(final Integer id) {
-    this.id = id;
-  }
-
-  public String getDescription() {
-    return "";
   }
 }

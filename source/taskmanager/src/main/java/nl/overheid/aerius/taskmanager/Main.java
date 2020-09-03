@@ -17,7 +17,6 @@
 package nl.overheid.aerius.taskmanager;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,11 +48,9 @@ public final class Main {
    *
    * @param args no arguments needed, but if supplied, they should fit the description given by using -help.
    * @throws IOException When an error occurred reading a file during configuration.
-   * @throws SQLException When an error occurred trying to contact the database during configuration.
    * @throws ParseException When command line option parsing failed
-   * @throws InterruptedException When taskmanager interrupted
    */
-  public static void main(final String[] args) throws IOException, SQLException, ParseException, InterruptedException {
+  public static void main(final String[] args) throws IOException, ParseException {
     final CmdOptions cmdOptions = new CmdOptions(args);
     if (cmdOptions.printIfInfoOption()) {
       return;
@@ -82,12 +79,10 @@ public final class Main {
    *
    * @param executorService execution service
    * @param configurationFile configuration properties file
-   * @throws SQLException sql errors
    * @throws IOException io errors
-   * @throws InterruptedException interrupted errors
    */
   static void startupFromConfiguration(final ExecutorService executorService, final String configurationFile)
-      throws IOException, SQLException, InterruptedException {
+      throws IOException {
     final Properties props = ConfigurationManager.getPropertiesFromFile(configurationFile);
     MetricFactory.init(props, "taskmanager");
     final TaskManagerConfiguration tmConfig = ConfigurationManager.loadConfiguration(props);
@@ -95,8 +90,8 @@ public final class Main {
     final AdaptorFactory aFactory = new RabbitMQAdaptorFactory(bcFactory);
     final PriorityTaskSchedulerFactory schedulerFactory = new PriorityTaskSchedulerFactory();
     final TaskManager<PriorityTaskQueue, PriorityTaskSchedule> manager = new TaskManager<>(executorService, aFactory, schedulerFactory);
-    final TaskSchedulerWatcher<PriorityTaskQueue, PriorityTaskSchedule> watcher =
-        new TaskSchedulerWatcher<>(manager, schedulerFactory, tmConfig.getConfigurationDirectory());
+    final TaskSchedulerWatcher<PriorityTaskQueue, PriorityTaskSchedule> watcher = new TaskSchedulerWatcher<>(manager, schedulerFactory,
+        tmConfig.getConfigurationDirectory());
 
     try {
       watcher.run(); // This will wait until shutdown.
