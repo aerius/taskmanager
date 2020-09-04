@@ -40,6 +40,17 @@
     </license>
   </licenses>
 
+  <distributionManagement>
+    <repository>
+      <id>aerius-nexus</id>
+      <url>https://nexus.aerius.nl/repository/maven-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>aerius-nexus</id>
+      <url>https://nexus.aerius.nl/repository/maven-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <scm>
     <connection>scm:git:ssh://git@github.com:aerius/taskmanager.git</connection>
     <developerConnection>scm:git:ssh://git@github.com:aerius/taskmanager.git</developerConnection>
