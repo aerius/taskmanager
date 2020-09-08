@@ -12,7 +12,7 @@
     <logger name="java.security">
         <level value="ERROR"/>
     </logger>
-    <logger name="nl.overheid.aerius">
+    <logger name="nl.aerius">
         <level value="INFO"/>
     </logger>
     <root>
