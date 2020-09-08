@@ -26,7 +26,6 @@ public class PriorityTaskSchedule extends TaskSchedule<PriorityTaskQueue> implem
   private static final long serialVersionUID = 2L;
 
   /**
-   * @param id The ID.
    * @param workerQueueName worker type
    */
   public PriorityTaskSchedule(final String workerQueueName) {

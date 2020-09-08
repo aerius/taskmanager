@@ -19,7 +19,6 @@ package nl.overheid.aerius.taskmanager.client;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.ConnectException;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,8 +38,8 @@ import nl.overheid.aerius.taskmanager.client.util.QueueHelper;
  * Client to be used to communicate with the taskmanager (more importantly, send tasks to taskmanager). Usage example:
  *
  * <pre>
- * TaskManagerClient client = new TaskManagerClient(connectionConfiguration);
- * TaskResultHandler resultHandler = new SomeTaskResultHandlerImpl();
+ * TaskManagerClientSender client = new TaskManagerClientSender(brokerConnectionFactory);
+ * TaskResultCallback resultHandler = new SomeTaskResultCallbackImpl();
  * TaskInput task = new SomeTaskInput();
  * client.sendTask(task, resultHandler, task.getExchangeName(), task.getDefaultQueueName());
  * </pre>
@@ -60,7 +59,6 @@ public class TaskManagerClientSender implements TaskWrapperSender {
    * client will be send to the resultHandler.
    *
    * @param factory Broker connection factory
-   * @throws IOException If an error occurred communicating with the broker.
    */
   public TaskManagerClientSender(final BrokerConnectionFactory factory) {
     if (factory == null) {
@@ -71,7 +69,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
   }
 
   /**
-   * Convenience method of {@link #sendTasks(Map, String TaskResultHandler, String, WorkerQueueType)}.
+   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
    * Should be used when results are not important and should not be waited for.
    *
    * @param input The input object which the worker needs to do the work.
@@ -85,7 +83,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
   }
 
   /**
-   * Convenience method of {@link #sendTasks(Map, String TaskResultHandler, String, WorkerQueueType)}.
+   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
    * Should be used when results are not important and should not be waited for.
    *
    * @param input The input object which the worker needs to do the work.
@@ -94,12 +92,13 @@ public class TaskManagerClientSender implements TaskWrapperSender {
    * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
    * @throws IOException In case of errors communicating with queue.
    */
-  public void sendTask(final Serializable input, final String uniqueId, final WorkerQueueType queueNaming, final String taskQueueName) throws IOException {
+  public void sendTask(final Serializable input, final String uniqueId, final WorkerQueueType queueNaming, final String taskQueueName)
+      throws IOException {
     sendTask(new TaskWrapper(Optional.empty(), input, uniqueId, uniqueId, taskQueueName, queueNaming));
   }
 
   /**
-   * Convenience method of {@link #sendTasks(Map, TaskResultHandler, String, String)}.
+   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
    *
    * @param input The input object which the worker needs to do the work.
    * @param resultCallback The resultCallback which will receive results. Can be null, in which case the messages are only send and no results can be
@@ -117,7 +116,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
   }
 
   /**
-   * Convenience method of {@link #sendTasks(Map, TaskResultHandler, String, String)}. Should be used when the callback wants to know correspond a
+   * Convenience method of {@link #sendTask(Serializable, String, String, TaskResultCallback, WorkerQueueType, String)}. Should be used when the callback wants to correspond a
    * result based on a unique ID.
    *
    * @param input The input object which the worker needs to do the work.
@@ -134,6 +133,18 @@ public class TaskManagerClientSender implements TaskWrapperSender {
     sendTask(new TaskWrapper(Optional.ofNullable(resultCallback), input, uniqueId, uniqueId, taskQueueName, queueNaming));
   }
 
+  /**
+   * @param input The input object which the worker needs to do the work.
+   * @param correlationId The correlation ID to use for this task. Will be used when a result is received to
+   *          tell the TaskResultCallback which task was the cause. Can be used to correlate a task in the callback.
+   * @param messageId The message ID to use for this task. Will be used when a result is received to
+   *          tell the TaskResultCallback which task was the cause. Should be unique.
+   * @param resultCallback The resultCallback which will receive results.
+   *          Can be null, in which case the messages are only send and no results can be retrieved.
+   * @param queueNaming name of the queue
+   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
+   * @throws IOException In case of errors communicating with queue.
+   */
   public void sendTask(final Serializable input, final String correlationId, final String messageId, final TaskResultCallback resultCallback,
       final WorkerQueueType queueNaming, final String taskQueueName) throws IOException {
     sendTask(new TaskWrapper(Optional.ofNullable(resultCallback), input, correlationId, messageId, taskQueueName, queueNaming));
@@ -215,8 +226,8 @@ public class TaskManagerClientSender implements TaskWrapperSender {
   }
 
   /**
-   * Exit this client, making it impossible to send new tasks or retrieve any more results. Should be used by a taskResultHandler when all the results
-   * are in (to free up resources).
+   * Exit this client, making it impossible to send new tasks or retrieve any more results.
+   * Should be used by a TaskResultCallback when all the results are in (to free up resources).
    */
   public void shutdown() {
     synchronized (this) {
