@@ -35,7 +35,7 @@ public interface WorkerHandler {
    * @return The object to send as output to the caller.
    * <p>This can be an exception if needed, the calling client should be aware an exception can be returned
    * (like ClassNotFoundException)
-   * @throws Exception
+   * @throws Exception An exception to indicate handling the work failed. Depending on the type of exception
    */
   Serializable handleWorkLoad(Serializable input, WorkerIntermediateResultSender resultSender, String correlationId) throws Exception;
 }
