@@ -16,6 +16,7 @@
  */
 package nl.aerius.taskmanager;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,7 +42,7 @@ public class QueueWatchDogTest {
     assertFalse("No running workers, no problem", qwd.isItDead(false, 10));
     assertFalse("Running workers, with messages, no problem", qwd.isItDead(true, 10));
     assertFalse("Running workers, with no messages, possible problem, we just wait", qwd.isItDead(true, 0));
-    Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+    await().atMost(2, TimeUnit.SECONDS).until(() -> qwd.isItDead(true, 0));
     assertTrue("Running workers, with no messages, after specified time; yes reset", qwd.isItDead(true, 0));
   }
 

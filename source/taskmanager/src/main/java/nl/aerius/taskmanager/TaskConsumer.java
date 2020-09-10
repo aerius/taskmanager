@@ -116,6 +116,7 @@ class TaskConsumer implements MessageReceivedHandler, Runnable {
       taskMessageHandler.shutDown();
     } catch (final IOException e) {
       // eat error on shutdown
+      LOG.trace("Exception while shutting down", e);
     }
   }
 

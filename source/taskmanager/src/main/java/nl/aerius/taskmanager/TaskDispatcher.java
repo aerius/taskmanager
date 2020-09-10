@@ -95,20 +95,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
         final Task task = scheduler.getNextTask();
         LOG.trace("Send task to worker {}, ({})", workerQueueName, task.getId());
         state = State.DISPATCH_TASK;
-        try {
-          workerPool.sendTaskToWorker(task);
-          unLockClient(task);
-        } catch (final NoFreeWorkersException e) {
-          LOG.info("[NoFreeWorkersException] Workers decreased while waiting for task. Rescheduling task.");
-          scheduler.addTask(task);
-        } catch (final TaskAlreadySentException e) {
-          LOG.error("Duplicate task detected for worker queue: {}, from task queue: {}", e.getWorkerQueueName(), e.getTaskQueueName(), e);
-          taskAbortedOnDuplicateMessageId(task);
-        } catch (final IOException | ShutdownSignalException e) {
-          LOG.error("Sending task to worker failed", e);
-          taskDeliveryFailed(task);
-          unLockClient(task);
-        }
+        dispatch(task);
       }
     } catch (final RuntimeException e) {
       LOG.error("TaskDispatcher crashed with RuntimeException: {}", getState(), e);
@@ -117,6 +104,24 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
       Thread.currentThread().interrupt();
     }
     running = false;
+  }
+
+  private void dispatch(final Task task) {
+    try {
+      workerPool.sendTaskToWorker(task);
+      unLockClient(task);
+    } catch (final NoFreeWorkersException e) {
+      LOG.info("[NoFreeWorkersException] Workers decreased while waiting for task. Rescheduling task.");
+      LOG.trace("NoFreeWorkersException thrown", e);
+      scheduler.addTask(task);
+    } catch (final TaskAlreadySentException e) {
+      LOG.error("Duplicate task detected for worker queue: {}, from task queue: {}", e.getWorkerQueueName(), e.getTaskQueueName(), e);
+      taskAbortedOnDuplicateMessageId(task);
+    } catch (final IOException | ShutdownSignalException e) {
+      LOG.error("Sending task to worker failed", e);
+      taskDeliveryFailed(task);
+      unLockClient(task);
+    }
   }
 
   /**

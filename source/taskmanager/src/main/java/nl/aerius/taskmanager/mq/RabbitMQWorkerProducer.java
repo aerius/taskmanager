@@ -102,6 +102,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
         channel.close();
       } catch (final IOException e) {
         // eat error.
+        LOG.trace("Exception while forwarding message", e);
       }
     }
   }
@@ -117,31 +118,35 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   }
 
   private void tryStartReplyConsumer() {
-    try {
-      boolean warn = true;
-      while (!isShutdown) {
-        try {
-          final Connection connection = factory.getConnection();
-          connection.addShutdownListener(new ShutdownListener() {
+    boolean warn = true;
+    while (!isShutdown) {
+      try {
+        final Connection connection = factory.getConnection();
+        connection.addShutdownListener(new ShutdownListener() {
 
-            @Override
-            public void shutdownCompleted(final ShutdownSignalException cause) {
-              tryStartReplyConsumer();
-            }
-          });
-          startReplyConsumer(connection);
-          LOG.info("Succesfully (re)started reply consumer for queue {}", workerQueueName);
-          break;
-        } catch (final ShutdownSignalException | IOException e1) {
-          if (warn) {
-            LOG.warn("(Re)starting reply consumer for queue {} failed, retrying in a while", workerQueueName, e1);
-            warn = false;
+          @Override
+          public void shutdownCompleted(final ShutdownSignalException cause) {
+            tryStartReplyConsumer();
           }
-          Thread.sleep(TimeUnit.SECONDS.toMillis(DEFAULT_RETRY_SECONDS));
+        });
+        startReplyConsumer(connection);
+        LOG.info("Succesfully (re)started reply consumer for queue {}", workerQueueName);
+        break;
+      } catch (final ShutdownSignalException | IOException e1) {
+        if (warn) {
+          LOG.warn("(Re)starting reply consumer for queue {} failed, retrying in a while", workerQueueName, e1);
+          warn = false;
         }
+        delayRetry(DEFAULT_RETRY_SECONDS);
       }
-    } catch (final InterruptedException e2) {
-      LOG.debug("Starting reply consumer interrupted", e2);
+    }
+  }
+
+  private void delayRetry(final int retryTime) {
+    try {
+      Thread.sleep(TimeUnit.SECONDS.toMillis(retryTime));
+    } catch (final InterruptedException ex) {
+      LOG.debug("Waiting interrupted", ex);
       Thread.currentThread().interrupt();
     }
   }

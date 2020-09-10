@@ -77,10 +77,6 @@ public class PriorityTaskQueue extends TaskQueue implements Serializable {
         && priority == other.priority;
   }
 
-  public String getDescription() {
-    return "";
-  }
-
   public int getPriority() {
     return priority;
   }

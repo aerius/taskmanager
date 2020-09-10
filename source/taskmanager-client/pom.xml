@@ -28,11 +28,10 @@
   </parent>
 
   <artifactId>taskmanager-client</artifactId>
+  <packaging>jar</packaging>
 
   <name>Taskmanager Client Library</name>
   <description>The Library for Taskmanager Client code</description>
-
-  <packaging>jar</packaging>
 
   <dependencies>
     <!-- RabbitMQ -->

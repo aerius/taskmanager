@@ -64,7 +64,6 @@ class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
   public void sendTaskToWorker(final Task task) throws IOException {
     if (runningWorkers.containsKey(task.getId())) {
       LOG.error("Duplicate task detected for worker queue: {}, from task queue: {}", workerQueueName, task.getTaskConsumer().getQueueName());
-      //      throw new TaskAlreadySentException(workerType, task.getTaskConsumer().getQueueName());
     } else {
       synchronized (this) {
         if (!freeWorkers.tryAcquire()) {

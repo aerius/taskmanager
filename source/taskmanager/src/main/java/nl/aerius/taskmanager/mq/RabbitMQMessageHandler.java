@@ -106,23 +106,27 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
   }
 
   private void tryStartConsuming() {
-    try {
-      boolean warn = true;
-      while (!isShutdown) {
-        try {
-          stopAndStartConsumer();
-          LOG.info("Succesfully (re)started consumer for {}", taskQueueName);
-          break;
-        } catch (final ShutdownSignalException | IOException e1) {
-          if (warn) {
-            LOG.warn("(Re)starting consumer for {} failed, retrying in a while", taskQueueName, e1);
-            warn = false;
-          }
-          Thread.sleep(TimeUnit.SECONDS.toMillis(DEFAULT_RETRY_SECONDS));
+    boolean warn = true;
+    while (!isShutdown) {
+      try {
+        stopAndStartConsumer();
+        LOG.info("Succesfully (re)started consumer for {}", taskQueueName);
+        break;
+      } catch (final ShutdownSignalException | IOException e1) {
+        if (warn) {
+          LOG.warn("(Re)starting consumer for {} failed, retrying in a while", taskQueueName, e1);
+          warn = false;
         }
+        delayRetry(DEFAULT_RETRY_SECONDS);
       }
-    } catch (final InterruptedException e2) {
-      LOG.debug("Starting consumer interrupted", e2);
+    }
+  }
+
+  private void delayRetry(final int retryTime) {
+    try {
+      Thread.sleep(TimeUnit.SECONDS.toMillis(retryTime));
+    } catch (final InterruptedException ex) {
+      LOG.debug("Waiting interrupted", ex);
       Thread.currentThread().interrupt();
     }
   }
