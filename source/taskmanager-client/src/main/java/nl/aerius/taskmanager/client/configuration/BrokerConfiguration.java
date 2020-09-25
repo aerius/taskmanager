@@ -78,7 +78,7 @@ public class BrokerConfiguration {
     final String prop = System.getProperty(key);
 
     if (prop == null) {
-      final String env = System.getenv("AERIUS." + key.toUpperCase(Locale.ENGLISH));
+      final String env = System.getenv(("AERIUS." + key.toUpperCase(Locale.ENGLISH)).replace('.', '_'));
 
       if (env == null) {
         return properties.getProperty(key);
