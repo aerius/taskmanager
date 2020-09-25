@@ -1,10 +1,6 @@
 name: Publish artifact
 
-# Publish on a push
-on:
-  push:
-    branches: 
-      - master
+on: [push]
 
 jobs:
   publish:
@@ -18,7 +14,15 @@ jobs:
         java-version: 1.8
     - name: Build with Maven
       run: mvn -f source/pom.xml package
-    - name: Publish Artifact
+    - name: Publish Docker image
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: taskmanager
+        username: ${{ secrets.nexus_username }}
+        password: ${{ secrets.nexus_password }}
+        registry: nexus-docker.aerius.nl
+        workdir: source/
+    - name: Publish Maven Artifacts
       uses: samuelmeuli/action-maven-publish@v1
       with:
         server_id: aerius-nexus
