@@ -27,9 +27,10 @@
   </parent>
 
   <artifactId>taskmanager</artifactId>
+  <packaging>jar</packaging>
+  
   <name>AERIUS taskmanager</name>
   <description>AERIUS Taskmanager actual manager/scheduler (standalone)</description>
-  <packaging>jar</packaging>
 
   <dependencies>
     <dependency>

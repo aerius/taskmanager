@@ -19,11 +19,11 @@ package nl.aerius.taskmanager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -42,15 +42,16 @@ class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurationHand
 
   @Override
   public PriorityTaskSchedule read(final File file) throws FileNotFoundException, IOException {
-    try (final Reader reader = new FileReader(file)) {
+    try (final Reader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
       return gson.fromJson(reader, PriorityTaskSchedule.class);
     }
   }
 
   @Override
   public void write(final File path, final PriorityTaskSchedule priorityTaskSchedule) throws IOException {
-    try (final Writer writer = new FileWriter(new File(path, PREFIX + priorityTaskSchedule.getWorkerQueueName() + ".json"))) {
+    final File targetFile = new File(path, PREFIX + priorityTaskSchedule.getWorkerQueueName() + ".json");
+    try (final Writer writer = Files.newBufferedWriter(targetFile.toPath(), StandardCharsets.UTF_8)) {
       writer.write(gson.toJson(priorityTaskSchedule));
     }
-   }
+  }
 }

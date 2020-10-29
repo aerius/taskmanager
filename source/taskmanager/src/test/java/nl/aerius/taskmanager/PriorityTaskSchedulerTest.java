@@ -16,7 +16,9 @@
  */
 package nl.aerius.taskmanager;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -24,8 +26,11 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -132,13 +137,14 @@ public class PriorityTaskSchedulerTest {
   }
 
   @Test(timeout = 7000)
-  public void testGetTaskWith1WorkerAvailable() throws InterruptedException {
+  public void testGetTaskWith1WorkerAvailable() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(1);
     final Task task1 = createTask(taskConsumer1, "1", QUEUE1); //add task with priority 0.
     scheduler.addTask(task1);
     final AtomicInteger chkCounter = new AtomicInteger();
-    final ExecutorService es = waitForTask(task1, chkCounter);
-    es.awaitTermination(1, TimeUnit.SECONDS);
+    final Future<Task> receivedTask = waitForTask(task1, chkCounter);
+    await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
+    assertNotNull("Received task", receivedTask.get());
     assertEquals("Counter should be 1 when only one slot available", 1, chkCounter.intValue());
   }
 
@@ -146,10 +152,9 @@ public class PriorityTaskSchedulerTest {
    * Test if getNextTask correctly gets new task.
    * If only 1 slot available and the next task is a low priority of the queue on which already another process is running,
    * it should not be run until that more than one or the task of that queue is finished.
-   * @throws InterruptedException
    */
   @Test(timeout = 7000)
-  public void testGetTask() throws InterruptedException {
+  public void testGetTask() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(2);
     final Task task1a = createTask(taskConsumer1, "1a", QUEUE1);
     scheduler.addTask(task1a);
@@ -159,15 +164,18 @@ public class PriorityTaskSchedulerTest {
     assertSame("Should get task2a back.", task2a, scheduler.getNextTask());
     assertSame("Should get task1a back.", task1a, scheduler.getNextTask());
     final AtomicInteger chkCounter = new AtomicInteger();
-    final ExecutorService es = waitForTask(task1b, chkCounter);
-    es.awaitTermination(1, TimeUnit.SECONDS);
+    final Future<Task> receivedTask = waitForTask(task1b, chkCounter);
+    await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     assertEquals("Counter should still be zero", 0, chkCounter.intValue());
+    assertFalse("Should not be done yet", receivedTask.isDone());
     scheduler.onTaskFinished(task2a.getMessage().getMetaData().getQueueName());
-    es.awaitTermination(1, TimeUnit.SECONDS);
+    await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     // task2a finished, but task1b may still not be executed, because only 1 slot available.
     assertEquals("Counter should still be zero when 1 slot priorty available", 0, chkCounter.intValue());
+    assertFalse("Should not be done yet", receivedTask.isDone());
     scheduler.onTaskFinished(task1a.getMessage().getMetaData().getQueueName());
-    es.awaitTermination(1, TimeUnit.SECONDS);
+    await().atMost(1, TimeUnit.SECONDS).until(() -> receivedTask.isDone());
+    assertNotNull("Received task", receivedTask.get());
     // task1a finished, now task1b may be executed.
     assertEquals("Counter should still be 1", 1, chkCounter.intValue());
   }
@@ -176,10 +184,9 @@ public class PriorityTaskSchedulerTest {
    * Test if getNextTask correctly gets new task in case of a big worker pool.
    * If capacity is reached for a task, it should not run unless a task of the same queue is returned as finished.
    * In the meanwhile, other tasks can start/finish (as long as there is a capacity for those tasks).
-   * @throws InterruptedException
    */
   @Test(timeout = 7000)
-  public void testGetTaskBigPool() throws InterruptedException {
+  public void testGetTaskBigPool() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(10);
     final List<Task> tasks = new ArrayList<>();
     final List<Task> sendTasks = new ArrayList<>();
@@ -198,16 +205,19 @@ public class PriorityTaskSchedulerTest {
     scheduler.addTask(task1b);
     assertSame("Should still get task 1b", task1b, scheduler.getNextTask());
     final AtomicInteger chkCounter = new AtomicInteger();
-    final ExecutorService es = waitForTask(null, chkCounter);
-    es.awaitTermination(1, TimeUnit.SECONDS);
+    final Future<Task> receivedTask = waitForTask(null, chkCounter);
+    await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     assertEquals("Counter should still be zero", 0, chkCounter.intValue());
+    assertFalse("Should not be done yet", receivedTask.isDone());
     scheduler.onTaskFinished(task1.getMessage().getMetaData().getQueueName());
     scheduler.onTaskFinished(task1b.getMessage().getMetaData().getQueueName());
-    es.awaitTermination(1, TimeUnit.SECONDS);
+    await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     // task1's are finished, but tasks on 2 may still not be executed, because not enough slots available.
     assertEquals("Counter should still be zero when capacity not reached", 0, chkCounter.intValue());
+    assertFalse("Should not be done yet", receivedTask.isDone());
     scheduler.onTaskFinished(sendTasks.get(0).getMessage().getMetaData().getQueueName());
-    es.awaitTermination(1, TimeUnit.SECONDS);
+    await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
+    assertNotNull("Received task", receivedTask.get());
     // One of the task2's is now finished, another task2 may be executed.
     assertEquals("Counter should increase because there is enough capacity now", 1, chkCounter.intValue());
   }
@@ -228,24 +238,27 @@ public class PriorityTaskSchedulerTest {
     assertSame("Scheduler should prefer task3", task3, scheduler.getNextTask());
   }
 
-  private ExecutorService waitForTask(final Task task, final AtomicInteger chkCounter) {
+  private Future<Task> waitForTask(final Task task, final AtomicInteger chkCounter) {
     final ExecutorService es = Executors.newCachedThreadPool();
-    es.execute(new Runnable() {
+    final Future<Task> receivedTask = es.submit(new Callable<Task>() {
       @Override
-      public void run() {
+      public Task call() throws Exception {
+        Task result = null;
         try {
+          result = scheduler.getNextTask();
           if (task == null) {
-            assertNotNull("Should get any task back", scheduler.getNextTask());
+            assertNotNull("Should get any task back", result);
           } else {
-            assertSame("Should get task back.", task, scheduler.getNextTask());
+            assertSame("Should get task back.", task, result);
           }
           chkCounter.incrementAndGet();
         } catch (final InterruptedException e) {
         }
+        return result;
       }
     });
     es.shutdown();
-    return es;
+    return receivedTask;
   }
 
   private TaskConsumer createMockTaskConsumer(final String taskQueueName) throws IOException {
@@ -259,7 +272,8 @@ public class PriorityTaskSchedulerTest {
 
   private Task createTask(final TaskConsumer tc, final String message, final String queue) {
     final Task task = new Task(tc);
-    task.setData(new Message(new MessageMetaData(queue) {}) {
+    task.setData(new Message(new MessageMetaData(queue) {
+    }) {
       @Override
       public String getMessageId() {
         return message;

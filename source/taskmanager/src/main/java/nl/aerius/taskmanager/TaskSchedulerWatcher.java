@@ -75,35 +75,38 @@ class TaskSchedulerWatcher<T extends TaskQueue, S extends TaskSchedule<T>> imple
     try {
       init();
       while (running) {
-
-        final WatchKey key = watchService.take();
-
-        for (final WatchEvent<?> event : key.pollEvents()) {
-          final Kind<?> kind = event.kind();
-          final WatchEvent<Path> ev = (WatchEvent<Path>) event;
-          final File file = new File(watchDirectoryPath.toFile(), ev.context().toFile().getName());
-
-          if (!file.getName().endsWith(CONFIG_FILE_EXTENSION)) {
-            continue;
-          }
-          if (kind == ENTRY_CREATE || kind == ENTRY_MODIFY) {
-            updateTaskScheduler(file);
-          } else if (kind == ENTRY_DELETE) {
-            removeTaskScheduler(file);
-          } else {
-            LOG.debug("Unsupported watch event: {}", kind);
-          }
-        }
-        //If the key is no longer valid, the directory is inaccessible so exit the loop.
-        if (!key.reset()) {
-          LOG.warn("Stopped watching directory for configuration changed, because directory not accessable.");
-          running = false;
-        }
+        doRun();
       }
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (final RuntimeException | IOException e) {
       LOG.error("Filewatcher stopped unexpected", e);
+    }
+  }
+
+  private void doRun() throws InterruptedException, IOException {
+    final WatchKey key = watchService.take();
+
+    for (final WatchEvent<?> event : key.pollEvents()) {
+      final Kind<?> kind = event.kind();
+      final WatchEvent<Path> ev = (WatchEvent<Path>) event;
+      final File file = new File(watchDirectoryPath.toFile(), ev.context().toFile().getName());
+
+      if (!file.getName().endsWith(CONFIG_FILE_EXTENSION)) {
+        continue;
+      }
+      if (kind == ENTRY_CREATE || kind == ENTRY_MODIFY) {
+        updateTaskScheduler(file);
+      } else if (kind == ENTRY_DELETE) {
+        removeTaskScheduler(file);
+      } else {
+        LOG.debug("Unsupported watch event: {}", kind);
+      }
+    }
+    //If the key is no longer valid, the directory is inaccessible so exit the loop.
+    if (!key.reset()) {
+      LOG.warn("Stopped watching directory for configuration changed, because directory not accessable.");
+      running = false;
     }
   }
 
@@ -145,6 +148,7 @@ class TaskSchedulerWatcher<T extends TaskQueue, S extends TaskSchedule<T>> imple
       watchService.close();
     } catch (final IOException e) {
       // suppress closing exception
+      LOG.trace("Error shutting down", e);
     }
   }
 }

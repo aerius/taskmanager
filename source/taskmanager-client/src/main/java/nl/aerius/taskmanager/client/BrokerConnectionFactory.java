@@ -78,32 +78,38 @@ public class BrokerConnectionFactory {
     lock.lock();
     try {
       if (connection == null || !connection.isOpen()) {
-        boolean retry = true;
-        int retryTime = 0;
-        while (retry) {
-          retryTime += WAIT_BEFORE_RETRY_SECONDS;
-          try {
-            connection = createNewConnection();
-            retry = false;
-          } catch (final IOException e) {
-            LOG.error("Connecting to rabbitmq failed, retry in {} seconds. Cause: {}", retryTime, e.getMessage());
-            delayRetry(retryTime);
-          }
-        }
-        connection.addShutdownListener(new ShutdownListener() {
-          @Override
-          public void shutdownCompleted(final ShutdownSignalException cause) {
-            if (cause.isInitiatedByApplication()) {
-              LOG.info("Connection was shut down (by application)");
-            } else {
-              LOG.warn("Connection has been shut down, trying to reconnect", cause);
-            }
-          }
-        });
+        connection = openConnection();
       }
     } finally {
       lock.unlock();
     }
+    return connection;
+  }
+
+  private Connection openConnection() {
+    Connection connection = null;
+    boolean retry = true;
+    int retryTime = 0;
+    while (retry) {
+      retryTime += WAIT_BEFORE_RETRY_SECONDS;
+      try {
+        connection = createNewConnection();
+        retry = false;
+      } catch (final IOException e) {
+        LOG.error("Connecting to rabbitmq failed, retry in {} seconds. Cause: {}", retryTime, e.getMessage());
+        delayRetry(retryTime);
+      }
+    }
+    connection.addShutdownListener(new ShutdownListener() {
+      @Override
+      public void shutdownCompleted(final ShutdownSignalException cause) {
+        if (cause.isInitiatedByApplication()) {
+          LOG.info("Connection was shut down (by application)");
+        } else {
+          LOG.warn("Connection has been shut down, trying to reconnect", cause);
+        }
+      }
+    });
     return connection;
   }
 

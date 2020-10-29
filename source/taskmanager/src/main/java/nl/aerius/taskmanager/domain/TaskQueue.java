@@ -40,21 +40,10 @@ public class TaskQueue {
 
   @Override
   public boolean equals(final Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null || getClass() != obj.getClass()) {
-      return false;
-    }
-    final TaskQueue other = (TaskQueue) obj;
-    if (queueName == null) {
-      if (other.queueName != null) {
-        return false;
-      }
-    } else if (!queueName.equals(other.queueName)) {
-      return false;
-    }
-    return true;
+    return obj != null
+        && obj.getClass() == this.getClass()
+        && ((queueName == null && ((TaskQueue) obj).queueName == null)
+            || (queueName != null && queueName.equals(((TaskQueue) obj).queueName)));
   }
 
   public String getQueueName() {

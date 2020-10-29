@@ -28,8 +28,8 @@ public interface TaskResultCallback {
    * value with the input.
    *
    * @param value data retrieved returned by the worker
-   * @param correlationId id related to this data
-   * @param messageId
+   * @param correlationId Correlation id related to this data
+   * @param messageId Message id related to this data.
    */
   void onSuccess(Object value, String correlationId, String messageId);
 
@@ -40,8 +40,8 @@ public interface TaskResultCallback {
    * passed here or null if it's not known.
    *
    * @param exception Exception thrown by worker or process
-   * @param correlationId id related to the input that caused the exception
-   * @param messageId
+   * @param correlationId Correlation id related to this data
+   * @param messageId Message id related to this data.
    */
   void onFailure(Exception exception, String correlationId, String messageId);
 }

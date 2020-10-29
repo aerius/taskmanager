@@ -101,7 +101,7 @@ public abstract class ConnectionConfiguration {
   public abstract int getBrokerRetryWaitTime();
 
   @AutoValue.Builder
-  public static abstract class Builder {
+  public abstract static class Builder {
     public abstract Builder brokerHost(String host);
     public abstract Builder brokerPort(int port);
     public abstract Builder brokerUsername(String username);

@@ -54,7 +54,7 @@ public class WorkerResultSender implements WorkerIntermediateResultSender {
    * Send the last result back to the client. Because it is the last message, the taskmanager should be informed.
    * This is done by sending a message back to the worker reply queue.
    * @param data to send on the queue
-   * @throws IOException
+   * @throws IOException when the result could not be send.
    */
   public void sendFinalResult(final Serializable data) throws IOException {
     sendIntermediateResult(data);

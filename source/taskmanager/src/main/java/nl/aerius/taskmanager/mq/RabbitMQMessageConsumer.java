@@ -95,6 +95,7 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
     try {
       callback.onMessageReceived(message);
     } catch (final RuntimeException e) {
+      LOG.trace("Exception while handling message", e);
       nack(message.getMetaData());
     }
   }
