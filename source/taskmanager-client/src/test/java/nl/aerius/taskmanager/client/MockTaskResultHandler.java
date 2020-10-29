@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import nl.aerius.taskmanager.client.TaskResultCallback;
+
 /**
  *
  */

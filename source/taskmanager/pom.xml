@@ -69,6 +69,12 @@
 
     <!-- Testing -->
     <dependency>
+      <groupId>nl.aerius</groupId>
+      <artifactId>taskmanager-test</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
@@ -81,14 +87,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>nl.aerius</groupId>
-      <artifactId>taskmanager-client</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies>
