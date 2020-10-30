@@ -30,9 +30,9 @@ import com.rabbitmq.client.Connection;
 
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
-import nl.aerius.taskmanager.client.MockChannel;
-import nl.aerius.taskmanager.client.MockConnection;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
+import nl.aerius.taskmanager.test.MockChannel;
+import nl.aerius.taskmanager.test.MockConnection;
 
 /**
  * Abstract base class for RabbitMQ tests.

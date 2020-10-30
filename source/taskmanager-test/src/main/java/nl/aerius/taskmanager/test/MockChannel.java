@@ -14,9 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.client;
+package nl.aerius.taskmanager.test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Random;
@@ -54,8 +57,6 @@ import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 
-import nl.aerius.taskmanager.client.util.QueueHelper;
-
 /**
  * Mock implementation simulating {@link Channel}.
  */
@@ -80,7 +81,8 @@ public class MockChannel implements Channel {
   }
 
   @Override
-  public final void basicPublish(final String exchange, final String routingKey, final boolean mandatory, final BasicProperties props, final byte[] body)
+  public final void basicPublish(final String exchange, final String routingKey, final boolean mandatory, final BasicProperties props,
+      final byte[] body)
       throws IOException {
     basicPublish(exchange, routingKey, mandatory, false, props, body);
   }
@@ -549,6 +551,19 @@ public class MockChannel implements Channel {
     return body;
   }
 
+  private static byte[] objectToBytes(final Serializable object) throws IOException {
+    final byte[] bytes;
+    if (object == null) {
+      bytes = new byte[0];
+    } else {
+      try (final ByteArrayOutputStream bo = new ByteArrayOutputStream(); final ObjectOutputStream out = new ObjectOutputStream(bo)) {
+        out.writeObject(object);
+        bytes = bo.toByteArray();
+      }
+    }
+    return bytes;
+  }
+
   private PriorityBlockingQueue<Body> getQueue(final String key) {
     synchronized (QUEUES) {
       if (!QUEUES.containsKey(key)) {
@@ -578,7 +593,7 @@ public class MockChannel implements Channel {
         } catch (final Exception e) {
           LOG.error("handle Delivery in MockChannel failed", e);
           try {
-            callback.handleDelivery(null, null, null, QueueHelper.objectToBytes(e));
+            callback.handleDelivery(null, null, null, objectToBytes(e));
           } catch (final IOException e1) {
             LOG.error("handle Delivery of error in MockChannel failed", e1);
           }

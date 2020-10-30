@@ -38,6 +38,8 @@ import org.junit.Test;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Connection;
 
+import nl.aerius.taskmanager.test.MockConnection;
+
 /**
  * Test class for {@link TaskManagerClientSender}.
  */

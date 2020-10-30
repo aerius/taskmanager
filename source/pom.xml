@@ -255,6 +255,7 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
+        <module>taskmanager-test</module>
         <module>taskmanager-client</module>
         <module>taskmanager</module>
       </modules>

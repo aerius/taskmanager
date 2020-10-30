@@ -34,6 +34,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.client.TaskWrapper.TaskWrapperSender;
 import nl.aerius.taskmanager.client.util.QueueHelper;
+import nl.aerius.taskmanager.test.MockChannel;
 
 /**
  *
