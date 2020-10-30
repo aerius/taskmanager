@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 
@@ -45,7 +43,7 @@ public class WorkerResultSender implements WorkerIntermediateResultSender {
 
   @Override
   public void sendIntermediateResult(final Serializable result) throws IOException {
-    if (!StringUtils.isBlank(properties.getReplyTo())) {
+    if (properties.getReplyTo() != null && !properties.getReplyTo().isEmpty()) {
       sendMessage(properties.getReplyTo(), QueueHelper.objectToBytes(result));
     }
   }

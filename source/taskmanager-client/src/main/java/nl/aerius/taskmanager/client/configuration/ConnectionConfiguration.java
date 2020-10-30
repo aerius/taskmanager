@@ -16,8 +16,6 @@
  */
 package nl.aerius.taskmanager.client.configuration;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Configuration object for different (queue) properties.
  */
@@ -218,16 +216,17 @@ public class ConnectionConfiguration {
     public ConnectionConfiguration build() {
       final ConnectionConfiguration connectionConfiguration = autoBuild();
 
-      if (StringUtils.isBlank(connectionConfiguration.getBrokerHost())) {
-        throw new IllegalArgumentException("Broker host not allowed to be null or empty.");
-      } else if (StringUtils.isBlank(connectionConfiguration.getBrokerUsername())) {
-        throw new IllegalArgumentException("Broker username not allowed to be null or empty.");
-      } else if (StringUtils.isBlank(connectionConfiguration.getBrokerPassword())) {
-        throw new IllegalArgumentException("Broker password not allowed to be null or empty.");
-      } else if (StringUtils.isBlank(connectionConfiguration.getBrokerVirtualHost())) {
-        throw new IllegalArgumentException("Broker virtual host not allowed to be null or empty.");
-      }
+      checkBlank("Broker Host", connectionConfiguration.getBrokerHost());
+      checkBlank("Broker Username", connectionConfiguration.getBrokerUsername());
+      checkBlank("Broker Password", connectionConfiguration.getBrokerPassword());
+      checkBlank("Broker Virtual Host", connectionConfiguration.getBrokerVirtualHost());
       return connectionConfiguration;
+    }
+
+    private void checkBlank(final String name, final String value) {
+      if (value == null || value.isEmpty()) {
+        throw new IllegalArgumentException(name + " not allowed to be null or empty.");
+      }
     }
 
     public ConnectionConfiguration.Builder brokerHost(final String brokerHost) {
