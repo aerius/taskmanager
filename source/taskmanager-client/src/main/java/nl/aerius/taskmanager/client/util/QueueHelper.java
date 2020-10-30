@@ -33,8 +33,7 @@ import com.rabbitmq.client.LongString;
  */
 public final class QueueHelper {
 
-  private QueueHelper() {
-  }
+  private QueueHelper() {}
 
   /**
    * Convert a byte array to an object.

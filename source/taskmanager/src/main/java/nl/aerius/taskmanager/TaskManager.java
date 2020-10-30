@@ -50,7 +50,6 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
   private final TaskSchedulerFactory<T, S> schedulerFactory;
   private final Map<String, TaskScheduleBucket> buckets = new HashMap<>();
 
-
   public TaskManager(final ExecutorService executorService, final AdaptorFactory factory, final TaskSchedulerFactory<T, S> schedulerFactory) {
     this.executorService = executorService;
     this.factory = factory;

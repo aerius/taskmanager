@@ -173,7 +173,6 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
     }
   }
 
-
   @Override
   public final int compare(final Task task1, final Task task2) {
     final String qN1 = task1.getTaskConsumer().getQueueName();

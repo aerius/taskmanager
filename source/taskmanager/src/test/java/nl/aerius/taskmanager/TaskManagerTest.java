@@ -79,6 +79,7 @@ public class TaskManagerTest {
     assertTrue("TaskScheduler updated", taskManager.updateTaskScheduler(schedule));
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
+
   @Test
   public void testRemoveQueue() throws IOException, InterruptedException {
     assertTrue("TaskScheduler running", taskManager.updateTaskScheduler(schedule));

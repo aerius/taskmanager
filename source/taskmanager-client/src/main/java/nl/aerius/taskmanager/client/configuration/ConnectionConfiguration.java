@@ -213,8 +213,7 @@ public class ConnectionConfiguration {
     private Integer brokerManagementRefreshRate;
     private Integer brokerRetryWaitTime;
 
-    Builder() {
-    }
+    Builder() {}
 
     public ConnectionConfiguration build() {
       final ConnectionConfiguration connectionConfiguration = autoBuild();

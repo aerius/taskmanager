@@ -33,12 +33,10 @@ public class MockConnection implements Connection {
   private boolean closed;
 
   @Override
-  public void addShutdownListener(final ShutdownListener listener) {
-  }
+  public void addShutdownListener(final ShutdownListener listener) {}
 
   @Override
-  public void removeShutdownListener(final ShutdownListener listener) {
-  }
+  public void removeShutdownListener(final ShutdownListener listener) {}
 
   @Override
   public ShutdownSignalException getCloseReason() {
@@ -46,8 +44,7 @@ public class MockConnection implements Connection {
   }
 
   @Override
-  public void notifyListeners() {
-  }
+  public void notifyListeners() {}
 
   @Override
   public boolean isOpen() {

@@ -173,7 +173,7 @@ public class RabbitMQQueueMonitor implements Runnable {
 
   protected JsonElement getJsonResultFromApi(final String apiPath) throws URISyntaxException, UnsupportedEncodingException {
     JsonElement returnElement = null;
-    final URI uri = new  URI("http://" + configuration.getBrokerHost() + ":" + configuration.getBrokerManagementPort() + apiPath);
+    final URI uri = new URI("http://" + configuration.getBrokerHost() + ":" + configuration.getBrokerManagementPort() + apiPath);
     try (final CloseableHttpResponse response = httpClient.execute(targetHost, new HttpGet(uri), context)) {
       if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
         try (final InputStreamReader is = new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8);

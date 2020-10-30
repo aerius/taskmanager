@@ -118,7 +118,6 @@ public class TaskDispatcherTest {
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
   }
 
-
   @Test(timeout = 3000)
   public void testExceptionDuringForward() throws InterruptedException {
     workerProducer.setShutdownExceptionOnForward(true);

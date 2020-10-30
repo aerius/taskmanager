@@ -60,7 +60,8 @@ public class RabbitMQQueueMonitorTest {
       protected JsonElement getJsonResultFromApi(final String apiPath) {
         final JsonParser parser = new JsonParser();
         try (final InputStream fr = getClass().getResourceAsStream("queue_aerius.worker.ops.txt");
-            final InputStreamReader is = new InputStreamReader(fr); final JsonReader jr = new JsonReader(is)) {
+            final InputStreamReader is = new InputStreamReader(fr);
+            final JsonReader jr = new JsonReader(is)) {
           return parser.parse(jr);
         } catch (final IOException e) {
           throw new RuntimeException(e);
