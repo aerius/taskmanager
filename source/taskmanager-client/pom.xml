@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     Copyright the State of the Netherlands
@@ -28,7 +27,6 @@
   </parent>
 
   <artifactId>taskmanager-client</artifactId>
-  <packaging>jar</packaging>
 
   <name>Taskmanager Client Library</name>
   <description>The Library for Taskmanager Client code</description>

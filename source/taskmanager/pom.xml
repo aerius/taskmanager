@@ -27,9 +27,8 @@
   </parent>
 
   <artifactId>taskmanager</artifactId>
-  <packaging>jar</packaging>
   
-  <name>AERIUS taskmanager</name>
+  <name>AERIUS Taskmanager</name>
   <description>AERIUS Taskmanager actual manager/scheduler (standalone)</description>
 
   <dependencies>
@@ -39,18 +38,6 @@
       <version>${project.version}</version>
     </dependency>
   
-    <!-- RabbitMQ -->
-    <dependency>
-      <groupId>com.rabbitmq</groupId>
-      <artifactId>amqp-client</artifactId>
-    </dependency>
-        
-    <!-- json -->
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-    </dependency>
-    
     <!-- CLI -->
     <dependency>
       <groupId>commons-cli</groupId>
@@ -58,10 +45,6 @@
     </dependency>
   
     <!-- Logging -->
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
