@@ -3,13 +3,7 @@ FROM maven:3-openjdk-8 as builder
 
 WORKDIR /app
 
-# First download as many dependencies as possible. This avoids downloading all dependencies each time something in source changes
-COPY pom.xml /app/
-COPY taskmanager/pom.xml /app/taskmanager/
-COPY taskmanager-client/pom.xml /app/taskmanager-client/
-RUN mvn package clean -Dmaven.main.skip -Dmaven.test.skip
-
-# Next do the actual build
+# Do the actual build
 COPY . /app
 RUN mvn clean package
 
