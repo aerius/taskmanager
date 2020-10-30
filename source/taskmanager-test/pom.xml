@@ -28,7 +28,7 @@
   <artifactId>taskmanager-test</artifactId>
   <packaging>jar</packaging>
 
-  <name>Taskmanager Test Library</name>
+  <name>Taskmanager :: Test Library</name>
   <description>A Library to help with testing Taskmanager (Client) code</description>
 
   <dependencies>

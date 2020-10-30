@@ -23,7 +23,7 @@
   <artifactId>taskmanager-parent</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>AERIUS taskmanager parent pom</name>
+  <name>Taskmanager :: Parent</name>
   <url>https://www.aerius.nl</url>
 
   <organization>

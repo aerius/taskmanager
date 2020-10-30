@@ -27,7 +27,7 @@
 
   <artifactId>taskmanager-client</artifactId>
 
-  <name>Taskmanager Client Library</name>
+  <name>Taskmanager :: Client Library</name>
   <description>The Library for Taskmanager Client code</description>
 
   <dependencies>
