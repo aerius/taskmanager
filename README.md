@@ -37,27 +37,15 @@ For example a web interface calculation for Calculator is put on the queue `aeri
 2. The taskmanagers listens to all client queues and takes a message from each queue if one is present.
 3. When a worker starts listing to the worker queue it opens a RabbbitMQ channel for each process in the worker that can handle tasks.
 For example a queue is named `aerius.worker.calculator`. Where `.worker` indicates that it's a worker queue.
-4. The taskmanager counts the number of worker channels and than knows the capacity available.
+4. The taskmanager counts the number of worker channels and to determine the available capacity.
 This check is done with a fixed interval and the capacity is updated accordingly.
 5. When a worker is available the taskmanager scheduler determines which task should be forwarded to a worker.
 This is based on priority and maximum load for a given worker type.
-6. The task is than send to the worker and the taskmanager keeps track of this task.
+6. The task is then send to the worker and the taskmanager keeps track of this task.
 7. The taskmanager continues from step 2.
-7. If the task is finished the worker sends a reply via the work reply queue, e.g. `aerius.worker.calculator.reply`.
-8. The taskmanager marks the tasks as finished and marks the worker as free.
+8. Once the task is finished the worker sends a reply via the work reply queue, e.g. `aerius.worker.calculator.reply`.
+9. The taskmanager marks the tasks as finished and marks the worker as free.
 A new task can now be scheduled.
-
-
-
-Because a single work can take up a lot of resources, the resources must be prioritized.
-One way action is work related to user interaction should get a higher priority than background work.
-This is combined with the ability to set a maximum percentage of resource utilization by a specific type of work.
-This will guarantee specific work, like user interactive work, will always get through even when a lot of work is scheduled.
-Part of this process is the interaction between task manager and workers.
-Workers split work into smaller chunks and limit the amount of chunks done concurrently.
-The workers monitor the total utilization of work done by querying the task manager.
-If there are still resources available a worker can send more chunks concurrently.
-This will allow large tasks to utilize as much of the system resources as possible, while still avoiding a worker claiming too much resources.
 
 ## Configuration
 
@@ -85,8 +73,8 @@ metrics.graphite.host = [graphite host]
 
 ### Queue Configuration
 The queue configuration is done in json files.
-These files need to be put int the directory configured in `taskmanager.configuration.directory`.
-The task managers monitors this directory and updates the the configuration if any of the files change.
+These files need to be put in the directory configured in `taskmanager.configuration.directory`.
+The task managers monitors this directory and updates the configuration on the fly if any of the files change.
 This makes it possible to change the configuration while the task manager runs.
 The json format of the configuration files is as follows:
 
@@ -112,9 +100,9 @@ In `queues` there can be 1 or more queue configurations.
 Each queue configuration consists of 3 parameters:
 * `queueName`: The postfix of the client queue of which the task manager constructs the full queue name using the worker queue name.
 So `calculator_ui` becomes `aerius.ops.calculator_ui`, when the `workerQueueName` is `ops`.
-* `priority`: An positive int value determining the priority of the tasks.
+* `priority`: A positive int value determining the priority of the tasks.
 A lower number means a higher priority.
-* `maxCapacityUse`: A number between 0 and 1 that limits te amount of tasks that are concurrently run for the queue based on the available number of workers.
+* `maxCapacityUse`: A number between 0 and 1 that limits the amount of tasks that are concurrently run for the queue based on the available number of workers.
 For example if the value is `0.6` and there are `10` workers.
 This would mean a maximum of `6` workers will be given a tasks from this queue.
 
