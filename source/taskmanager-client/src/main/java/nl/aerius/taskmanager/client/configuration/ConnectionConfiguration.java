@@ -16,15 +16,10 @@
  */
 package nl.aerius.taskmanager.client.configuration;
 
-import org.apache.commons.lang3.StringUtils;
-
-import com.google.auto.value.AutoValue;
-
 /**
  * Configuration object for different (queue) properties.
  */
-@AutoValue
-public abstract class ConnectionConfiguration {
+public class ConnectionConfiguration {
 
   /**
    * RabbitMQ default port.
@@ -51,8 +46,43 @@ public abstract class ConnectionConfiguration {
    */
   private static final int DEFAULT_RETRY_WAIT_TIME = 60; //seconds
 
+  private final String brokerHost;
+
+  private final int brokerPort;
+
+  private final String brokerUsername;
+
+  private final String brokerPassword;
+
+  private final String brokerVirtualHost;
+
+  private final int brokerManagementPort;
+
+  private final int brokerManagementRefreshRate;
+
+  private final int brokerRetryWaitTime;
+
+  private ConnectionConfiguration(
+      final String brokerHost,
+      final int brokerPort,
+      final String brokerUsername,
+      final String brokerPassword,
+      final String brokerVirtualHost,
+      final int brokerManagementPort,
+      final int brokerManagementRefreshRate,
+      final int brokerRetryWaitTime) {
+    this.brokerHost = brokerHost;
+    this.brokerPort = brokerPort;
+    this.brokerUsername = brokerUsername;
+    this.brokerPassword = brokerPassword;
+    this.brokerVirtualHost = brokerVirtualHost;
+    this.brokerManagementPort = brokerManagementPort;
+    this.brokerManagementRefreshRate = brokerManagementRefreshRate;
+    this.brokerRetryWaitTime = brokerRetryWaitTime;
+  }
+
   public static Builder builder() {
-    return new AutoValue_ConnectionConfiguration.Builder()
+    return new ConnectionConfiguration.Builder()
         .brokerPort(DEFAULT_BROKER_PORT)
         .brokerManagementPort(DEFAULT_BROKER_MANAGEMENT_PORT)
         .brokerVirtualHost(DEFAULT_BROKER_VIRTUAL_HOST)
@@ -63,68 +93,233 @@ public abstract class ConnectionConfiguration {
   /**
    * @return The host used to communicate with the broker
    */
-  public abstract String getBrokerHost();
+  public String getBrokerHost() {
+    return brokerHost;
+  }
 
   /**
    * @return The port used to communicate with the broker (rabbitMQ default: 5672)
    */
-  public abstract int getBrokerPort();
+  public int getBrokerPort() {
+    return brokerPort;
+  }
 
   /**
    * @return The username to be used while communicating with the broker
    */
-  public abstract String getBrokerUsername();
+  public String getBrokerUsername() {
+    return brokerUsername;
+  }
 
   /**
    * @return The password to be used while communicating with the broker
    */
-  public abstract String getBrokerPassword();
+  public String getBrokerPassword() {
+    return brokerPassword;
+  }
 
   /**
    * @return The virtual host to be used on the broker (rabbitMQ default: /)
    */
-  public abstract String getBrokerVirtualHost();
+  public String getBrokerVirtualHost() {
+    return brokerVirtualHost;
+  }
 
   /**
    * @return The port used to communicate with the management interface of the broker (rabbitMQ default: 15672)
    */
-  public abstract int getBrokerManagementPort();
+  public int getBrokerManagementPort() {
+    return brokerManagementPort;
+  }
 
   /**
    * @return The refresh rate in seconds the RabbitMQ management api is queried for status changes.
    */
-  public abstract int getBrokerManagementRefreshRate();
+  public int getBrokerManagementRefreshRate() {
+    return brokerManagementRefreshRate;
+  }
 
   /**
    * @return The wait time in seconds before retrying to connect with the broker.
    */
-  public abstract int getBrokerRetryWaitTime();
+  public int getBrokerRetryWaitTime() {
+    return brokerRetryWaitTime;
+  }
 
-  @AutoValue.Builder
-  public abstract static class Builder {
-    public abstract Builder brokerHost(String host);
-    public abstract Builder brokerPort(int port);
-    public abstract Builder brokerUsername(String username);
-    public abstract Builder brokerPassword(String password);
-    public abstract Builder brokerVirtualHost(String virtualHost);
-    public abstract Builder brokerManagementPort(int managementPort);
-    public abstract Builder brokerManagementRefreshRate(int managementRefreshRate);
-    public abstract Builder brokerRetryWaitTime(int retryWaitTime);
-    abstract ConnectionConfiguration autoBuild();  // not public
+  @Override
+  public String toString() {
+    return "ConnectionConfiguration{"
+        + "brokerHost=" + brokerHost + ", "
+        + "brokerPort=" + brokerPort + ", "
+        + "brokerUsername=" + brokerUsername + ", "
+        + "brokerPassword=" + brokerPassword + ", "
+        + "brokerVirtualHost=" + brokerVirtualHost + ", "
+        + "brokerManagementPort=" + brokerManagementPort + ", "
+        + "brokerManagementRefreshRate=" + brokerManagementRefreshRate + ", "
+        + "brokerRetryWaitTime=" + brokerRetryWaitTime
+        + "}";
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (o instanceof ConnectionConfiguration) {
+      final ConnectionConfiguration that = (ConnectionConfiguration) o;
+      return this.brokerHost.equals(that.getBrokerHost())
+          && this.brokerPort == that.getBrokerPort()
+          && this.brokerUsername.equals(that.getBrokerUsername())
+          && this.brokerPassword.equals(that.getBrokerPassword())
+          && this.brokerVirtualHost.equals(that.getBrokerVirtualHost())
+          && this.brokerManagementPort == that.getBrokerManagementPort()
+          && this.brokerManagementRefreshRate == that.getBrokerManagementRefreshRate()
+          && this.brokerRetryWaitTime == that.getBrokerRetryWaitTime();
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int h$ = 1;
+    h$ *= 1000003;
+    h$ ^= brokerHost.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerPort;
+    h$ *= 1000003;
+    h$ ^= brokerUsername.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerPassword.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerVirtualHost.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerManagementPort;
+    h$ *= 1000003;
+    h$ ^= brokerManagementRefreshRate;
+    h$ *= 1000003;
+    h$ ^= brokerRetryWaitTime;
+    return h$;
+  }
+
+  public static final class Builder {
+    private String brokerHost;
+    private Integer brokerPort;
+    private String brokerUsername;
+    private String brokerPassword;
+    private String brokerVirtualHost;
+    private Integer brokerManagementPort;
+    private Integer brokerManagementRefreshRate;
+    private Integer brokerRetryWaitTime;
+
+    Builder() {
+    }
 
     public ConnectionConfiguration build() {
       final ConnectionConfiguration connectionConfiguration = autoBuild();
 
-      if (StringUtils.isBlank(connectionConfiguration.getBrokerHost())) {
-        throw new IllegalArgumentException("Broker host not allowed to be null or empty.");
-      } else if (StringUtils.isBlank(connectionConfiguration.getBrokerUsername())) {
-        throw new IllegalArgumentException("Broker username not allowed to be null or empty.");
-      } else if (StringUtils.isBlank(connectionConfiguration.getBrokerPassword())) {
-        throw new IllegalArgumentException("Broker password not allowed to be null or empty.");
-      } else if (StringUtils.isBlank(connectionConfiguration.getBrokerVirtualHost())) {
-        throw new IllegalArgumentException("Broker virtual host not allowed to be null or empty.");
-      }
+      checkBlank("Broker Host", connectionConfiguration.getBrokerHost());
+      checkBlank("Broker Username", connectionConfiguration.getBrokerUsername());
+      checkBlank("Broker Password", connectionConfiguration.getBrokerPassword());
+      checkBlank("Broker Virtual Host", connectionConfiguration.getBrokerVirtualHost());
       return connectionConfiguration;
+    }
+
+    private void checkBlank(final String name, final String value) {
+      if (value == null || value.isEmpty()) {
+        throw new IllegalArgumentException(name + " not allowed to be null or empty.");
+      }
+    }
+
+    public ConnectionConfiguration.Builder brokerHost(final String brokerHost) {
+      if (brokerHost == null) {
+        throw new NullPointerException("Null brokerHost");
+      }
+      this.brokerHost = brokerHost;
+      return this;
+    }
+
+    public ConnectionConfiguration.Builder brokerPort(final int brokerPort) {
+      this.brokerPort = brokerPort;
+      return this;
+    }
+
+    public ConnectionConfiguration.Builder brokerUsername(final String brokerUsername) {
+      if (brokerUsername == null) {
+        throw new NullPointerException("Null brokerUsername");
+      }
+      this.brokerUsername = brokerUsername;
+      return this;
+    }
+
+    public ConnectionConfiguration.Builder brokerPassword(final String brokerPassword) {
+      if (brokerPassword == null) {
+        throw new NullPointerException("Null brokerPassword");
+      }
+      this.brokerPassword = brokerPassword;
+      return this;
+    }
+
+    public ConnectionConfiguration.Builder brokerVirtualHost(final String brokerVirtualHost) {
+      if (brokerVirtualHost == null) {
+        throw new NullPointerException("Null brokerVirtualHost");
+      }
+      this.brokerVirtualHost = brokerVirtualHost;
+      return this;
+    }
+
+    public ConnectionConfiguration.Builder brokerManagementPort(final int brokerManagementPort) {
+      this.brokerManagementPort = brokerManagementPort;
+      return this;
+    }
+
+    public ConnectionConfiguration.Builder brokerManagementRefreshRate(final int brokerManagementRefreshRate) {
+      this.brokerManagementRefreshRate = brokerManagementRefreshRate;
+      return this;
+    }
+
+    public ConnectionConfiguration.Builder brokerRetryWaitTime(final int brokerRetryWaitTime) {
+      this.brokerRetryWaitTime = brokerRetryWaitTime;
+      return this;
+    }
+
+    ConnectionConfiguration autoBuild() {
+      String missing = "";
+      if (this.brokerHost == null) {
+        missing += " brokerHost";
+      }
+      if (this.brokerPort == null) {
+        missing += " brokerPort";
+      }
+      if (this.brokerUsername == null) {
+        missing += " brokerUsername";
+      }
+      if (this.brokerPassword == null) {
+        missing += " brokerPassword";
+      }
+      if (this.brokerVirtualHost == null) {
+        missing += " brokerVirtualHost";
+      }
+      if (this.brokerManagementPort == null) {
+        missing += " brokerManagementPort";
+      }
+      if (this.brokerManagementRefreshRate == null) {
+        missing += " brokerManagementRefreshRate";
+      }
+      if (this.brokerRetryWaitTime == null) {
+        missing += " brokerRetryWaitTime";
+      }
+      if (!missing.isEmpty()) {
+        throw new IllegalStateException("Missing required properties:" + missing);
+      }
+      return new ConnectionConfiguration(
+          this.brokerHost,
+          this.brokerPort,
+          this.brokerUsername,
+          this.brokerPassword,
+          this.brokerVirtualHost,
+          this.brokerManagementPort,
+          this.brokerManagementRefreshRate,
+          this.brokerRetryWaitTime);
     }
   }
 }

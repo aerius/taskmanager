@@ -45,7 +45,8 @@ public final class MetricFactory {
 
   private static MetricRegistry metrics;
 
-  private MetricFactory() {}
+  private MetricFactory() {
+  }
 
   public static void init(final Properties properties, final String application) {
     synchronized (MetricFactory.class) {

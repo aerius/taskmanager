@@ -58,7 +58,7 @@ interface TaskScheduler<T extends TaskQueue> extends WorkerUpdateHandler {
    */
   void removeQueue(String taskQueueName);
 
-/**
+  /**
    * Interface for factory class to create new schedulers based on a given configuration.
    */
   interface TaskSchedulerFactory<T extends TaskQueue, S extends TaskSchedule<T>> {

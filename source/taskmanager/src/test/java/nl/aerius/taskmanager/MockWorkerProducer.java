@@ -54,7 +54,6 @@ public class MockWorkerProducer implements WorkerProducer {
     // no-op
   }
 
-
   public void setShutdownExceptionOnForward(final boolean shutdownExceptionOnForward) {
     this.shutdownExceptionOnForward = shutdownExceptionOnForward;
   }

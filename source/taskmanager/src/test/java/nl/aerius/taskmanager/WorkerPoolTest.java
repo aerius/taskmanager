@@ -43,6 +43,7 @@ public class WorkerPoolTest {
   private RabbitMQMessageMetaData message;
   private WorkerUpdateHandler workerUpdateHandler;
   private int numberOfWorkers;
+
   @Before
   public void setUp() throws IOException, InterruptedException {
     numberOfWorkers = 0;
@@ -53,8 +54,7 @@ public class WorkerPoolTest {
       }
     };
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, new MockWorkerProducer(), workerUpdateHandler);
-    taskConsumer =
-        new TaskConsumer("testqueue", new MockForwardTaskHandler(), new MockAdaptorFactory()) {
+    taskConsumer = new TaskConsumer("testqueue", new MockForwardTaskHandler(), new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData message) {
         WorkerPoolTest.this.message = (RabbitMQMessageMetaData) message;

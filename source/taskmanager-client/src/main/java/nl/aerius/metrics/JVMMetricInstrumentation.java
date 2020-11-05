@@ -29,7 +29,8 @@ import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 
 public final class JVMMetricInstrumentation {
-  private JVMMetricInstrumentation() {}
+  private JVMMetricInstrumentation() {
+  }
 
   public static void registerJVMMetrics(final MetricRegistry metrics) {
     registerAll(metrics, "BufferPool", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()));

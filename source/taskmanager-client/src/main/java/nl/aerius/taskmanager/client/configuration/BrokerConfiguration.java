@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Properties;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +98,8 @@ public class BrokerConfiguration {
    * @return true if property is set
    */
   protected boolean validateRequiredProperty(final String key, final List<String> reasons) {
-    final boolean empty = StringUtils.isEmpty(getProperty(key));
+    final String property = getProperty(key);
+    final boolean empty = property == null || property.isEmpty();
 
     if (empty) {
       reasons.add("Required property '" + key + "' is not set.");

@@ -16,7 +16,6 @@
  */
 package nl.aerius.taskmanager;
 
-
 import java.io.File;
 import java.io.FileNotFoundException;
 
@@ -38,12 +37,9 @@ class CmdOptions {
   private static final String CONFIG = "config";
   private static final String FILE_ARG_NAME = "file";
 
-  private static final Option HELP_OPTION =
-      new Option(HELP, "print this message");
-  private static final Option VERSION_OPTION =
-      new Option(VERSION, "print version information");
-  private static final Option CONFIG_OPTION =
-      new Option(CONFIG, true, "task manaegr options file");
+  private static final Option HELP_OPTION = new Option(HELP, "print this message");
+  private static final Option VERSION_OPTION = new Option(VERSION, "print version information");
+  private static final Option CONFIG_OPTION = new Option(CONFIG, true, "task manaegr options file");
 
   private final Options options;
   private final CommandLine cmd;

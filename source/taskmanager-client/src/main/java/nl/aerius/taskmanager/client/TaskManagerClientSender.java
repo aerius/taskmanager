@@ -22,7 +22,6 @@ import java.net.ConnectException;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,7 +154,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
     if (wrapper.getTask() == null) {
       throw new IllegalArgumentException("input value of null not allowed.");
     }
-    if (StringUtils.isBlank(wrapper.getQueueName())) {
+    if (wrapper.getQueueName() == null || wrapper.getQueueName().isEmpty()) {
       throw new IllegalArgumentException("Blank taskQueueName not allowed.");
     }
     if (!running) {

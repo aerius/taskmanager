@@ -41,7 +41,8 @@ public final class Main {
 
   private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-  private Main() {}
+  private Main() {
+  }
 
   /**
    * When this main method is used, the task manager will be started.
