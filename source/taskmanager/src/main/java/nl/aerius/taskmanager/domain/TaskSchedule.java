@@ -27,9 +27,11 @@ import com.google.gson.annotations.Expose;
  */
 public class TaskSchedule<T extends TaskQueue> {
 
-  @Expose private String workerQueueName;
+  @Expose
+  private String workerQueueName;
 
-  @Expose private List<T> queues = new ArrayList<>();
+  @Expose
+  private List<T> queues = new ArrayList<>();
 
   public String getWorkerQueueName() {
     return workerQueueName;

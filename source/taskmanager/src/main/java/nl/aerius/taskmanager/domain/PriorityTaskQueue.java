@@ -29,8 +29,10 @@ public class PriorityTaskQueue extends TaskQueue implements Serializable {
 
   private static final long serialVersionUID = 7719329377305394882L;
 
-  @Expose private int priority;
-  @Expose private double maxCapacityUse;
+  @Expose
+  private int priority;
+  @Expose
+  private double maxCapacityUse;
 
   /**
    * Empty constructor.

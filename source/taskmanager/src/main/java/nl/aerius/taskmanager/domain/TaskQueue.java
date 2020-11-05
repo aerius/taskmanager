@@ -22,7 +22,8 @@ import com.google.gson.annotations.Expose;
  * Base class for a single task queue configuration.
  */
 public class TaskQueue {
-  @Expose private String queueName;
+  @Expose
+  private String queueName;
 
   protected TaskQueue() {
     // Constructor for gson parsing

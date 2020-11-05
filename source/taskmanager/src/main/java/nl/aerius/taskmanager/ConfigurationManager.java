@@ -37,7 +37,8 @@ final class ConfigurationManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskManagerConfiguration.class);
 
-  private ConfigurationManager() {}
+  private ConfigurationManager() {
+  }
 
   /**
    * Load the configuration from default properties and a directory configured in a property file

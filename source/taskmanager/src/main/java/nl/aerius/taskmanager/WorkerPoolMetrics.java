@@ -25,7 +25,8 @@ import com.codahale.metrics.MetricRegistry;
  * Set up metric collection for this worker pool with the given type name.
  */
 public final class WorkerPoolMetrics {
-  private WorkerPoolMetrics() {}
+  private WorkerPoolMetrics() {
+  }
 
   public static void setupMetrics(final MetricRegistry metrics, final WorkerPool workerPool, final String workerQueueName) {
     metrics.register(metricName(workerQueueName, "workerSize"), new Gauge<Integer>() {
