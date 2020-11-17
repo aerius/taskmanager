@@ -18,7 +18,7 @@ jobs:
         VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f source/pom.xml 2>/dev/null)
         echo "::set-output name=version::${VERSION}"
     - name: Build with Maven
-      run: mvn -f source/pom.xml package
+      run: mvn --no-transfer-progress -f source/pom.xml package
     - name: Publish Docker image
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
@@ -36,4 +36,4 @@ jobs:
         nexus_password: ${{ secrets.nexus_password }}
         directory: source/
         # Tests are already run in the Build step, no use running them again
-        maven_args: -DskipTests
+        maven_args: -DskipTests --no-transfer-progress
