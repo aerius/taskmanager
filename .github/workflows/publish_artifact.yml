@@ -1,6 +1,9 @@
 name: Publish artifact
 
-on: [push]
+on:
+  push:
+  release:
+    types: [published]
 
 jobs:
   publish:
@@ -12,14 +15,16 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    - name: Build with Maven
+      run: mvn --no-transfer-progress -f source/pom.xml package
     - name: Get Maven project version
       id: get_maven_project_version
       run: |
         VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f source/pom.xml 2>/dev/null)
         echo "::set-output name=version::${VERSION}"
-    - name: Build with Maven
-      run: mvn --no-transfer-progress -f source/pom.xml package
-    - name: Publish Docker image
+# Artifacts (maven + Docker) should only be published if a release is made, otherwise only on pushes with a SNAPSHOT version
+    - if: ${{ github.event_name == 'release' }} || ${{ endsWith(steps.get_maven_project_version.outputs.version, '-SNAPSHOT') }}
+      name: Publish Docker image
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: taskmanager
@@ -27,8 +32,9 @@ jobs:
         password: ${{ secrets.nexus_password }}
         registry: nexus-docker.aerius.nl
         workdir: source/
-        tags: "latest,${{ steps.get_maven_project_version.outputs.version }}"
-    - name: Publish Maven Artifacts
+        tag_semver: true
+    - if: ${{ github.event_name == 'release' }} || ${{ endsWith(steps.get_maven_project_version.outputs.version, '-SNAPSHOT') }}
+      name: Publish Maven Artifacts
       uses: samuelmeuli/action-maven-publish@v1
       with:
         server_id: aerius-nexus
