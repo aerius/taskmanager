@@ -23,7 +23,7 @@ jobs:
         VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f source/pom.xml 2>/dev/null)
         echo "::set-output name=version::${VERSION}"
 # Artifacts (maven + Docker) should only be published if a release is made, otherwise only on pushes with a SNAPSHOT version
-    - if: ${{ github.event_name == 'release' }} || ${{ endsWith(steps.get_maven_project_version.outputs.version, '-SNAPSHOT') }}
+    - if: github.event_name == 'release' || endsWith(steps.get_maven_project_version.outputs.version, '-SNAPSHOT')
       name: Publish Docker image
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
@@ -33,7 +33,7 @@ jobs:
         registry: nexus-docker.aerius.nl
         workdir: source/
         tag_semver: true
-    - if: ${{ github.event_name == 'release' }} || ${{ endsWith(steps.get_maven_project_version.outputs.version, '-SNAPSHOT') }}
+    - if: github.event_name == 'release' || endsWith(steps.get_maven_project_version.outputs.version, '-SNAPSHOT')
       name: Publish Maven Artifacts
       uses: samuelmeuli/action-maven-publish@v1
       with:
