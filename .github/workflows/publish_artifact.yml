@@ -42,4 +42,4 @@ jobs:
         nexus_password: ${{ secrets.nexus_password }}
         directory: source/
         # Tests are already run in the Build step, no use running them again
-        maven_args: -DskipTests --no-transfer-progress
+        maven_args: -DskipTests

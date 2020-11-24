@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Do the actual build
 COPY . /app
-RUN mvn --no-transfer-progress clean package
+RUN mvn --no-transfer-progress -DskipTests=true clean package
 
 # Move the resultant jar to a known name so it can be picked up by the final image.
 RUN mv -v "$(ls taskmanager/target/taskmanager-*.jar | grep -v -e '-javadoc' -e '-sources')" app.jar \
