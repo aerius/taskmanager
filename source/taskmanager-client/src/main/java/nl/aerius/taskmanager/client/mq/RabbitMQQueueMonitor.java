@@ -34,6 +34,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -41,7 +42,7 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +61,7 @@ import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 public class RabbitMQQueueMonitor implements Runnable {
 
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQQueueMonitor.class);
+  private static final int TIMEOUT = (int) TimeUnit.SECONDS.toMillis(3);
 
   private final long refreshDelay;
   private final Map<String, List<QueueUpdateHandler>> handlersMap = new HashMap<>();
@@ -74,7 +76,7 @@ public class RabbitMQQueueMonitor implements Runnable {
     this.configuration = configuration;
     refreshDelay = TimeUnit.SECONDS.toMillis(configuration.getBrokerManagementRefreshRate());
     parser = new JsonParser();
-    httpClient = HttpClients.createDefault();
+    httpClient = HttpClientBuilder.create().setDefaultRequestConfig(getDefaultRequestConfig()).build();
     if (refreshDelay == 0) {
       // if refreshDelay == 0 then querying to a server is disabled. This is used in unit tests.
       targetHost = null;
@@ -188,5 +190,13 @@ public class RabbitMQQueueMonitor implements Runnable {
       LOG.error("Exception while trying to retrieve json result.", e);
     }
     return returnElement;
+  }
+
+  private RequestConfig getDefaultRequestConfig() {
+    return RequestConfig.custom()
+        .setConnectTimeout(TIMEOUT)
+        .setConnectionRequestTimeout(TIMEOUT)
+        .setSocketTimeout(TIMEOUT)
+        .build();
   }
 }
