@@ -30,6 +30,10 @@
   <name>Taskmanager :: Client Library</name>
   <description>The Library for Taskmanager Client code</description>
 
+  <properties>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+  </properties>
+
   <dependencies>
     <!-- RabbitMQ -->
     <dependency>
@@ -89,4 +93,20 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

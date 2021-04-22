@@ -30,6 +30,10 @@
   <name>Taskmanager :: Application</name>
   <description>AERIUS Taskmanager actual manager/scheduler (standalone)</description>
 
+  <properties>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>nl.aerius</groupId>
@@ -75,6 +79,18 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
