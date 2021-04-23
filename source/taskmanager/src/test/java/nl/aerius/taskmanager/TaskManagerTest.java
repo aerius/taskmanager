@@ -16,8 +16,8 @@
  */
 package nl.aerius.taskmanager;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,9 +26,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.codahale.metrics.MetricRegistry;
 
@@ -48,7 +48,7 @@ public class TaskManagerTest {
   private PriorityTaskSchedule schedule;
   private TaskManager<PriorityTaskQueue, PriorityTaskSchedule> taskManager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException, InterruptedException {
     executor = Executors.newCachedThreadPool();
     MetricFactory.init(new Properties(), "test");
@@ -58,7 +58,7 @@ public class TaskManagerTest {
     schedule = handler.read(new File(getClass().getClassLoader().getResource("queue/priority-task-scheduler.ops.json").getFile()));
   }
 
-  @After
+  @AfterEach
   public void after() throws InterruptedException {
     taskManager.shutdown();
     executor.shutdownNow();
@@ -68,30 +68,30 @@ public class TaskManagerTest {
 
   @Test
   public void testAddScheduler() throws IOException, InterruptedException {
-    assertTrue("TaskScheduler running", taskManager.updateTaskScheduler(schedule));
+    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
   @Test
   public void testModifyQueue() throws IOException, InterruptedException {
-    assertTrue("TaskScheduler running", taskManager.updateTaskScheduler(schedule));
+    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
     schedule.getTaskQueues().get(0).setPriority(30);
-    assertTrue("TaskScheduler updated", taskManager.updateTaskScheduler(schedule));
+    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
   @Test
   public void testRemoveQueue() throws IOException, InterruptedException {
-    assertTrue("TaskScheduler running", taskManager.updateTaskScheduler(schedule));
+    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
     schedule.getTaskQueues().remove(0);
-    assertTrue("TaskScheduler updated", taskManager.updateTaskScheduler(schedule));
+    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
   @Test
   public void testMetricAvailable() throws IOException, InterruptedException {
-    assertTrue("TaskScheduler running", taskManager.updateTaskScheduler(schedule));
+    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
     final MetricRegistry metrics = MetricFactory.getMetrics();
-    assertEquals("There should be 3 gauges in a scheduler.", 3, metrics.getGauges((name, metric) -> name.startsWith("OPS")).size());
+    assertEquals(3, metrics.getGauges((name, metric) -> name.startsWith("OPS")).size(), "There should be 3 gauges in a scheduler.");
   }
 }

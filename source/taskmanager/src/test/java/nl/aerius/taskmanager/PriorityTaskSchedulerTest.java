@@ -17,11 +17,11 @@
 package nl.aerius.taskmanager;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,8 +34,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.PriorityTaskScheduler.PriorityTaskSchedulerFactory;
 import nl.aerius.taskmanager.domain.Message;
@@ -62,7 +63,7 @@ public class PriorityTaskSchedulerTest {
   private Task task3;
   private PriorityTaskScheduler scheduler;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException, InterruptedException {
     taskConsumer1 = createMockTaskConsumer(QUEUE1);
     taskConsumer2 = createMockTaskConsumer(QUEUE2);
@@ -82,61 +83,66 @@ public class PriorityTaskSchedulerTest {
     task3 = createTask(taskConsumer3, "3", QUEUE3);
   }
 
-  @Test(timeout = 5000)
+  @Test
+  @Timeout(5000)
   public void testCompare() throws InterruptedException {
-    assertTrue("Compare Ok", compare(task1, task2a, 1));
+    assertTrue(compare(task1, task2a, 1), "Compare Ok");
   }
 
-  @Test(timeout = 5000)
+  @Test
+  @Timeout(5000)
   public void testCompareReverse() throws InterruptedException {
-    assertTrue("Compare reserve Ok", compare(task2a, task1, -1));
+    assertTrue(compare(task2a, task1, -1), "Compare reserve Ok");
   }
 
   private boolean compare(final Task taskA, final Task taskB, final int returnResult) throws InterruptedException {
     scheduler.onWorkerPoolSizeChange(3);
-    assertEquals("Task with higher priority and no tasks running should be returned", returnResult,
-        scheduler.compare(taskA, taskB));
+    assertEquals(returnResult, scheduler.compare(taskA, taskB),
+        "Task with higher priority and no tasks running should be returned");
     scheduler.addTask(task2a);
-    assertSame("Should get task2a back.", task2a, scheduler.getNextTask());
-    assertEquals("Task with lower priority, but no task run yet should be done returned", -returnResult,
-        scheduler.compare(taskA, taskB));
+    assertSame(task2a, scheduler.getNextTask(), "Should get task2a back.");
+    assertEquals(-returnResult, scheduler.compare(taskA, taskB),
+        "Task with lower priority, but no task run yet should be done returned");
     scheduler.addTask(task1);
-    assertSame("Should get task1 back.", task1, scheduler.getNextTask());
-    assertEquals("Task with higher priority should be returned when both with tasks running ", returnResult,
-        scheduler.compare(taskA, taskB));
+    assertSame(task1, scheduler.getNextTask(), "Should get task1 back.");
+    assertEquals(returnResult, scheduler.compare(taskA, taskB),
+        "Task with higher priority should be returned when both with tasks running ");
     return true;
   }
 
-  @Test(timeout = 5000)
+  @Test
+  @Timeout(5000)
   public void testCompareSame() throws InterruptedException {
-    assertTrue("Compare same Ok", compareSame(task2a, task3, -1));
+    assertTrue(compareSame(task2a, task3, -1), "Compare same Ok");
   }
 
-  @Test(timeout = 5000)
+  @Test
+  @Timeout(5000)
   public void testCompareSameReverse() throws InterruptedException {
-    assertTrue("Compare same reserve Ok", compareSame(task3, task2a, 1));
+    assertTrue(compareSame(task3, task2a, 1), "Compare same reserve Ok");
   }
 
   private boolean compareSame(final Task taskA, final Task taskB, final int returnResult) throws InterruptedException {
     scheduler.onWorkerPoolSizeChange(4);
-    assertEquals("Task with same priority and no tasks running return 0", 0,
-        scheduler.compare(taskA, taskB));
+    assertEquals(0, scheduler.compare(taskA, taskB),
+        "Task with same priority and no tasks running return 0");
     scheduler.addTask(task2a);
-    assertSame("Should get task2a back.", task2a, scheduler.getNextTask());
-    assertEquals("Task with same priority, but no task run yet should be done returned", returnResult,
-        scheduler.compare(taskA, taskB));
+    assertSame(task2a, scheduler.getNextTask(), "Should get task2a back.");
+    assertEquals(returnResult, scheduler.compare(taskA, taskB),
+        "Task with same priority, but no task run yet should be done returned");
     scheduler.addTask(task3);
-    assertSame("Should get task3 back.", task3, scheduler.getNextTask());
-    assertEquals("Task with same priority should return 0", 0,
-        scheduler.compare(taskA, taskB));
+    assertSame(task3, scheduler.getNextTask(), "Should get task3 back.");
+    assertEquals(0, scheduler.compare(taskA, taskB),
+        "Task with same priority should return 0");
     scheduler.addTask(task2b);
-    assertSame("Should get task2b back.", task2b, scheduler.getNextTask());
-    assertEquals("Task with same priority, but one with more running, should run with less running", -returnResult,
-        scheduler.compare(taskA, taskB));
+    assertSame(task2b, scheduler.getNextTask(), "Should get task2b back.");
+    assertEquals(-returnResult, scheduler.compare(taskA, taskB),
+        "Task with same priority, but one with more running, should run with less running");
     return true;
   }
 
-  @Test(timeout = 7000)
+  @Test
+  @Timeout(7000)
   public void testGetTaskWith1WorkerAvailable() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(1);
     final Task task1 = createTask(taskConsumer1, "1", QUEUE1); //add task with priority 0.
@@ -144,8 +150,8 @@ public class PriorityTaskSchedulerTest {
     final AtomicInteger chkCounter = new AtomicInteger();
     final Future<Task> receivedTask = waitForTask(task1, chkCounter);
     await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
-    assertNotNull("Received task", receivedTask.get());
-    assertEquals("Counter should be 1 when only one slot available", 1, chkCounter.intValue());
+    assertNotNull(receivedTask.get(), "Received task");
+    assertEquals(1, chkCounter.intValue(), "Counter should be 1 when only one slot available");
   }
 
   /**
@@ -153,7 +159,8 @@ public class PriorityTaskSchedulerTest {
    * If only 1 slot available and the next task is a low priority of the queue on which already another process is running,
    * it should not be run until that more than one or the task of that queue is finished.
    */
-  @Test(timeout = 7000)
+  @Test
+  @Timeout(7000)
   public void testGetTask() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(2);
     final Task task1a = createTask(taskConsumer1, "1a", QUEUE1);
@@ -161,23 +168,23 @@ public class PriorityTaskSchedulerTest {
     final Task task1b = createTask(taskConsumer1, "1b", QUEUE1);
     scheduler.addTask(task1b);
     scheduler.addTask(task2a);
-    assertSame("Should get task2a back.", task2a, scheduler.getNextTask());
-    assertSame("Should get task1a back.", task1a, scheduler.getNextTask());
+    assertSame(task2a, scheduler.getNextTask(), "Should get task2a back.");
+    assertSame(task1a, scheduler.getNextTask(), "Should get task1a back.");
     final AtomicInteger chkCounter = new AtomicInteger();
     final Future<Task> receivedTask = waitForTask(task1b, chkCounter);
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
-    assertEquals("Counter should still be zero", 0, chkCounter.intValue());
-    assertFalse("Should not be done yet", receivedTask.isDone());
+    assertEquals(0, chkCounter.intValue(), "Counter should still be zero");
+    assertFalse(receivedTask.isDone(), "Should not be done yet");
     scheduler.onTaskFinished(task2a.getMessage().getMetaData().getQueueName());
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     // task2a finished, but task1b may still not be executed, because only 1 slot available.
-    assertEquals("Counter should still be zero when 1 slot priorty available", 0, chkCounter.intValue());
-    assertFalse("Should not be done yet", receivedTask.isDone());
+    assertEquals(0, chkCounter.intValue(), "Counter should still be zero when 1 slot priorty available");
+    assertFalse(receivedTask.isDone(), "Should not be done yet");
     scheduler.onTaskFinished(task1a.getMessage().getMetaData().getQueueName());
     await().atMost(1, TimeUnit.SECONDS).until(() -> receivedTask.isDone());
-    assertNotNull("Received task", receivedTask.get());
+    assertNotNull(receivedTask.get(), "Received task");
     // task1a finished, now task1b may be executed.
-    assertEquals("Counter should still be 1", 1, chkCounter.intValue());
+    assertEquals(1, chkCounter.intValue(), "Counter should still be 1");
   }
 
   /**
@@ -185,7 +192,8 @@ public class PriorityTaskSchedulerTest {
    * If capacity is reached for a task, it should not run unless a task of the same queue is returned as finished.
    * In the meanwhile, other tasks can start/finish (as long as there is a capacity for those tasks).
    */
-  @Test(timeout = 7000)
+  @Test
+  @Timeout(7000)
   public void testGetTaskBigPool() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(10);
     final List<Task> tasks = new ArrayList<>();
@@ -200,26 +208,26 @@ public class PriorityTaskSchedulerTest {
       sendTasks.add(sendTask);
     }
     scheduler.addTask(task1);
-    assertSame("Should still get task 1", task1, scheduler.getNextTask());
+    assertSame(task1, scheduler.getNextTask(), "Should still get task 1");
     final Task task1b = createTask(taskConsumer1, "1b", QUEUE1);
     scheduler.addTask(task1b);
-    assertSame("Should still get task 1b", task1b, scheduler.getNextTask());
+    assertSame(task1b, scheduler.getNextTask(), "Should still get task 1b");
     final AtomicInteger chkCounter = new AtomicInteger();
     final Future<Task> receivedTask = waitForTask(null, chkCounter);
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
-    assertEquals("Counter should still be zero", 0, chkCounter.intValue());
-    assertFalse("Should not be done yet", receivedTask.isDone());
+    assertEquals(0, chkCounter.intValue(), "Counter should still be zero");
+    assertFalse(receivedTask.isDone(), "Should not be done yet");
     scheduler.onTaskFinished(task1.getMessage().getMetaData().getQueueName());
     scheduler.onTaskFinished(task1b.getMessage().getMetaData().getQueueName());
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     // task1's are finished, but tasks on 2 may still not be executed, because not enough slots available.
-    assertEquals("Counter should still be zero when capacity not reached", 0, chkCounter.intValue());
-    assertFalse("Should not be done yet", receivedTask.isDone());
+    assertEquals(0, chkCounter.intValue(), "Counter should still be zero when capacity not reached");
+    assertFalse(receivedTask.isDone(), "Should not be done yet");
     scheduler.onTaskFinished(sendTasks.get(0).getMessage().getMetaData().getQueueName());
     await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
-    assertNotNull("Received task", receivedTask.get());
+    assertNotNull(receivedTask.get(), "Received task");
     // One of the task2's is now finished, another task2 may be executed.
-    assertEquals("Counter should increase because there is enough capacity now", 1, chkCounter.intValue());
+    assertEquals(1, chkCounter.intValue(), "Counter should increase because there is enough capacity now");
   }
 
   /**
@@ -227,15 +235,16 @@ public class PriorityTaskSchedulerTest {
    * the task of queue 3 should be selected.
    * @throws InterruptedException
    */
-  @Test(timeout = 1000)
+  @Test
+  @Timeout(1000)
   public void testCompare2Workers() throws InterruptedException {
     scheduler.onWorkerPoolSizeChange(2);
     scheduler.addTask(task2a);
     scheduler.getNextTask();
-    assertEquals("Scheduler should prefer task3", 1, scheduler.compare(task2b, task3));
+    assertEquals(1, scheduler.compare(task2b, task3), "Scheduler should prefer task3");
     scheduler.addTask(task2b);
     scheduler.addTask(task3);
-    assertSame("Scheduler should prefer task3", task3, scheduler.getNextTask());
+    assertSame(task3, scheduler.getNextTask(), "Scheduler should prefer task3");
   }
 
   private Future<Task> waitForTask(final Task task, final AtomicInteger chkCounter) {
@@ -247,9 +256,9 @@ public class PriorityTaskSchedulerTest {
         try {
           result = scheduler.getNextTask();
           if (task == null) {
-            assertNotNull("Should get any task back", result);
+            assertNotNull(result, "Should get any task back");
           } else {
-            assertSame("Should get task back.", task, result);
+            assertSame(task, result, "Should get task back.");
           }
           chkCounter.incrementAndGet();
         } catch (final InterruptedException e) {

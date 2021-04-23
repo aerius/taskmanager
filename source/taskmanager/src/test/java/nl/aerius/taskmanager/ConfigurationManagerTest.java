@@ -16,13 +16,14 @@
  */
 package nl.aerius.taskmanager;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.util.Properties;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.domain.TaskManagerConfiguration;
 
@@ -33,16 +34,17 @@ public class ConfigurationManagerTest {
 
   private Properties properties;
 
-  @Before
+  @BeforeEach
   public void before() throws IOException {
     final String propFile = getClass().getClassLoader().getResource("taskmanager_test.properties").getPath();
     properties = ConfigurationManager.getPropertiesFromFile(propFile);
   }
 
-  @Test(timeout = 2000)
+  @Test
+  @Timeout(2000)
   public void testLoadConfiguration() throws IOException {
     final TaskManagerConfiguration tmc = ConfigurationManager.loadConfiguration(properties);
 
-    assertNotNull("No username could be read from configuration file", tmc.getBrokerConfiguration().getBrokerUsername());
+    assertNotNull(tmc.getBrokerConfiguration().getBrokerUsername(), "No username could be read from configuration file");
   }
 }

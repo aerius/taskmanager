@@ -17,10 +17,10 @@
 package nl.aerius.taskmanager;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -28,10 +28,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.TaskDispatcher.State;
 
@@ -49,7 +50,7 @@ public class TaskDispatcherTest {
   private MockWorkerProducer workerProducer;
   private MockAdaptorFactory factory;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException, InterruptedException {
     executor = Executors.newCachedThreadPool();
     final FIFOTaskScheduler scheduler = new FIFOTaskScheduler();
@@ -60,14 +61,15 @@ public class TaskDispatcherTest {
     taskConsumer = new TaskConsumer("testqueue", dispatcher, factory);
   }
 
-  @After
+  @AfterEach
   public void after() throws InterruptedException {
     dispatcher.shutdown();
     executor.shutdownNow();
     executor.awaitTermination(10, TimeUnit.MILLISECONDS);
   }
 
-  @Test(timeout = 3000)
+  @Test
+  @Timeout(3000)
   public void testNoFreeWorkers() throws InterruptedException {
     final AtomicBoolean unLocked = new AtomicBoolean(false);
     // Add Worker which will unlock
@@ -80,25 +82,27 @@ public class TaskDispatcherTest {
     forwardTask(unLocked);
     // Dispatcher should go back to wait for worker to become available.
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
-    assertEquals("WorkerPool should be empty", 0, workerPool.getCurrentWorkerSize());
+    assertEquals(0, workerPool.getCurrentWorkerSize(), "WorkerPool should be empty");
     workerPool.onQueueUpdate("", 1, 0, 0);
-    assertEquals("WorkerPool should have 1 running", 1, workerPool.getCurrentWorkerSize());
+    assertEquals(1, workerPool.getCurrentWorkerSize(), "WorkerPool should have 1 running");
   }
 
-  @Test(timeout = 3000)
+  @Test
+  @Timeout(3000)
   public void testForwardTest() throws InterruptedException {
     final AtomicBoolean unLocked = new AtomicBoolean(false);
     dispatcher.forwardTask(createTask());
     executor.execute(dispatcher);
     forwardTask(unLocked);
-    assertFalse("Taskconsumer must be locked at this point", unLocked.get());
+    assertFalse(unLocked.get(), "Taskconsumer must be locked at this point");
     workerPool.onQueueUpdate("", 1, 0, 0); //add worker which will unlock
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
-    assertTrue("Taskconsumer must be unlocked at this point", unLocked.get());
+    assertTrue(unLocked.get(), "Taskconsumer must be unlocked at this point");
   }
 
-  @Ignore("TaskAlreadySendexception error willl not be thrown")
-  @Test(timeout = 3000)
+  @Disabled("TaskAlreadySendexception error willl not be thrown")
+  @Test
+  @Timeout(3000)
   public void testForwardDuplicateTask() throws InterruptedException {
     final Task task = createTask();
     executor.execute(dispatcher);
@@ -108,7 +112,7 @@ public class TaskDispatcherTest {
     workerPool.onQueueUpdate("", 2, 0, 0); //add worker which will unlock
     await().until(() -> !dispatcher.isLocked(task));
     // Now force the issue.
-    assertSame("Taskdispatcher must be waiting for task", TaskDispatcher.State.WAIT_FOR_TASK, dispatcher.getState());
+    assertSame(TaskDispatcher.State.WAIT_FOR_TASK, dispatcher.getState(), "Taskdispatcher must be waiting for task");
     // Forwarding same Task object, so same id.
     dispatcher.forwardTask(task);
     await().until(() -> factory.getMockTaskMessageHandler().getAbortedMessage() == null);
@@ -118,7 +122,8 @@ public class TaskDispatcherTest {
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
   }
 
-  @Test(timeout = 3000)
+  @Test
+  @Timeout(3000)
   public void testExceptionDuringForward() throws InterruptedException {
     workerProducer.setShutdownExceptionOnForward(true);
     final Task task = createTask();

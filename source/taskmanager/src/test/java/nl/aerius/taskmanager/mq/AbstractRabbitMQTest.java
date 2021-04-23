@@ -21,9 +21,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -44,18 +44,18 @@ public class AbstractRabbitMQTest {
   protected MockChannel mockChannel;
   protected AdaptorFactory adapterFactory;
 
-  @BeforeClass
+  @BeforeAll
   public static void setupClass() {
     executor = Executors.newSingleThreadExecutor();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterClass() throws InterruptedException {
     executor.shutdownNow();
     executor.awaitTermination(10, TimeUnit.MILLISECONDS);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mockChannel = new MockChannel();
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()

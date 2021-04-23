@@ -17,13 +17,13 @@
 package nl.aerius.taskmanager;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for {@link QueueWatchDog}.
@@ -38,18 +38,18 @@ public class QueueWatchDogTest {
         return diff / 100; //1th of a second
       };
     };
-    assertFalse("No running workers, with no messages, no problem", qwd.isItDead(false, 0));
-    assertFalse("No running workers, no problem", qwd.isItDead(false, 10));
-    assertFalse("Running workers, with messages, no problem", qwd.isItDead(true, 10));
-    assertFalse("Running workers, with no messages, possible problem, we just wait", qwd.isItDead(true, 0));
+    assertFalse(qwd.isItDead(false, 0), "No running workers, with no messages, no problem");
+    assertFalse(qwd.isItDead(false, 10), "No running workers, no problem");
+    assertFalse(qwd.isItDead(true, 10), "Running workers, with messages, no problem");
+    assertFalse(qwd.isItDead(true, 0), "Running workers, with no messages, possible problem, we just wait");
     await().atMost(2, TimeUnit.SECONDS).until(() -> qwd.isItDead(true, 0));
-    assertTrue("Running workers, with no messages, after specified time; yes reset", qwd.isItDead(true, 0));
+    assertTrue(qwd.isItDead(true, 0), "Running workers, with no messages, after specified time; yes reset");
   }
 
   @Test
   public void testCalculatedDiffTime() {
     final QueueWatchDog qwd = new QueueWatchDog();
     final long minutes = 10;
-    assertEquals("Check if correctly calcualted in minutes", minutes, qwd.calculatedDiffTime(TimeUnit.MINUTES.toMillis(minutes)));
+    assertEquals(minutes, qwd.calculatedDiffTime(TimeUnit.MINUTES.toMillis(minutes)), "Check if correctly calcualted in minutes");
   }
 }
