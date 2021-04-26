@@ -33,4 +33,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn --no-transfer-progress -f source/pom.xml verify sonar:sonar -P sonar
+        run: mvn --no-transfer-progress -f source/pom.xml -P sonar verify sonar:sonar

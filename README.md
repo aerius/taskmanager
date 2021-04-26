@@ -1,6 +1,6 @@
 # Task Manager
 
-![Build Package](https://github.com/aerius/taskmanager/actions/workflows/publish_artifact.yml/badge.svg)
+[![Build Package](https://github.com/aerius/taskmanager/actions/workflows/publish_artifact.yml/badge.svg)](#)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=aerius_taskmanager&metric=alert_status)](https://sonarcloud.io/dashboard?id=aerius_taskmanager)
 
 The task manager is the central application through which all tasks are passed.
