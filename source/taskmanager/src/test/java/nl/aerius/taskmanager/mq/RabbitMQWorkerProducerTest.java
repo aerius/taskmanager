@@ -16,12 +16,14 @@
  */
 package nl.aerius.taskmanager.mq;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.DefaultConsumer;
@@ -37,7 +39,8 @@ public class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
 
   private static final String WORKER_QUEUE_NAME = "TEST";
 
-  @Test(timeout = 5000)
+  @Test
+  @Timeout(5000)
   public void testForwardMessage() throws IOException, InterruptedException {
     final byte[] sendBody = "4321".getBytes();
 
@@ -66,6 +69,6 @@ public class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
       }
     });
     lock.tryAcquire(1, 5, TimeUnit.SECONDS);
-    Assert.assertArrayEquals("Test if body send", sendBody, data.getData());
+    assertArrayEquals(sendBody, data.getData(), "Test if body send");
   }
 }

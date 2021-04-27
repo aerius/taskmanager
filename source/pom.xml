@@ -23,7 +23,7 @@
   <artifactId>taskmanager-parent</artifactId>
   <version>1.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Taskmanager :: Parent</name>
+  <name>Taskmanager</name>
   <url>https://www.aerius.nl</url>
 
   <organization>
@@ -59,6 +59,7 @@
     <maven.compiler.target>11</maven.compiler.target>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <aerius-tools.version>1.1.0-SNAPSHOT</aerius-tools.version>
     <spotless.version>2.5.0</spotless.version>
     <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
@@ -68,7 +69,7 @@
     <sonar.organization>aerius</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
-    <aggregate.report.dir>target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
+    <aggregate.report.dir>taskmanager-report/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
   </properties>
 
   <repositories>
@@ -151,19 +152,26 @@
         <groupId>org.awaitility</groupId>
         <artifactId>awaitility</artifactId>
         <version>4.0.3</version>
-        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.7.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
+        <version>5.7.0</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
-        <version>3.5.9</version>
-        <scope>test</scope>
+        <version>3.6.0</version>
       </dependency>
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.13</version>
-        <scope>test</scope>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>3.6.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -176,6 +184,12 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>0.8.6</version>
         </plugin>
+
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.2</version>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
@@ -301,6 +315,18 @@
         <module>taskmanager-test</module>
         <module>taskmanager-client</module>
         <module>taskmanager</module>
+      </modules>
+    </profile>
+
+    <!-- Profile to perform SonarQube run and collect coverage reports -->
+    <profile>
+      <id>sonar</id>
+
+      <modules>
+        <module>taskmanager-test</module>
+        <module>taskmanager-client</module>
+        <module>taskmanager</module>
+        <module>taskmanager-report</module>
       </modules>
     </profile>
 

@@ -25,71 +25,31 @@
     <version>1.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>taskmanager-client</artifactId>
+  <artifactId>taskmanager-report</artifactId>
+  <packaging>jar</packaging>
 
-  <name>Taskmanager :: Client Library</name>
-  <description>The Library for Taskmanager Client code</description>
+  <name>Taskmanager :: Report</name>
+  <description>AERIUS Taskmanager SonarQube Jacoco module to collect Covarage reports</description>
 
   <properties>
     <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
   <dependencies>
-    <!-- RabbitMQ -->
-    <dependency>
-      <groupId>com.rabbitmq</groupId>
-      <artifactId>amqp-client</artifactId>
-    </dependency>
-
-    <!-- json -->
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-    </dependency>
-
-    <!-- Commons -->
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-    </dependency>
-
-    <!-- Metrics -->
-    <dependency>
-      <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-graphite</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-jvm</artifactId>
-    </dependency>
-
-    <!-- Logging -->
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Testing -->
     <dependency>
       <groupId>nl.aerius</groupId>
       <artifactId>taskmanager-test</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
+      <groupId>nl.aerius</groupId>
+      <artifactId>taskmanager-client</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
+      <groupId>nl.aerius</groupId>
+      <artifactId>taskmanager</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
@@ -100,11 +60,12 @@
         <artifactId>jacoco-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>prepare-agent</id>
+            <id>report</id>
             <goals>
-              <goal>prepare-agent</goal>
+              <goal>report-aggregate</goal>
             </goals>
-          </execution>
+            <phase>verify</phase>
+          </execution>          
         </executions>
       </plugin>
     </plugins>

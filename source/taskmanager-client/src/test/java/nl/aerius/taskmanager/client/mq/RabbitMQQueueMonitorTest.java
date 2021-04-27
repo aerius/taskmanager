@@ -16,7 +16,7 @@
  */
 package nl.aerius.taskmanager.client.mq;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -74,8 +74,8 @@ public class RabbitMQQueueMonitorTest {
       executor.execute(rpm);
       Thread.sleep(TimeUnit.SECONDS.toMillis(1));
       rpm.shutdown();
-      assertEquals("Number of workers", 4, workerSize.get());
-      assertEquals("Number of messages", 3, messagesSize.get());
+      assertEquals(4, workerSize.get(), "Number of workers");
+      assertEquals(3, messagesSize.get(), "Number of messages");
     } finally {
       executor.shutdown();
     }

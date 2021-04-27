@@ -16,15 +16,16 @@
  */
 package nl.aerius.taskmanager;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
@@ -44,7 +45,7 @@ public class WorkerPoolTest {
   private WorkerUpdateHandler workerUpdateHandler;
   private int numberOfWorkers;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException, InterruptedException {
     numberOfWorkers = 0;
     workerUpdateHandler = new MockTaskFinishedHandler() {
@@ -64,22 +65,22 @@ public class WorkerPoolTest {
 
   @Test
   public void testWorkerPoolSizing() throws InterruptedException, IOException {
-    assertSame("Check if workerPool size is empty at start", 0, workerPool.getCurrentWorkerSize());
+    assertSame(0, workerPool.getCurrentWorkerSize(), "Check if workerPool size is empty at start");
     workerPool.onQueueUpdate("", 10, 0, 0);
-    assertSame("Check if workerPool size is changed after sizing", 10, workerPool.getCurrentWorkerSize());
-    assertEquals("Check if workerPool change handler called.", 10, numberOfWorkers);
+    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is changed after sizing");
+    assertEquals(10, numberOfWorkers, "Check if workerPool change handler called.");
     workerPool.reserveWorker();
-    assertSame("Check if workerPool size is same after reserving 1 worker", 10, workerPool.getCurrentWorkerSize());
+    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
     final Task task = createTask();
     workerPool.sendTaskToWorker(task);
-    assertSame("Check if workerPool size is same after reserving 1 worker", 10, workerPool.getCurrentWorkerSize());
+    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
     workerPool.releaseWorker(task.getId());
-    assertSame("Check if workerPool size is same after releasing 1 worker", 10, workerPool.getCurrentWorkerSize());
+    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after releasing 1 worker");
   }
 
-  @Test(expected = NoFreeWorkersException.class)
+  @Test
   public void testNoFreeWorkers() throws IOException, InterruptedException {
-    workerPool.sendTaskToWorker(createTask());
+    assertThrows(NoFreeWorkersException.class, () -> workerPool.sendTaskToWorker(createTask()));
   }
 
   @Test
@@ -91,16 +92,16 @@ public class WorkerPoolTest {
     workerPool.sendTaskToWorker(task2);
     final Task task3 = createTask();
     workerPool.sendTaskToWorker(task3);
-    assertSame("Check if workerPool size is same after 2 workers running", 5, workerPool.getCurrentWorkerSize());
+    assertSame(5, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after 2 workers running");
     workerPool.onQueueUpdate("", 1, 0, 0);
-    assertSame("Check if workerPool size is lower", 1, workerPool.getWorkerSize());
-    assertSame("Check if current workerPool size is same after decreasing # workers", 3, workerPool.getCurrentWorkerSize());
+    assertSame(1, workerPool.getWorkerSize(), "Check if workerPool size is lower");
+    assertSame(3, workerPool.getCurrentWorkerSize(), "Check if current workerPool size is same after decreasing # workers");
     workerPool.releaseWorker(task1.getId());
-    assertSame("Check if workerPool size is lower, but not yet same as total because still process running", 2, workerPool.getCurrentWorkerSize());
+    assertSame(2, workerPool.getCurrentWorkerSize(), "Check if workerPool size is lower, but not yet same as total because still process running");
     workerPool.releaseWorker(task2.getId());
-    assertSame("Check if workerPool size is lower", 1, workerPool.getCurrentWorkerSize());
+    assertSame(1, workerPool.getCurrentWorkerSize(), "Check if workerPool size is lower");
     workerPool.releaseWorker(task3.getId());
-    assertSame("Check if workerPool size should remain the same", 1, workerPool.getCurrentWorkerSize());
+    assertSame(1, workerPool.getCurrentWorkerSize(), "Check if workerPool size should remain the same");
   }
 
   @Test
@@ -113,17 +114,19 @@ public class WorkerPoolTest {
     final int currentWorkerSize1 = workerPool.getCurrentWorkerSize();
     workerPool.releaseWorker(id);
     final int currentWorkerSize2 = workerPool.getCurrentWorkerSize();
-    assertEquals("Check if task is not sent twice", currentWorkerSize1, currentWorkerSize2);
-    assertEquals("Check if task worker size not decreased to much", 2, workerPool.getCurrentWorkerSize());
+    assertEquals(currentWorkerSize1, currentWorkerSize2, "Check if task is not sent twice");
+    assertEquals(2, workerPool.getCurrentWorkerSize(), "Check if task worker size not decreased to much");
   }
 
-  @Ignore("Exception is not thrown anymore, so test ignored for now")
-  @Test(expected = TaskAlreadySentException.class)
+  @Disabled("Exception is not thrown anymore, so test ignored for now")
+  @Test
   public void testSendSameTaskTwice() throws IOException, InterruptedException {
-    workerPool.onQueueUpdate("", 3, 0, 0);
-    final Task task1 = createTask();
-    workerPool.sendTaskToWorker(task1);
-    workerPool.sendTaskToWorker(task1);
+    assertThrows(TaskAlreadySentException.class, () -> {
+      workerPool.onQueueUpdate("", 3, 0, 0);
+      final Task task1 = createTask();
+      workerPool.sendTaskToWorker(task1);
+      workerPool.sendTaskToWorker(task1);
+    });
   }
 
   @Test
@@ -131,7 +134,7 @@ public class WorkerPoolTest {
     workerPool.onQueueUpdate("", 1, 0, 0);
     final Task task1 = createTask();
     workerPool.sendTaskToWorker(task1);
-    assertNotSame("Check if message is delivered", 0, message.getDeliveryTag());
+    assertNotSame(0, message.getDeliveryTag(), "Check if message is delivered");
   }
 
   private Task createTask() {
