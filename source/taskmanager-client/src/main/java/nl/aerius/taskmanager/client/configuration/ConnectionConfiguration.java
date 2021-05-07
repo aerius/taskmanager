@@ -161,44 +161,40 @@ public class ConnectionConfiguration {
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
+  public boolean equals(final Object obj) {
+    if (this == obj) {
       return true;
     }
-    if (o instanceof ConnectionConfiguration) {
-      final ConnectionConfiguration that = (ConnectionConfiguration) o;
-      return this.brokerHost.equals(that.getBrokerHost())
-          && this.brokerPort == that.getBrokerPort()
-          && this.brokerUsername.equals(that.getBrokerUsername())
-          && this.brokerPassword.equals(that.getBrokerPassword())
-          && this.brokerVirtualHost.equals(that.getBrokerVirtualHost())
-          && this.brokerManagementPort == that.getBrokerManagementPort()
-          && this.brokerManagementRefreshRate == that.getBrokerManagementRefreshRate()
-          && this.brokerRetryWaitTime == that.getBrokerRetryWaitTime();
+    if (obj == null) {
+      return false;
     }
-    return false;
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final ConnectionConfiguration that = (ConnectionConfiguration) obj;
+    return this.brokerHost.equals(that.getBrokerHost())
+        && this.brokerPort == that.getBrokerPort()
+        && this.brokerUsername.equals(that.getBrokerUsername())
+        && this.brokerPassword.equals(that.getBrokerPassword())
+        && this.brokerVirtualHost.equals(that.getBrokerVirtualHost())
+        && this.brokerManagementPort == that.getBrokerManagementPort()
+        && this.brokerManagementRefreshRate == that.getBrokerManagementRefreshRate()
+        && this.brokerRetryWaitTime == that.getBrokerRetryWaitTime();
   }
 
   @Override
   public int hashCode() {
-    int h$ = 1;
-    h$ *= 1000003;
-    h$ ^= brokerHost.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerPort;
-    h$ *= 1000003;
-    h$ ^= brokerUsername.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerPassword.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerVirtualHost.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerManagementPort;
-    h$ *= 1000003;
-    h$ ^= brokerManagementRefreshRate;
-    h$ *= 1000003;
-    h$ ^= brokerRetryWaitTime;
-    return h$;
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((brokerHost == null) ? 0 : brokerHost.hashCode());
+    result = prime * result + brokerManagementPort;
+    result = prime * result + brokerManagementRefreshRate;
+    result = prime * result + ((brokerPassword == null) ? 0 : brokerPassword.hashCode());
+    result = prime * result + brokerPort;
+    result = prime * result + brokerRetryWaitTime;
+    result = prime * result + ((brokerUsername == null) ? 0 : brokerUsername.hashCode());
+    result = prime * result + ((brokerVirtualHost == null) ? 0 : brokerVirtualHost.hashCode());
+    return result;
   }
 
   public static final class Builder {
