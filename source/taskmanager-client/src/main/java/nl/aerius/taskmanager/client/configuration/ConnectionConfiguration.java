@@ -184,17 +184,24 @@ public class ConnectionConfiguration {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((brokerHost == null) ? 0 : brokerHost.hashCode());
-    result = prime * result + brokerManagementPort;
-    result = prime * result + brokerManagementRefreshRate;
-    result = prime * result + ((brokerPassword == null) ? 0 : brokerPassword.hashCode());
-    result = prime * result + brokerPort;
-    result = prime * result + brokerRetryWaitTime;
-    result = prime * result + ((brokerUsername == null) ? 0 : brokerUsername.hashCode());
-    result = prime * result + ((brokerVirtualHost == null) ? 0 : brokerVirtualHost.hashCode());
-    return result;
+    int h$ = 1;
+    h$ *= 1000003;
+    h$ ^= brokerHost.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerPort;
+    h$ *= 1000003;
+    h$ ^= brokerUsername.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerPassword.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerVirtualHost.hashCode();
+    h$ *= 1000003;
+    h$ ^= brokerManagementPort;
+    h$ *= 1000003;
+    h$ ^= brokerManagementRefreshRate;
+    h$ *= 1000003;
+    h$ ^= brokerRetryWaitTime;
+    return h$;
   }
 
   public static final class Builder {
