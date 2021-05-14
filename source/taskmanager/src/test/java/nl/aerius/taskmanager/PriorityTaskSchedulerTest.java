@@ -281,7 +281,7 @@ public class PriorityTaskSchedulerTest {
 
   private Task createTask(final TaskConsumer tc, final String message, final String queue) {
     final Task task = new Task(tc);
-    task.setData(new Message(new MessageMetaData(queue) {
+    task.setData(new Message<>(new MessageMetaData(queue) {
     }) {
       @Override
       public String getMessageId() {
