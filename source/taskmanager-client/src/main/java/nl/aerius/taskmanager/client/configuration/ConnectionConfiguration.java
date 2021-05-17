@@ -161,22 +161,25 @@ public class ConnectionConfiguration {
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
+  public boolean equals(final Object obj) {
+    if (this == obj) {
       return true;
     }
-    if (o instanceof ConnectionConfiguration) {
-      final ConnectionConfiguration that = (ConnectionConfiguration) o;
-      return this.brokerHost.equals(that.getBrokerHost())
-          && this.brokerPort == that.getBrokerPort()
-          && this.brokerUsername.equals(that.getBrokerUsername())
-          && this.brokerPassword.equals(that.getBrokerPassword())
-          && this.brokerVirtualHost.equals(that.getBrokerVirtualHost())
-          && this.brokerManagementPort == that.getBrokerManagementPort()
-          && this.brokerManagementRefreshRate == that.getBrokerManagementRefreshRate()
-          && this.brokerRetryWaitTime == that.getBrokerRetryWaitTime();
+    if (obj == null) {
+      return false;
     }
-    return false;
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final ConnectionConfiguration that = (ConnectionConfiguration) obj;
+    return this.brokerHost.equals(that.getBrokerHost())
+        && this.brokerPort == that.getBrokerPort()
+        && this.brokerUsername.equals(that.getBrokerUsername())
+        && this.brokerPassword.equals(that.getBrokerPassword())
+        && this.brokerVirtualHost.equals(that.getBrokerVirtualHost())
+        && this.brokerManagementPort == that.getBrokerManagementPort()
+        && this.brokerManagementRefreshRate == that.getBrokerManagementRefreshRate()
+        && this.brokerRetryWaitTime == that.getBrokerRetryWaitTime();
   }
 
   @Override

@@ -69,13 +69,11 @@ public class RabbitMQQueueMonitor implements Runnable {
   private final CloseableHttpClient httpClient;
   private final HttpHost targetHost;
   private final HttpClientContext context;
-  private final JsonParser parser;
   private boolean running;
 
   public RabbitMQQueueMonitor(final ConnectionConfiguration configuration) {
     this.configuration = configuration;
     refreshDelay = TimeUnit.SECONDS.toMillis(configuration.getBrokerManagementRefreshRate());
-    parser = new JsonParser();
     httpClient = HttpClientBuilder.create().setDefaultRequestConfig(getDefaultRequestConfig()).build();
     if (refreshDelay == 0) {
       // if refreshDelay == 0 then querying to a server is disabled. This is used in unit tests.
@@ -180,7 +178,7 @@ public class RabbitMQQueueMonitor implements Runnable {
       if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
         try (final InputStreamReader is = new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8);
             final JsonReader jr = new JsonReader(is)) {
-          returnElement = parser.parse(jr);
+          returnElement = JsonParser.parseReader(jr);
         }
       } else {
         LOG.error("Status code wasn't 200 when retrieving json result. Status was: {}, {}",

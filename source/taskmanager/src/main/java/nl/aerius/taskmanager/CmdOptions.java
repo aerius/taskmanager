@@ -21,7 +21,7 @@ import java.io.FileNotFoundException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -52,7 +52,7 @@ class CmdOptions {
     CONFIG_OPTION.setRequired(true);
     options.addOption(CONFIG_OPTION);
 
-    final CommandLineParser parser = new GnuParser();
+    final CommandLineParser parser = new DefaultParser();
     cmd = parser.parse(options, args);
   }
 

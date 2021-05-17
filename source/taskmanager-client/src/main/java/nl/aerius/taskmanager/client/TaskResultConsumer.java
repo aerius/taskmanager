@@ -52,10 +52,9 @@ class TaskResultConsumer extends DefaultConsumer implements TaskCancelListener {
     super(channel);
     this.taskWrapper = taskWrapper;
     this.taskSender = taskSender;
-    if (!taskWrapper.getResultCallback().isPresent()) {
-      throw new IllegalArgumentException("There should be a result callback when using TaskResultConsumer.");
-    }
-    this.callback = taskWrapper.getResultCallback().get();
+
+    this.callback = taskWrapper.getResultCallback()
+        .orElseThrow(() -> new IllegalArgumentException("There should be a result callback when using TaskResultConsumer."));
 
     if (callback instanceof TaskMultipleResultCallback) {
       ((TaskMultipleResultCallback) callback).setTaskCancelListener(this);
