@@ -194,7 +194,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
         // don't catch all IOExceptions, just ConnectExceptions.
         // exceptions like wrong host-name should cause a bigger disturbance.
         // those indicate that connection has temporarily been lost with RabbitMQ, though could be not that temporarily...
-        LOG.error("Sending task (id:" + wrapper.getTaskId() + ") failed, retrying in a bit.", e);
+        LOG.error("Sending task (id: {}) failed, retrying in a bit.", wrapper.getTaskId(), e);
         try {
           Thread.sleep(CLIENT_START_RETRY_PERIOD);
         } catch (final InterruptedException e1) {

@@ -37,12 +37,12 @@ import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 /**
  * Test class for {@link RabbitMQQueueMonitor}.
  */
-public class RabbitMQQueueMonitorTest {
+class RabbitMQQueueMonitorTest {
 
   private static final String DUMMY = "dummy";
 
   @Test
-  public void testGetWorkerQueueState() throws InterruptedException {
+  void testGetWorkerQueueState() throws InterruptedException {
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost(DUMMY).brokerPort(0).brokerUsername(DUMMY).brokerPassword(DUMMY).build();
     final AtomicInteger workerSize = new AtomicInteger();

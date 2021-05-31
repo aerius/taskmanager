@@ -29,24 +29,9 @@ public final class WorkerPoolMetrics {
   }
 
   public static void setupMetrics(final MetricRegistry metrics, final WorkerPool workerPool, final String workerQueueName) {
-    metrics.register(metricName(workerQueueName, "workerSize"), new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-        return workerPool.getWorkerSize();
-      }
-    });
-    metrics.register(metricName(workerQueueName, "currentWorkerSize"), new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-        return workerPool.getCurrentWorkerSize();
-      }
-    });
-    metrics.register(metricName(workerQueueName, "runningWorkerSize"), new Gauge<Integer>() {
-      @Override
-      public Integer getValue() {
-        return workerPool.getRunningWorkerSize();
-      }
-    });
+    metrics.register(metricName(workerQueueName, "workerSize"), (Gauge<Integer>) () -> workerPool.getWorkerSize());
+    metrics.register(metricName(workerQueueName, "currentWorkerSize"), (Gauge<Integer>) () -> workerPool.getCurrentWorkerSize());
+    metrics.register(metricName(workerQueueName, "runningWorkerSize"), (Gauge<Integer>) () -> workerPool.getRunningWorkerSize());
   }
 
   public static void removeMetrics(final MetricRegistry metrics, final String workerQueueName) {

@@ -35,13 +35,13 @@ import nl.aerius.taskmanager.client.mq.QueueUpdateHandler;
 /**
  * Test class for {@link RabbitMQWorkerProducer}.
  */
-public class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
+class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
 
   private static final String WORKER_QUEUE_NAME = "TEST";
 
   @Test
   @Timeout(5000)
-  public void testForwardMessage() throws IOException, InterruptedException {
+  void testForwardMessage() throws IOException, InterruptedException {
     final byte[] sendBody = "4321".getBytes();
 
     final WorkerProducer wp = adapterFactory.createWorkerProducer(WORKER_QUEUE_NAME);

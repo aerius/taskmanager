@@ -72,7 +72,8 @@ class TaskConsumer implements MessageReceivedHandler, Runnable {
 
   /**
    * Inform the consumer the message delivery was successful.
-   * @param message message that was successful
+   *
+   * @param messageMetaData Meta data of the message that that was successful
    * @throws IOException
    */
   public void messageDelivered(final MessageMetaData messageMetaData) throws IOException {
@@ -81,7 +82,8 @@ class TaskConsumer implements MessageReceivedHandler, Runnable {
 
   /**
    * Inform the consumer the message delivery failed.
-   * @param message message that failed
+   *
+   * @param messageMetaData Meta data of the message that failed
    * @throws IOException
    */
   public void messageDeliveryFailed(final MessageMetaData messageMetaData) throws IOException {

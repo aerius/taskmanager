@@ -182,7 +182,7 @@ public class RabbitMQQueueMonitor implements Runnable {
         }
       } else {
         LOG.error("Status code wasn't 200 when retrieving json result. Status was: {}, {}",
-            response.getStatusLine().getStatusCode(), response.getStatusLine().toString());
+            response.getStatusLine().getStatusCode(), response.getStatusLine());
       }
     } catch (final IOException e) {
       LOG.error("Exception while trying to retrieve json result.", e);

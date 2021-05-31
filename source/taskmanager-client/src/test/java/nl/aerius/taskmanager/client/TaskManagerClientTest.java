@@ -44,7 +44,7 @@ import nl.aerius.taskmanager.test.MockConnection;
 /**
  * Test class for {@link TaskManagerClientSender}.
  */
-public class TaskManagerClientTest {
+class TaskManagerClientTest {
 
   private static final WorkerQueueType WORKER_TYPE_TEST = new WorkerQueueType("TEST");
   private static final String NORMAL_TASK_ID = "SomeTaskId";
@@ -55,17 +55,17 @@ public class TaskManagerClientTest {
   private MockTaskResultHandler mockTaskResultHandler;
 
   @BeforeAll
-  public static void setupClass() {
+  static void setupClass() {
     executor = Executors.newSingleThreadExecutor();
   }
 
   @AfterAll
-  public static void afterClass() {
+  static void afterClass() {
     executor.shutdown();
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mockTaskResultHandler = new MockTaskResultHandler();
     workerType = WORKER_TYPE_TEST;
     taskManagerClient = new TaskManagerClientSender(new BrokerConnectionFactory(executor) {
@@ -77,12 +77,12 @@ public class TaskManagerClientTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     taskManagerClient.shutdown();
   }
 
   @Test
-  public void testSendTask() throws IOException, InterruptedException {
+  void testSendTask() throws IOException, InterruptedException {
     final Serializable input = new MockTaskInput();
     final String sendTaskId = UUID.randomUUID().toString();
     taskManagerClient.sendTask(input, sendTaskId, mockTaskResultHandler, workerType, TASK_QUEUE_NAME);
@@ -99,31 +99,31 @@ public class TaskManagerClientTest {
   }
 
   @Test
-  public void testSendTasks() throws IOException {
+  void testSendTasks() throws IOException {
     taskManagerClient.sendTask(new MockTaskInput(), NORMAL_TASK_ID, mockTaskResultHandler, workerType, TASK_QUEUE_NAME);
     assertTrue(taskManagerClient.isUsable(), "Taskmanagerclient should still be usable.");
   }
 
   @Test
-  public void testSendTasksWithNullId() throws IOException, InterruptedException {
+  void testSendTasksWithNullId() throws IOException, InterruptedException {
     taskManagerClient.sendTask(new MockTaskInput(), null, mockTaskResultHandler, workerType, TASK_QUEUE_NAME);
     assertTrue(taskManagerClient.isUsable(), "Taskmanagerclient should still be usable.");
   }
 
   @Test
-  public void testSendTasksTwice() throws IOException, InterruptedException {
+  void testSendTasksTwice() throws IOException, InterruptedException {
     testSendTask();
     testSendTask();
     assertTrue(taskManagerClient.isUsable(), "Taskmanagerclient should still be usable.");
   }
 
   @Test
-  public void testTaskManagerClientWithoutConnectionConfiguration() throws IOException {
+  void testTaskManagerClientWithoutConnectionConfiguration() throws IOException {
     assertThrows(IllegalArgumentException.class, () -> taskManagerClient = new TaskManagerClientSender(null));
   }
 
   @Test
-  public void testTaskManagerClientWithConnectionConfigurationBean() throws IOException, InterruptedException {
+  void testTaskManagerClientWithConnectionConfigurationBean() throws IOException, InterruptedException {
     testSendTask();
   }
 
@@ -132,7 +132,7 @@ public class TaskManagerClientTest {
    * @throws InterruptedException
    */
   @Test
-  public void testSendUnserializableTask() throws IOException, InterruptedException {
+  void testSendUnserializableTask() throws IOException, InterruptedException {
     assertThrows(NotSerializableException.class, () -> {
       //anonymous inner type isn't serializable (even if the type is Serializable).
       final Serializable input = new Serializable() {
@@ -148,7 +148,7 @@ public class TaskManagerClientTest {
    * @throws InterruptedException
    */
   @Test
-  public void testExit() throws IOException, InterruptedException {
+  void testExit() throws IOException, InterruptedException {
     testSendTask();
     taskManagerClient.shutdown();
     assertFalse(taskManagerClient.isUsable(), "Taskmanagerclient shouldn't be usable anymore.");
@@ -159,7 +159,7 @@ public class TaskManagerClientTest {
    * @throws InterruptedException
    */
   @Test
-  public void testSendTaskAfterExit() throws IOException, InterruptedException {
+  void testSendTaskAfterExit() throws IOException, InterruptedException {
     assertThrows(AlreadyClosedException.class, () -> {
       taskManagerClient.shutdown();
       testSendTask();
@@ -170,7 +170,7 @@ public class TaskManagerClientTest {
    * Test method for {@link TaskManagerClientSender#sendTask(Object, String, String)}.
    */
   @Test
-  public void testSendTaskToNullQueue() throws IOException {
+  void testSendTaskToNullQueue() throws IOException {
     assertThrows(IllegalArgumentException.class,
         () -> taskManagerClient.sendTask(new MockTaskInput(), NORMAL_TASK_ID, mockTaskResultHandler, workerType, null));
   }
@@ -179,7 +179,7 @@ public class TaskManagerClientTest {
    * Test method for {@link TaskManagerClientSender#sendTask(Object, String, String)}.
    */
   @Test
-  public void testSendNullObjectAsTask() throws IOException {
+  void testSendNullObjectAsTask() throws IOException {
     assertThrows(IllegalArgumentException.class, () -> taskManagerClient.sendTask(null, null, mockTaskResultHandler, workerType, TASK_QUEUE_NAME));
   }
 
@@ -187,7 +187,7 @@ public class TaskManagerClientTest {
    * Test method for {@link TaskManagerClientSender#sendTask(Object, String, String)}.
    */
   @Test
-  public void testSendTaskWithNullResultHandler() throws IOException {
+  void testSendTaskWithNullResultHandler() throws IOException {
     taskManagerClient.sendTask(new MockTaskInput(), NORMAL_TASK_ID, null, workerType, TASK_QUEUE_NAME);
     assertTrue(taskManagerClient.isUsable(), "Taskmanagerclient should still be usable.");
   }
@@ -196,7 +196,7 @@ public class TaskManagerClientTest {
    * Test method for {@link TaskManagerClientSender#sendTask(Object, WorkerQueueType, String)}.
    */
   @Test
-  public void testSendTaskWithoutResultHandler() throws IOException {
+  void testSendTaskWithoutResultHandler() throws IOException {
     taskManagerClient.sendTask(new MockTaskInput(), workerType, TASK_QUEUE_NAME);
     assertTrue(taskManagerClient.isUsable(), "Taskmanagerclient should still be usable.");
   }

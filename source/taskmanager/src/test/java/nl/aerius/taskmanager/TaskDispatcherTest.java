@@ -39,7 +39,7 @@ import nl.aerius.taskmanager.TaskDispatcher.State;
 /**
  * Test for {@link TaskDispatcher} class.
  */
-public class TaskDispatcherTest {
+class TaskDispatcherTest {
 
   private static final String WORKER_QUEUE_NAME_TEST = "TEST";
   private static ExecutorService executor;
@@ -51,7 +51,7 @@ public class TaskDispatcherTest {
   private MockAdaptorFactory factory;
 
   @BeforeEach
-  public void setUp() throws IOException, InterruptedException {
+  void setUp() throws IOException, InterruptedException {
     executor = Executors.newCachedThreadPool();
     final FIFOTaskScheduler scheduler = new FIFOTaskScheduler();
     workerProducer = new MockWorkerProducer();
@@ -62,7 +62,7 @@ public class TaskDispatcherTest {
   }
 
   @AfterEach
-  public void after() throws InterruptedException {
+  void after() throws InterruptedException {
     dispatcher.shutdown();
     executor.shutdownNow();
     executor.awaitTermination(10, TimeUnit.MILLISECONDS);
@@ -70,7 +70,7 @@ public class TaskDispatcherTest {
 
   @Test
   @Timeout(3000)
-  public void testNoFreeWorkers() throws InterruptedException {
+  void testNoFreeWorkers() throws InterruptedException {
     final AtomicBoolean unLocked = new AtomicBoolean(false);
     // Add Worker which will unlock
     workerPool.onQueueUpdate("", 1, 0, 0);
@@ -89,7 +89,7 @@ public class TaskDispatcherTest {
 
   @Test
   @Timeout(3000)
-  public void testForwardTest() throws InterruptedException {
+  void testForwardTest() throws InterruptedException {
     final AtomicBoolean unLocked = new AtomicBoolean(false);
     dispatcher.forwardTask(createTask());
     executor.execute(dispatcher);
@@ -103,7 +103,7 @@ public class TaskDispatcherTest {
   @Disabled("TaskAlreadySendexception error willl not be thrown")
   @Test
   @Timeout(3000)
-  public void testForwardDuplicateTask() throws InterruptedException {
+  void testForwardDuplicateTask() throws InterruptedException {
     final Task task = createTask();
     executor.execute(dispatcher);
     dispatcher.forwardTask(task);
@@ -124,7 +124,7 @@ public class TaskDispatcherTest {
 
   @Test
   @Timeout(3000)
-  public void testExceptionDuringForward() throws InterruptedException {
+  void testExceptionDuringForward() throws InterruptedException {
     workerProducer.setShutdownExceptionOnForward(true);
     final Task task = createTask();
     executor.execute(dispatcher);
@@ -160,12 +160,9 @@ public class TaskDispatcherTest {
   }
 
   private void forwardTask(final AtomicBoolean unLocked) {
-    executor.execute(new Runnable() {
-      @Override
-      public void run() {
-        dispatcher.forwardTask(createTask());
-        unLocked.set(true);
-      }
+    executor.execute(() -> {
+      dispatcher.forwardTask(createTask());
+      unLocked.set(true);
     });
   }
 

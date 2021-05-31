@@ -47,7 +47,7 @@ import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 /**
  * Test class for {@link PriorityTaskScheduler}.
  */
-public class PriorityTaskSchedulerTest {
+class PriorityTaskSchedulerTest {
 
   private static final String QUEUE1 = "queue1";
   private static final String QUEUE2 = "queue2";
@@ -64,7 +64,7 @@ public class PriorityTaskSchedulerTest {
   private PriorityTaskScheduler scheduler;
 
   @BeforeEach
-  public void setUp() throws IOException, InterruptedException {
+  void setUp() throws IOException, InterruptedException {
     taskConsumer1 = createMockTaskConsumer(QUEUE1);
     taskConsumer2 = createMockTaskConsumer(QUEUE2);
     final TaskConsumer taskConsumer3 = createMockTaskConsumer(QUEUE3);
@@ -85,13 +85,13 @@ public class PriorityTaskSchedulerTest {
 
   @Test
   @Timeout(5000)
-  public void testCompare() throws InterruptedException {
+  void testCompare() throws InterruptedException {
     assertTrue(compare(task1, task2a, 1), "Compare Ok");
   }
 
   @Test
   @Timeout(5000)
-  public void testCompareReverse() throws InterruptedException {
+  void testCompareReverse() throws InterruptedException {
     assertTrue(compare(task2a, task1, -1), "Compare reserve Ok");
   }
 
@@ -112,13 +112,13 @@ public class PriorityTaskSchedulerTest {
 
   @Test
   @Timeout(5000)
-  public void testCompareSame() throws InterruptedException {
+  void testCompareSame() throws InterruptedException {
     assertTrue(compareSame(task2a, task3, -1), "Compare same Ok");
   }
 
   @Test
   @Timeout(5000)
-  public void testCompareSameReverse() throws InterruptedException {
+  void testCompareSameReverse() throws InterruptedException {
     assertTrue(compareSame(task3, task2a, 1), "Compare same reserve Ok");
   }
 
@@ -143,7 +143,7 @@ public class PriorityTaskSchedulerTest {
 
   @Test
   @Timeout(7000)
-  public void testGetTaskWith1WorkerAvailable() throws InterruptedException, ExecutionException {
+  void testGetTaskWith1WorkerAvailable() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(1);
     final Task task1 = createTask(taskConsumer1, "1", QUEUE1); //add task with priority 0.
     scheduler.addTask(task1);
@@ -161,7 +161,7 @@ public class PriorityTaskSchedulerTest {
    */
   @Test
   @Timeout(7000)
-  public void testGetTask() throws InterruptedException, ExecutionException {
+  void testGetTask() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(2);
     final Task task1a = createTask(taskConsumer1, "1a", QUEUE1);
     scheduler.addTask(task1a);
@@ -194,7 +194,7 @@ public class PriorityTaskSchedulerTest {
    */
   @Test
   @Timeout(7000)
-  public void testGetTaskBigPool() throws InterruptedException, ExecutionException {
+  void testGetTaskBigPool() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(10);
     final List<Task> tasks = new ArrayList<>();
     final List<Task> sendTasks = new ArrayList<>();
@@ -237,7 +237,7 @@ public class PriorityTaskSchedulerTest {
    */
   @Test
   @Timeout(1000)
-  public void testCompare2Workers() throws InterruptedException {
+  void testCompare2Workers() throws InterruptedException {
     scheduler.onWorkerPoolSizeChange(2);
     scheduler.addTask(task2a);
     scheduler.getNextTask();

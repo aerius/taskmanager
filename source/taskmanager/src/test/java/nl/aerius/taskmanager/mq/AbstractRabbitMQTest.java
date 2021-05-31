@@ -37,7 +37,7 @@ import nl.aerius.taskmanager.test.MockConnection;
 /**
  * Abstract base class for RabbitMQ tests.
  */
-public class AbstractRabbitMQTest {
+class AbstractRabbitMQTest {
 
   protected static ExecutorService executor;
   protected BrokerConnectionFactory factory;
@@ -45,18 +45,18 @@ public class AbstractRabbitMQTest {
   protected AdaptorFactory adapterFactory;
 
   @BeforeAll
-  public static void setupClass() {
+  static void setupClass() {
     executor = Executors.newSingleThreadExecutor();
   }
 
   @AfterAll
-  public static void afterClass() throws InterruptedException {
+  static void afterClass() throws InterruptedException {
     executor.shutdownNow();
     executor.awaitTermination(10, TimeUnit.MILLISECONDS);
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mockChannel = new MockChannel();
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost("localhost").brokerUsername("guest").brokerPassword("guest").build();

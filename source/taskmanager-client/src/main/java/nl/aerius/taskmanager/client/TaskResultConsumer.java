@@ -45,8 +45,8 @@ class TaskResultConsumer extends DefaultConsumer implements TaskCancelListener {
 
   /**
    * @param channel
-   * @param callback
-   * @param resultHandler
+   * @param taskWrapper
+   * @param taskSender
    */
   protected TaskResultConsumer(final Channel channel, final TaskWrapper taskWrapper, final TaskWrapperSender taskSender) {
     super(channel);
@@ -69,7 +69,7 @@ class TaskResultConsumer extends DefaultConsumer implements TaskCancelListener {
       // convert the byte array to a workable Java object.
       result = QueueHelper.bytesToObject(body);
       // let the workerHandler do its job.
-    } catch (final Exception e) {
+    } catch (final RuntimeException | ClassNotFoundException | IOException e) {
       LOG.error("Exception while deserializing result.", e);
       result = e;
     } finally {

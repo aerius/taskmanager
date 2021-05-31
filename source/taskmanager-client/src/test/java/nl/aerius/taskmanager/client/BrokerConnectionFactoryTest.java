@@ -31,22 +31,22 @@ import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 /**
  * Test for class {@link BrokerConnectionFactory}.
  */
-public class BrokerConnectionFactoryTest {
+class BrokerConnectionFactoryTest {
 
   private static ExecutorService executor;
 
   @BeforeAll
-  public static void setupClass() {
+  static void setupClass() {
     executor = Executors.newSingleThreadExecutor();
   }
 
   @AfterAll
-  public static void afterClass() {
+  static void afterClass() {
     executor.shutdown();
   }
 
   @Test
-  public void testTaskManagerClientWithoutBrokerHost() throws IOException {
+  void testTaskManagerClientWithoutBrokerHost() throws IOException {
     assertThrows(NullPointerException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerHost(null);
@@ -55,7 +55,7 @@ public class BrokerConnectionFactoryTest {
   }
 
   @Test
-  public void testTaskManagerClientWithEmptyBrokerHost() throws IOException {
+  void testTaskManagerClientWithEmptyBrokerHost() throws IOException {
     assertThrows(IllegalArgumentException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerHost("");
@@ -64,7 +64,7 @@ public class BrokerConnectionFactoryTest {
   }
 
   @Test
-  public void testTaskManagerClientWithoutBrokerUsername() throws IOException {
+  void testTaskManagerClientWithoutBrokerUsername() throws IOException {
     assertThrows(NullPointerException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerUsername(null);
@@ -73,7 +73,7 @@ public class BrokerConnectionFactoryTest {
   }
 
   @Test
-  public void testTaskManagerClientWithEmptyBrokerUsername() throws IOException {
+  void testTaskManagerClientWithEmptyBrokerUsername() throws IOException {
     assertThrows(IllegalArgumentException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerUsername("");
@@ -82,7 +82,7 @@ public class BrokerConnectionFactoryTest {
   }
 
   @Test
-  public void testTaskManagerClientWithoutBrokerPassword() throws IOException {
+  void testTaskManagerClientWithoutBrokerPassword() throws IOException {
     assertThrows(NullPointerException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerPassword(null);
@@ -91,7 +91,7 @@ public class BrokerConnectionFactoryTest {
   }
 
   @Test
-  public void testTaskManagerClientWithEmptyBrokerPassword() throws IOException {
+  void testTaskManagerClientWithEmptyBrokerPassword() throws IOException {
     assertThrows(IllegalArgumentException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerPassword("");
@@ -100,7 +100,7 @@ public class BrokerConnectionFactoryTest {
   }
 
   @Test
-  public void testTaskManagerClientWithoutBrokerVirtualHost() throws IOException {
+  void testTaskManagerClientWithoutBrokerVirtualHost() throws IOException {
     assertThrows(NullPointerException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerVirtualHost(null);
@@ -109,7 +109,7 @@ public class BrokerConnectionFactoryTest {
   }
 
   @Test
-  public void testTaskManagerClientWithEmptyBrokerVirtualHost() throws IOException {
+  void testTaskManagerClientWithEmptyBrokerVirtualHost() throws IOException {
     assertThrows(IllegalArgumentException.class, () -> {
       final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
       builder.brokerVirtualHost("");

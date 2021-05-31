@@ -40,7 +40,7 @@ import nl.aerius.taskmanager.test.MockChannel;
 /**
  * Test class for {@link TaskResultConsumer}.
  */
-public class TaskResultConsumerTest {
+class TaskResultConsumerTest {
 
   private static final WorkerQueueType WORKER_TYPE_TEST = new WorkerQueueType("TEST");
   private static final String CONSUMER_TAG = "Unimportant";
@@ -50,13 +50,13 @@ public class TaskResultConsumerTest {
   private MockChannel channel;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     sender = new MockTaskSender();
     channel = new MockChannel();
   }
 
   @Test
-  public void testHandleDeliveryNormalTask() throws IOException {
+  void testHandleDeliveryNormalTask() throws IOException {
     final SingleResultCallback resultCallback = new SingleResultCallback();
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
 
@@ -77,7 +77,7 @@ public class TaskResultConsumerTest {
   }
 
   @Test
-  public void testHandleDeliveryException() throws IOException {
+  void testHandleDeliveryException() throws IOException {
     final SingleResultCallback resultCallback = new SingleResultCallback();
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
 
@@ -99,7 +99,7 @@ public class TaskResultConsumerTest {
   }
 
   @Test
-  public void testHandleDeliveryMultipleResultsTask() throws IOException {
+  void testHandleDeliveryMultipleResultsTask() throws IOException {
     final MultipleResultCallback resultCallback = new MultipleResultCallback();
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
 
@@ -130,7 +130,7 @@ public class TaskResultConsumerTest {
   }
 
   @Test
-  public void testHandleDeliveryMultipleResultsTaskException() throws IOException {
+  void testHandleDeliveryMultipleResultsTaskException() throws IOException {
     final MultipleResultCallback resultCallback = new MultipleResultCallback();
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
 
@@ -156,7 +156,7 @@ public class TaskResultConsumerTest {
   }
 
   @Test
-  public void testCancelMultipleResultsTask() throws IOException {
+  void testCancelMultipleResultsTask() throws IOException {
     final MultipleResultCallback resultCallback = new MultipleResultCallback();
     assertNull(resultCallback.cancelListener, "Cancel listener");
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
@@ -174,7 +174,7 @@ public class TaskResultConsumerTest {
   }
 
   @Test
-  public void testHandleShutdownSignalNotSelfInitiated() {
+  void testHandleShutdownSignalNotSelfInitiated() {
     final SingleResultCallback resultCallback = new SingleResultCallback();
     final TaskWrapper taskWrapper = getExampleTaskWrapper(resultCallback);
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, taskWrapper, sender);
@@ -186,7 +186,7 @@ public class TaskResultConsumerTest {
   }
 
   @Test
-  public void testHandleShutdownSignalSelfInitiated() {
+  void testHandleShutdownSignalSelfInitiated() {
     final SingleResultCallback resultCallback = new SingleResultCallback();
     final TaskWrapper taskWrapper = getExampleTaskWrapper(resultCallback);
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, taskWrapper, sender);
@@ -198,7 +198,7 @@ public class TaskResultConsumerTest {
   }
 
   @Test
-  public void testWrapperWithoutCallback() {
+  void testWrapperWithoutCallback() {
     assertThrows(IllegalArgumentException.class, () -> {
       final TaskWrapper taskWrapper = new TaskWrapper(Optional.empty(), new TestTaskInput(), "Other", "One", "Shouldn't Matter", WORKER_TYPE_TEST);
       new TaskResultConsumer(channel, taskWrapper, sender);

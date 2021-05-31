@@ -22,37 +22,11 @@ import java.util.Map;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Mock class for a {@link Connection}.
  */
-public class MockConnection implements Connection {
-
-  private boolean closed;
-
-  @Override
-  public void addShutdownListener(final ShutdownListener listener) {
-  }
-
-  @Override
-  public void removeShutdownListener(final ShutdownListener listener) {
-  }
-
-  @Override
-  public ShutdownSignalException getCloseReason() {
-    return null;
-  }
-
-  @Override
-  public void notifyListeners() {
-  }
-
-  @Override
-  public boolean isOpen() {
-    return !closed;
-  }
+public class MockConnection extends MockShutdownNotifier implements Connection {
 
   @Override
   public InetAddress getAddress() {
@@ -97,11 +71,6 @@ public class MockConnection implements Connection {
   @Override
   public Channel createChannel(final int channelNumber) throws IOException {
     return null;
-  }
-
-  @Override
-  public void close() throws IOException {
-    closed = true;
   }
 
   @Override

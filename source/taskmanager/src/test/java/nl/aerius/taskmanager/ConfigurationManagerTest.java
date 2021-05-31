@@ -30,19 +30,19 @@ import nl.aerius.taskmanager.domain.TaskManagerConfiguration;
 /**
  * Test for {@link ConfigurationManager}.
  */
-public class ConfigurationManagerTest {
+class ConfigurationManagerTest {
 
   private Properties properties;
 
   @BeforeEach
-  public void before() throws IOException {
+  void before() throws IOException {
     final String propFile = getClass().getClassLoader().getResource("taskmanager_test.properties").getPath();
     properties = ConfigurationManager.getPropertiesFromFile(propFile);
   }
 
   @Test
   @Timeout(2000)
-  public void testLoadConfiguration() throws IOException {
+  void testLoadConfiguration() throws IOException {
     final TaskManagerConfiguration tmc = ConfigurationManager.loadConfiguration(properties);
 
     assertNotNull(tmc.getBrokerConfiguration().getBrokerUsername(), "No username could be read from configuration file");

@@ -54,13 +54,11 @@ import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Mock implementation simulating {@link Channel}.
  */
-public class MockChannel implements Channel {
+public class MockChannel extends MockShutdownNotifier implements Channel {
 
   private static final Logger LOG = LoggerFactory.getLogger(MockChannel.class);
 
@@ -68,8 +66,6 @@ public class MockChannel implements Channel {
   private static final Map<Long, Body> QUEUED = new ConcurrentHashMap<>();
   private byte[] received;
   private final ExecutorService executors = Executors.newCachedThreadPool();
-
-  private boolean closed;
 
   public byte[] getReceived() {
     return received.clone();
@@ -83,7 +79,7 @@ public class MockChannel implements Channel {
   @Override
   public final void basicPublish(final String exchange, final String routingKey, final boolean mandatory, final BasicProperties props,
       final byte[] body)
-      throws IOException {
+          throws IOException {
     basicPublish(exchange, routingKey, mandatory, false, props, body);
   }
 
@@ -100,32 +96,6 @@ public class MockChannel implements Channel {
   }
 
   @Override
-  public void addShutdownListener(final ShutdownListener listener) {
-    // Mock method.
-  }
-
-  @Override
-  public void removeShutdownListener(final ShutdownListener listener) {
-    // Mock method.
-  }
-
-  @Override
-  public ShutdownSignalException getCloseReason() {
-    // Mock method.
-    return null;
-  }
-
-  @Override
-  public void notifyListeners() {
-    // Mock method.
-  }
-
-  @Override
-  public boolean isOpen() {
-    return !closed;
-  }
-
-  @Override
   public int getChannelNumber() {
     // Mock method.
     return 0;
@@ -135,11 +105,6 @@ public class MockChannel implements Channel {
   public Connection getConnection() {
     // Mock method.
     return null;
-  }
-
-  @Override
-  public void close() throws IOException {
-    closed = true;
   }
 
   @Override

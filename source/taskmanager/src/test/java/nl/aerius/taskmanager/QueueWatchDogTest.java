@@ -28,10 +28,10 @@ import org.junit.jupiter.api.Test;
 /**
  * Test class for {@link QueueWatchDog}.
  */
-public class QueueWatchDogTest {
+class QueueWatchDogTest {
 
   @Test
-  public void testIsItDead() throws InterruptedException {
+  void testIsItDead() throws InterruptedException {
     final QueueWatchDog qwd = new QueueWatchDog() {
       @Override
       protected long calculatedDiffTime(final long diff) {
@@ -47,7 +47,7 @@ public class QueueWatchDogTest {
   }
 
   @Test
-  public void testCalculatedDiffTime() {
+  void testCalculatedDiffTime() {
     final QueueWatchDog qwd = new QueueWatchDog();
     final long minutes = 10;
     assertEquals(minutes, qwd.calculatedDiffTime(TimeUnit.MINUTES.toMillis(minutes)), "Check if correctly calcualted in minutes");
