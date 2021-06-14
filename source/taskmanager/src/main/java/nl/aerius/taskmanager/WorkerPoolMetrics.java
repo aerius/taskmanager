@@ -50,7 +50,7 @@ public final class WorkerPoolMetrics {
   private static String metricName(final String workerQueueName, final String metricName) {
     final int workerTypeIndex = workerQueueName.lastIndexOf('.');
 
-    return MetricRegistry.name((workerTypeIndex > 0 ? workerQueueName.substring(workerTypeIndex) : workerQueueName).toUpperCase(Locale.ENGLISH),
+    return MetricRegistry.name((workerTypeIndex > 0 ? workerQueueName.substring(workerTypeIndex) : workerQueueName).toUpperCase(Locale.ROOT),
         metricName);
   }
 }

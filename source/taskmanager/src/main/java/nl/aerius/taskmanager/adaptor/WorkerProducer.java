@@ -17,9 +17,7 @@
 package nl.aerius.taskmanager.adaptor;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
 
-import nl.aerius.taskmanager.client.mq.QueueUpdateHandler;
 import nl.aerius.taskmanager.domain.Message;
 
 /**
@@ -35,11 +33,10 @@ public interface WorkerProducer {
 
   /**
    * Starts the worker producer.
-   * @param executorService executor to use to start concurrent tasks to workers.
-   * @param workerPool set number of workers available on worker pool when number of workers changes.
+   * @param queueSizeObserver set number of workers available on worker pool when number of workers changes.
    * @throws IOException connection errors
    */
-  void start(ExecutorService executorService, QueueUpdateHandler workerPool) throws IOException;
+  void start();
 
   /**
    * Forward a message to the worker.
@@ -62,5 +59,20 @@ public interface WorkerProducer {
      * @param taskId id of the task finished
      */
     void onWorkerFinished(String taskId);
+  }
+
+  /**
+   * Interface to retrieve metrics about the current worker sizes.
+   */
+  interface WorkerMetrics {
+    /**
+     * @return Returns the number of workers currently busy.
+     */
+    int getRunningWorkerSize();
+
+    /**
+     * @return Returns the number total number of workers .
+     */
+    int getCurrentWorkerSize();
   }
 }

@@ -54,7 +54,7 @@ class TaskManagerTest {
     MetricFactory.init(new Properties(), "test");
     final AdaptorFactory factory = new MockAdaptorFactory();
     final TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> schedulerFactory = new FIFOTaskScheduler.FIFOSchedulerFactory();
-    taskManager = new TaskManager<>(executor, factory, schedulerFactory);
+    taskManager = new TaskManager<>(executor, factory, schedulerFactory, factory.createWorkerSizeProvider());
     schedule = handler.read(new File(getClass().getClassLoader().getResource("queue/priority-task-scheduler.ops.json").getFile()));
   }
 

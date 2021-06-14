@@ -14,20 +14,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.client.mq;
+package nl.aerius.taskmanager.adaptor;
 
 /**
- * Interface called when status information from RabbitMQ is received.
+ * Interface called to observer the number of workers.
  */
-public interface QueueUpdateHandler {
+public interface WorkerSizeObserver {
 
   /**
-   * Gives the number of workers, total number of messages, and number of messages ready on the queue.
+   * Gives the number of workers processes connected on the queue.
    *
-   * @param queueName name of the queue the data is for
-   * @param numberOfWorkers number of workers
-   * @param numberOfMessages total number of messages
-   * @param numberOfMessagesReady number of messages in ready state
+   * @param numberOfWorkers number of number of workers processes
+   * @param numberOfMessages Actual total number of messages on the queue
    */
-  void onQueueUpdate(String queueName, int numberOfWorkers, int numberOfMessages, int numberOfMessagesReady);
+  void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages);
+
+  /**
+   * Gives an increment or decrement number of workers processes connected on the queue.
+   *
+   * @param deltaNumberOfWorkers increase/decrease of number of workers processes
+   */
+  void onDeltaNumberOfWorkersUpdate(final int deltaNumberOfWorkers);
 }

@@ -55,6 +55,7 @@ A new task can now be scheduled.
 The task manager configuration consists of 2 parts.
 
 ### General Configuration
+
 The general configuration is needed to startup the task manager.
 The configuration is set in a `.properties` file (e.g. `taskmanager.properties`) and has the following configuration options:
 
@@ -75,6 +76,7 @@ metrics.graphite.host = [graphite host]
 ```
 
 ### Queue Configuration
+
 The queue configuration is done in json files.
 These files need to be put in the directory configured in `taskmanager.configuration.directory`.
 The task managers monitors this directory and updates the configuration on the fly if any of the files change.
@@ -108,9 +110,6 @@ A lower number means a higher priority.
 * `maxCapacityUse`: A number between 0 and 1 that limits the amount of tasks that are concurrently run for the queue based on the available number of workers.
 For example if the value is `0.6` and there are `10` workers.
 This would mean a maximum of `6` workers will be given a tasks from this queue.
-
-
-
 
 ## Building the Task Manager
 

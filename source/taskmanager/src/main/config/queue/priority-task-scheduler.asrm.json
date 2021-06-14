@@ -1,5 +1,5 @@
 {
-  "workerQueueName": "asrm2",
+  "workerQueueName": "asrm",
   "queues": [
     {
       "queueName": "calculation_ui",
@@ -24,21 +24,6 @@
     {
       "queueName": "connect_gml_export",
       "priority": 0,
-      "maxCapacityUse": 0.8
-    },
-    {
-      "queueName": "custom_jobs",
-      "priority": 0,
-      "maxCapacityUse": 0.8
-    },
-    {
-      "queueName": "permit",
-      "priority": 1,
-      "maxCapacityUse": 0.8
-    },
-    {
-      "queueName": "melding",
-      "priority": 3,
       "maxCapacityUse": 0.8
     }
   ]

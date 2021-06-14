@@ -24,13 +24,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.mockito.Mock;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
-import nl.aerius.taskmanager.client.mq.QueueUpdateHandler;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 
 /**
  * Test class for {@link RabbitMQWorkerProducer}.
@@ -39,18 +40,15 @@ class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
 
   private static final String WORKER_QUEUE_NAME = "TEST";
 
+  private @Mock WorkerSizeObserver queueSizeObserver;
+
   @Test
   @Timeout(5000)
   void testForwardMessage() throws IOException, InterruptedException {
     final byte[] sendBody = "4321".getBytes();
 
     final WorkerProducer wp = adapterFactory.createWorkerProducer(WORKER_QUEUE_NAME);
-    wp.start(executor, new QueueUpdateHandler() {
-      @Override
-      public void onQueueUpdate(final String queueName, final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesReady) {
-        // nothing to do here
-      }
-    });
+    wp.start();
     final BasicProperties bp = new BasicProperties();
     wp.forwardMessage(new RabbitMQMessage(WORKER_QUEUE_NAME, null, 4321, bp, sendBody) {
       @Override

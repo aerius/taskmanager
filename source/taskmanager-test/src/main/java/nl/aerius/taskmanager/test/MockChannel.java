@@ -544,26 +544,22 @@ public class MockChannel extends MockShutdownNotifier implements Channel {
   }
 
   private void scheduleCallback(final String queueName, final Consumer callback) {
-    executors.execute(new Runnable() {
-
-      @Override
-      public void run() {
-        final PriorityBlockingQueue<Body> queue = getQueue(queueName);
+    executors.execute(() -> {
+      final PriorityBlockingQueue<Body> queue = getQueue(queueName);
+      try {
+        final Body value = queue.take();
+        final long id = new Random().nextLong();
+        QUEUED.put(id, value);
+        final Envelope envelope = new Envelope(id, false, "", "");
+        callback.handleDelivery(null, envelope, value.getProperties(), mockResults(value.getProperties(), value.getBody()));
+      } catch (final Exception e) {
+        LOG.error("handle Delivery in MockChannel failed", e);
         try {
-          final Body value = queue.take();
-          final long id = new Random().nextLong();
-          QUEUED.put(id, value);
-          final Envelope envelope = new Envelope(id, false, "", "");
-          callback.handleDelivery(null, envelope, value.getProperties(), mockResults(value.getProperties(), value.getBody()));
-        } catch (final Exception e) {
-          LOG.error("handle Delivery in MockChannel failed", e);
-          try {
-            callback.handleDelivery(null, null, null, objectToBytes(e));
-          } catch (final IOException e1) {
-            LOG.error("handle Delivery of error in MockChannel failed", e1);
-          }
-          return;
+          callback.handleDelivery(null, null, null, objectToBytes(e));
+        } catch (final IOException e1) {
+          LOG.error("handle Delivery of error in MockChannel failed", e1);
         }
+        return;
       }
     });
   }

@@ -16,37 +16,43 @@
  */
 package nl.aerius.taskmanager.mq;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutorService;
+import static org.mockito.Mockito.doReturn;
+
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 import nl.aerius.taskmanager.test.MockChannel;
-import nl.aerius.taskmanager.test.MockConnection;
 
 /**
  * Abstract base class for RabbitMQ tests.
  */
 class AbstractRabbitMQTest {
 
-  protected static ExecutorService executor;
+  protected static ScheduledExecutorService executor;
   protected BrokerConnectionFactory factory;
   protected MockChannel mockChannel;
   protected AdaptorFactory adapterFactory;
 
+  private @Mock Connection mockConnection;
+  private @Mock RabbitMQChannelQueueEventsWatcher mockChannelWatcher;
+  private AutoCloseable closeable;
+
   @BeforeAll
   static void setupClass() {
-    executor = Executors.newSingleThreadExecutor();
+    executor = Executors.newScheduledThreadPool(5);
   }
 
   @AfterAll
@@ -57,21 +63,24 @@ class AbstractRabbitMQTest {
 
   @BeforeEach
   void setUp() throws Exception {
+    closeable = MockitoAnnotations.openMocks(this);
     mockChannel = new MockChannel();
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost("localhost").brokerUsername("guest").brokerPassword("guest").build();
+
+    doReturn(mockChannel).when(mockConnection).createChannel();
     factory = new BrokerConnectionFactory(executor, configuration) {
       @Override
-      protected Connection createNewConnection() throws IOException {
-        return new MockConnection() {
-          @Override
-          public Channel createChannel() throws IOException {
-            return mockChannel;
-          }
-        };
+      protected Connection createNewConnection() {
+        return mockConnection;
       }
     };
-    adapterFactory = new RabbitMQAdaptorFactory(factory);
+    adapterFactory = new RabbitMQAdaptorFactory(executor, factory);
+  }
+
+
+  @AfterEach public void releaseMocks() throws Exception {
+    closeable.close();
   }
 
   protected class DataDock {

@@ -24,6 +24,13 @@ import java.io.IOException;
 public interface AdaptorFactory {
 
   /**
+   * Creates a new WorkerSizeProviderProxy to process changes in the worker size and utilisation.
+   * @param workerQueueName name of queue of the worker
+   * @return new WorkerSizeProviderProxy
+   */
+  WorkerSizeProviderProxy createWorkerSizeProvider();
+
+  /**
    * Creates a new worker producer for the given worker type.
    * @param workerQueueName name of queue of the worker
    * @return new worker producer object

@@ -18,9 +18,12 @@ package nl.aerius.taskmanager;
 
 import java.io.IOException;
 
+import org.mockito.Mockito;
+
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
+import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 
 /**
  * Mock implementation of {@link AdaptorFactory}.
@@ -29,6 +32,11 @@ public class MockAdaptorFactory implements AdaptorFactory {
 
   private final MockWorkerProducer mockWorkerProducer = new MockWorkerProducer();
   private final MockTaskMessageHandler mockTaskMessageHandler = new MockTaskMessageHandler();
+
+  @Override
+  public WorkerSizeProviderProxy createWorkerSizeProvider() {
+    return Mockito.mock(WorkerSizeProviderProxy.class);
+  }
 
   @Override
   public WorkerProducer createWorkerProducer(final String workerQueueName) {

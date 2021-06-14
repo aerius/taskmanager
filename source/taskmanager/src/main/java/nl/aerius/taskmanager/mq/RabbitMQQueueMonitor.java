@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.client.mq;
+package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,10 +22,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpHost;
@@ -51,6 +47,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 
 /**
@@ -58,87 +55,57 @@ import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
  * informing the worker pool when a worker is finished.
  * <p>When the connection shuts down this pool manager will shutdown.
  */
-public class RabbitMQQueueMonitor implements Runnable {
+public class RabbitMQQueueMonitor {
 
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQQueueMonitor.class);
   private static final int TIMEOUT = (int) TimeUnit.SECONDS.toMillis(3);
 
-  private final long refreshDelay;
-  private final Map<String, List<QueueUpdateHandler>> handlersMap = new HashMap<>();
   private final ConnectionConfiguration configuration;
   private final CloseableHttpClient httpClient;
   private final HttpHost targetHost;
   private final HttpClientContext context;
-  private boolean running;
 
+  /**
+   * Constructor
+   *
+   * @param executorService scheduled executor to run the update process on a scheduled thread.
+   * @param configuration Connection configuration
+   */
   public RabbitMQQueueMonitor(final ConnectionConfiguration configuration) {
     this.configuration = configuration;
-    refreshDelay = TimeUnit.SECONDS.toMillis(configuration.getBrokerManagementRefreshRate());
     httpClient = HttpClientBuilder.create().setDefaultRequestConfig(getDefaultRequestConfig()).build();
-    if (refreshDelay == 0) {
-      // if refreshDelay == 0 then querying to a server is disabled. This is used in unit tests.
-      targetHost = null;
-      context = null;
-    } else {
-      targetHost = new HttpHost(configuration.getBrokerHost(), configuration.getBrokerManagementPort(), "http");
-      final CredentialsProvider credsProvider = new BasicCredentialsProvider();
-      credsProvider.setCredentials(
-          new AuthScope(configuration.getBrokerHost(), configuration.getBrokerManagementPort()),
-          new UsernamePasswordCredentials(configuration.getBrokerUsername(), configuration.getBrokerPassword()));
-      // Create AuthCache instance
-      final AuthCache authCache = new BasicAuthCache();
-      // Generate BASIC scheme object and add it to the local auth cache
-      final BasicScheme basicAuth = new BasicScheme();
-      authCache.put(targetHost, basicAuth);
+    targetHost = new HttpHost(configuration.getBrokerHost(), configuration.getBrokerManagementPort(), "http");
+    final CredentialsProvider credsProvider = new BasicCredentialsProvider();
+    credsProvider.setCredentials(
+        new AuthScope(configuration.getBrokerHost(), configuration.getBrokerManagementPort()),
+        new UsernamePasswordCredentials(configuration.getBrokerUsername(), configuration.getBrokerPassword()));
+    // Create AuthCache instance
+    final AuthCache authCache = new BasicAuthCache();
+    // Generate BASIC scheme object and add it to the local auth cache
+    final BasicScheme basicAuth = new BasicScheme();
+    authCache.put(targetHost, basicAuth);
 
-      context = HttpClientContext.create();
-      context.setCredentialsProvider(credsProvider);
-      context.setAuthCache(authCache);
-    }
-  }
-
-  public void addQueueUpdateHandler(final String queueName, final QueueUpdateHandler handler) {
-    if (!handlersMap.containsKey(queueName)) {
-      handlersMap.put(queueName, new ArrayList<>());
-    }
-    handlersMap.get(queueName).add(handler);
-  }
-
-  public void removeQueueUpdateHandler(final String queueName, final QueueUpdateHandler handler) {
-    handlersMap.get(queueName).remove(handler);
-  }
-
-  @Override
-  public void run() {
-    running = refreshDelay > 0;
-    try {
-      while (running) {
-        handlersMap.forEach(this::updateWorkerQueueState);
-        try {
-          Thread.sleep(refreshDelay);
-        } catch (final InterruptedException e) {
-          running = false;
-          LOG.error("RabbitMQQueueMonitor died in sleep.", e);
-          Thread.currentThread().interrupt();
-        }
-      }
-    } finally {
-      try {
-        httpClient.close();
-      } catch (final IOException e) {
-        LOG.trace("IOException on close httpclient", e);
-      }
-    }
+    context = HttpClientContext.create();
+    context.setCredentialsProvider(credsProvider);
+    context.setAuthCache(authCache);
   }
 
   /**
    * Stops the worker pool.
    */
   public void shutdown() {
-    running = false;
+    close();
   }
 
-  private void updateWorkerQueueState(final String queueName, final List<QueueUpdateHandler> handlers) {
+  public void close() {
+    try {
+      httpClient.close();
+    } catch (final IOException e) {
+      LOG.trace("IOException on close httpclient", e);
+    }
+  }
+
+  public void updateWorkerQueueState(final String queueName, final WorkerSizeObserver observer) {
     // Use RabbitMQ HTTP-API.
     // URL: [host]:[port]/api/queues/[virtualHost]/[QueueName]
     final String virtualHost = configuration.getBrokerVirtualHost().replace("/", "%2f");
@@ -152,9 +119,9 @@ public class RabbitMQQueueMonitor implements Runnable {
         final JsonObject jsonObject = je.getAsJsonObject();
         final int numberOfWorkers = getJsonIntPrimitive(jsonObject, "consumers");
         final int numberOfMessages = getJsonIntPrimitive(jsonObject, "messages");
-        final int numberOfMessagesReady = getJsonIntPrimitive(jsonObject, "messages_ready");
-        handlers.forEach(h -> h.onQueueUpdate(queueName, numberOfWorkers, numberOfMessages, numberOfMessagesReady));
-        LOG.trace("[{}] active workers:{}, messages:{}", queueName, numberOfWorkers, numberOfMessages);
+
+        observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
+        LOG.trace("[{}] active workers:{}", queueName, numberOfWorkers);
       }
     } catch (URISyntaxException | UnsupportedEncodingException e) {
       LOG.error("RabbitMQQueueMonitor", e);
