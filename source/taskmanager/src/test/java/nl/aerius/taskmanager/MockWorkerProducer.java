@@ -17,12 +17,10 @@
 package nl.aerius.taskmanager;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
 
 import com.rabbitmq.client.AlreadyClosedException;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
-import nl.aerius.taskmanager.client.mq.QueueUpdateHandler;
 import nl.aerius.taskmanager.domain.Message;
 
 /**
@@ -38,7 +36,7 @@ public class MockWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void start(final ExecutorService executorService, final QueueUpdateHandler workerPoolSize) throws IOException {
+  public void start() {
     // no-op
   }
 

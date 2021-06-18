@@ -54,13 +54,11 @@ import com.rabbitmq.client.FlowListener;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.ReturnListener;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Mock implementation simulating {@link Channel}.
  */
-public class MockChannel implements Channel {
+public class MockChannel extends MockShutdownNotifier implements Channel {
 
   private static final Logger LOG = LoggerFactory.getLogger(MockChannel.class);
 
@@ -68,8 +66,6 @@ public class MockChannel implements Channel {
   private static final Map<Long, Body> QUEUED = new ConcurrentHashMap<>();
   private byte[] received;
   private final ExecutorService executors = Executors.newCachedThreadPool();
-
-  private boolean closed;
 
   public byte[] getReceived() {
     return received.clone();
@@ -82,8 +78,7 @@ public class MockChannel implements Channel {
 
   @Override
   public final void basicPublish(final String exchange, final String routingKey, final boolean mandatory, final BasicProperties props,
-      final byte[] body)
-      throws IOException {
+      final byte[] body) throws IOException {
     basicPublish(exchange, routingKey, mandatory, false, props, body);
   }
 
@@ -100,32 +95,6 @@ public class MockChannel implements Channel {
   }
 
   @Override
-  public void addShutdownListener(final ShutdownListener listener) {
-    // Mock method.
-  }
-
-  @Override
-  public void removeShutdownListener(final ShutdownListener listener) {
-    // Mock method.
-  }
-
-  @Override
-  public ShutdownSignalException getCloseReason() {
-    // Mock method.
-    return null;
-  }
-
-  @Override
-  public void notifyListeners() {
-    // Mock method.
-  }
-
-  @Override
-  public boolean isOpen() {
-    return !closed;
-  }
-
-  @Override
   public int getChannelNumber() {
     // Mock method.
     return 0;
@@ -135,11 +104,6 @@ public class MockChannel implements Channel {
   public Connection getConnection() {
     // Mock method.
     return null;
-  }
-
-  @Override
-  public void close() throws IOException {
-    closed = true;
   }
 
   @Override
@@ -579,26 +543,22 @@ public class MockChannel implements Channel {
   }
 
   private void scheduleCallback(final String queueName, final Consumer callback) {
-    executors.execute(new Runnable() {
-
-      @Override
-      public void run() {
-        final PriorityBlockingQueue<Body> queue = getQueue(queueName);
+    executors.execute(() -> {
+      final PriorityBlockingQueue<Body> queue = getQueue(queueName);
+      try {
+        final Body value = queue.take();
+        final long id = new Random().nextLong();
+        QUEUED.put(id, value);
+        final Envelope envelope = new Envelope(id, false, "", "");
+        callback.handleDelivery(null, envelope, value.getProperties(), mockResults(value.getProperties(), value.getBody()));
+      } catch (final Exception e) {
+        LOG.error("handle Delivery in MockChannel failed", e);
         try {
-          final Body value = queue.take();
-          final long id = new Random().nextLong();
-          QUEUED.put(id, value);
-          final Envelope envelope = new Envelope(id, false, "", "");
-          callback.handleDelivery(null, envelope, value.getProperties(), mockResults(value.getProperties(), value.getBody()));
-        } catch (final Exception e) {
-          LOG.error("handle Delivery in MockChannel failed", e);
-          try {
-            callback.handleDelivery(null, null, null, objectToBytes(e));
-          } catch (final IOException e1) {
-            LOG.error("handle Delivery of error in MockChannel failed", e1);
-          }
-          return;
+          callback.handleDelivery(null, null, null, objectToBytes(e));
+        } catch (final IOException e1) {
+          LOG.error("handle Delivery of error in MockChannel failed", e1);
         }
+        return;
       }
     });
   }

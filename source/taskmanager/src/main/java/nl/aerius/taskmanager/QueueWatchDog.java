@@ -29,12 +29,12 @@ class QueueWatchDog {
   /**
    * If for more than 10 minutes the problem remains the sign to reset is given.
    */
-  private static final long RESET_TIME = 10;
+  private static final long RESET_TIME_MINUTES = 10;
 
   private long firstProblem;
 
   /**
-   * Check if the condition is met to do a reset. This is if for more than {@link #RESET_TIME} minutes workers are running,
+   * Check if the condition is met to do a reset. This is if for more than {@link #RESET_TIME_MINUTES} workers are running,
    * but no messages were on the queue it's time to free all tasks.
    * @param runningWorkers number of workers running
    * @param numberOfMessages number of messages on queue
@@ -46,7 +46,7 @@ class QueueWatchDog {
       if (firstProblem == 0) {
         firstProblem = new Date().getTime();
       } else {
-        doReset = calculatedDiffTime(new Date().getTime() - firstProblem) > RESET_TIME;
+        doReset = calculatedDiffTime(new Date().getTime() - firstProblem) > RESET_TIME_MINUTES;
       }
     } else {
       firstProblem = 0;

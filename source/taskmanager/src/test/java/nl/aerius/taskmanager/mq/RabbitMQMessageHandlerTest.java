@@ -34,11 +34,11 @@ import nl.aerius.taskmanager.domain.Message;
 /**
  * Test class for {@link RabbitMQMessageHandler}.
  */
-public class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
+class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
 
   @Test
   @Timeout(10000)
-  public void testMessageReceivedHandler() throws IOException, InterruptedException {
+  void testMessageReceivedHandler() throws IOException, InterruptedException {
     final String taskQueueName = "queue1";
     final byte[] receivedBody = "4321".getBytes();
     final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(taskQueueName);

@@ -14,16 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.client.mq;
+package nl.aerius.taskmanager.mq;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -32,27 +29,30 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 
 /**
  * Test class for {@link RabbitMQQueueMonitor}.
  */
-public class RabbitMQQueueMonitorTest {
+class RabbitMQQueueMonitorTest {
 
   private static final String DUMMY = "dummy";
 
   @Test
-  public void testGetWorkerQueueState() throws InterruptedException {
+  void testGetWorkerQueueState() throws InterruptedException {
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost(DUMMY).brokerPort(0).brokerUsername(DUMMY).brokerPassword(DUMMY).build();
     final AtomicInteger workerSize = new AtomicInteger();
-    final AtomicInteger messagesSize = new AtomicInteger();
-    final QueueUpdateHandler mwps = new QueueUpdateHandler() {
+    final WorkerSizeObserver mwps = new WorkerSizeObserver() {
+      @Override
+      public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
+        workerSize.set(numberOfWorkers);
+      }
 
       @Override
-      public void onQueueUpdate(final String queueName, final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesReady) {
-        workerSize.set(numberOfWorkers);
-        messagesSize.set(numberOfMessages);
+      public void onDeltaNumberOfWorkersUpdate(final int deltaNumberOfWorkers) {
+        // not tested here.
       }
     };
     final RabbitMQQueueMonitor rpm = new RabbitMQQueueMonitor(configuration) {
@@ -67,16 +67,11 @@ public class RabbitMQQueueMonitorTest {
         }
       }
     };
-    rpm.addQueueUpdateHandler(DUMMY, mwps);
-    final ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
-      executor.execute(rpm);
-      Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-      rpm.shutdown();
+      rpm.updateWorkerQueueState(DUMMY, mwps);
       assertEquals(4, workerSize.get(), "Number of workers");
-      assertEquals(3, messagesSize.get(), "Number of messages");
     } finally {
-      executor.shutdown();
+      rpm.shutdown();
     }
   }
 

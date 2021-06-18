@@ -27,7 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerFinishedHandler;
-import nl.aerius.taskmanager.client.mq.QueueUpdateHandler;
+import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 
 /**
@@ -36,7 +37,7 @@ import nl.aerius.taskmanager.exception.NoFreeWorkersException;
  * <p>Reserved workers are workers that are waiting for a task to become available on the queue.
  * <p>Running workers are workers for that are busy running the task and are waiting for the task to finish.
  */
-class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
+class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMetrics {
 
   private static final Logger LOG = LoggerFactory.getLogger(WorkerPool.class);
 
@@ -58,7 +59,7 @@ class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
   /**
    * Send the task to the worker by placing it on the worker queue.
    *
-   * @param worker worker worker that is running
+   * @param task task to send to the worker
    * @throws IOException
    */
   public void sendTaskToWorker(final Task task) throws IOException {
@@ -83,12 +84,14 @@ class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
     }
   }
 
+  @Override
   public int getCurrentWorkerSize() {
     synchronized (this) {
       return freeWorkers.availablePermits() + runningWorkers.size();
     }
   }
 
+  @Override
   public int getRunningWorkerSize() {
     synchronized (this) {
       return runningWorkers.size();
@@ -100,13 +103,20 @@ class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
     releaseWorker(taskId);
   }
 
+  /**
+   * Adds the worker to the pool of available workers and calls onWorkerReady.
+   *
+   * @param taskId Id of the task to release
+   */
   public void releaseWorker(final String taskId) {
     releaseWorker(taskId, runningWorkers.get(taskId));
   }
 
   /**
    * Adds the worker to the pool of available workers and calls onWorkerReady.
-   * @param task task to release
+   *
+   * @param taskId Id of the task that was reported done and can be released
+   * @param queueName queue the task is expected to be on.
    */
   public void releaseWorker(final String taskId, final String queueName) {
     if (queueName != null) {
@@ -118,6 +128,8 @@ class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
             freeWorkers.release(1);
           }
           runningWorkers.remove(taskId);
+        } else {
+          LOG.info("[{}][taskId:{}] Task for queue '{}' not found, maybe it was already released).", workerQueueName, taskId, queueName);
         }
       }
       workerUpdateHandler.onTaskFinished(queueName);
@@ -141,6 +153,13 @@ class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
     }
   }
 
+  @Override
+  public void onDeltaNumberOfWorkersUpdate(final int delta) {
+    synchronized (this) {
+      updateNumberOfWorkers(totalConfiguredWorkers + delta);
+    }
+  }
+
   /**
    * Sets the number of workers which are actually available. This number should
    * be determined on the number of workers that are actually in operation.
@@ -155,22 +174,26 @@ class WorkerPool implements QueueUpdateHandler, WorkerFinishedHandler {
    * @param numberOfMessagesReady Actual number of messages waiting to be picked up
    */
   @Override
-  public void onQueueUpdate(final String queueName, final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesReady) {
-    final int deltaWorkers;
+  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
     synchronized (this) {
-      totalConfiguredWorkers = numberOfWorkers;
-      deltaWorkers = totalConfiguredWorkers - getCurrentWorkerSize();
-      if (deltaWorkers > 0) {
-        freeWorkers.release(deltaWorkers);
-        LOG.info("# Workers of {} increased to {}(+{})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
-      } else if ((deltaWorkers < 0) && (freeWorkers.availablePermits() > 0)) {
-        freeWorkers.acquireUninterruptibly(Math.min(freeWorkers.availablePermits(), -deltaWorkers));
-        LOG.info("# Workers of {} descreased to {}({})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
-      }
+      updateNumberOfWorkers(numberOfWorkers);
       checkDeadTasks(numberOfMessages);
-      if (deltaWorkers != 0) {
-        workerUpdateHandler.onWorkerPoolSizeChange(totalConfiguredWorkers);
-      }
+    }
+  }
+
+  private void updateNumberOfWorkers(final int numberOfWorkers) {
+    totalConfiguredWorkers = numberOfWorkers;
+    final int deltaWorkers = totalConfiguredWorkers - getCurrentWorkerSize();
+
+    if (deltaWorkers > 0) {
+      freeWorkers.release(deltaWorkers);
+      LOG.info("# Workers of {} increased to {}(+{})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
+    } else if ((deltaWorkers < 0) && (freeWorkers.availablePermits() > 0)) {
+      freeWorkers.acquireUninterruptibly(Math.min(freeWorkers.availablePermits(), -deltaWorkers));
+      LOG.info("# Workers of {} decreased to {}({})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
+    }
+    if (deltaWorkers != 0) {
+      workerUpdateHandler.onWorkerPoolSizeChange(totalConfiguredWorkers);
     }
   }
 

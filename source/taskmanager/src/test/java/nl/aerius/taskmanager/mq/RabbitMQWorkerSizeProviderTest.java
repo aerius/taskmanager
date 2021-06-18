@@ -14,37 +14,38 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.mq;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
-import java.util.Properties;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.mockito.Mockito;
 
-import nl.aerius.taskmanager.domain.TaskManagerConfiguration;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 
 /**
- * Test for {@link ConfigurationManager}.
+ * Test class for {@link RabbitMQWorkerSizeProvider}
  */
-class ConfigurationManagerTest {
+public class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
 
-  private Properties properties;
+  private RabbitMQWorkerSizeProvider provider;
 
+  @Override
   @BeforeEach
-  void before() throws IOException {
-    final String propFile = getClass().getClassLoader().getResource("taskmanager_test.properties").getPath();
-    properties = ConfigurationManager.getPropertiesFromFile(propFile);
+  void setUp() throws Exception {
+    super.setUp();
+    provider = new RabbitMQWorkerSizeProvider(executor, factory);
   }
 
   @Test
-  @Timeout(2000)
-  void testLoadConfiguration() throws IOException {
-    final TaskManagerConfiguration tmc = ConfigurationManager.loadConfiguration(properties);
-
-    assertNotNull(tmc.getBrokerConfiguration().getBrokerUsername(), "No username could be read from configuration file");
+  void testStartShutdown() throws IOException {
+    final WorkerSizeObserver dummyObserver = Mockito.mock(WorkerSizeObserver.class);
+    provider.addObserver("test", dummyObserver);
+    provider.start();
+    provider.shutdown();
+    assertFalse(provider.removeObserver("test"), "Observer should already have been removed");
   }
 }

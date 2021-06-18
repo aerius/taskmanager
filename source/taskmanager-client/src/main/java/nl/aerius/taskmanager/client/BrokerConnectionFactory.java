@@ -29,8 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 
@@ -90,6 +88,7 @@ public class BrokerConnectionFactory {
     Connection connection = null;
     boolean retry = true;
     int retryTime = 0;
+
     while (retry) {
       retryTime += WAIT_BEFORE_RETRY_SECONDS;
       try {
@@ -100,14 +99,11 @@ public class BrokerConnectionFactory {
         delayRetry(retryTime);
       }
     }
-    connection.addShutdownListener(new ShutdownListener() {
-      @Override
-      public void shutdownCompleted(final ShutdownSignalException cause) {
-        if (cause.isInitiatedByApplication()) {
-          LOG.info("Connection was shut down (by application)");
-        } else {
-          LOG.warn("Connection has been shut down, trying to reconnect", cause);
-        }
+    connection.addShutdownListener((cause) -> {
+      if (cause.isInitiatedByApplication()) {
+        LOG.info("Connection was shut down (by application)");
+      } else {
+        LOG.warn("Connection has been shut down, trying to reconnect", cause);
       }
     });
     return connection;

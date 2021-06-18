@@ -17,10 +17,12 @@
 package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
+import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 
 /**
@@ -28,19 +30,28 @@ import nl.aerius.taskmanager.client.BrokerConnectionFactory;
  */
 public class RabbitMQAdaptorFactory implements AdaptorFactory {
 
+  private final ScheduledExecutorService executorService;
   private final BrokerConnectionFactory factory;
 
   /**
-   * Constructor, initialized with rabbitmq connection factory.
+   * Constructor, initialized with RabbitMQ connection factory.
+   *
+   * @param executorService executor service
    * @param factory connection factory
    */
-  public RabbitMQAdaptorFactory(final BrokerConnectionFactory factory) {
+  public RabbitMQAdaptorFactory(final ScheduledExecutorService executorService, final BrokerConnectionFactory factory) {
+    this.executorService = executorService;
     this.factory = factory;
   }
 
   @Override
   public TaskMessageHandler createTaskMessageHandler(final String taskQueueName) throws IOException {
     return new RabbitMQMessageHandler(factory, taskQueueName);
+  }
+
+  @Override
+  public WorkerSizeProviderProxy createWorkerSizeProvider() {
+    return new RabbitMQWorkerSizeProvider(executorService, factory);
   }
 
   @Override

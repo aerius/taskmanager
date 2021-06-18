@@ -35,6 +35,7 @@ import nl.aerius.metrics.MetricFactory;
 import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
+import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
 
@@ -48,12 +49,15 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
   private final ExecutorService executorService;
   private final AdaptorFactory factory;
   private final TaskSchedulerFactory<T, S> schedulerFactory;
+  private final WorkerSizeProviderProxy workerSizeObserverProxy;
   private final Map<String, TaskScheduleBucket> buckets = new HashMap<>();
 
-  public TaskManager(final ExecutorService executorService, final AdaptorFactory factory, final TaskSchedulerFactory<T, S> schedulerFactory) {
+  public TaskManager(final ExecutorService executorService, final AdaptorFactory factory, final TaskSchedulerFactory<T, S> schedulerFactory,
+      final WorkerSizeProviderProxy workerSizeObserverProxy) {
     this.executorService = executorService;
     this.factory = factory;
     this.schedulerFactory = schedulerFactory;
+    this.workerSizeObserverProxy = workerSizeObserverProxy;
   }
 
   /**
@@ -112,7 +116,8 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       LOG.info("Worker Queue Name:{}", workerQueueName);
       workerProducer = factory.createWorkerProducer(workerQueueName);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
-      workerProducer.start(executorService, workerPool);
+      workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
+      workerProducer.start();
       // Set up metrics
       WorkerPoolMetrics.setupMetrics(MetricFactory.getMetrics(), workerPool, workerQueueName);
 

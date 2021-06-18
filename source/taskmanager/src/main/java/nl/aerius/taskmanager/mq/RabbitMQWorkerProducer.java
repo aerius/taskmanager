@@ -19,7 +19,6 @@ package nl.aerius.taskmanager.mq;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -36,8 +35,6 @@ import com.rabbitmq.client.ShutdownSignalException;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.QueueConstants;
-import nl.aerius.taskmanager.client.mq.QueueUpdateHandler;
-import nl.aerius.taskmanager.client.mq.RabbitMQQueueMonitor;
 import nl.aerius.taskmanager.domain.Message;
 
 /**
@@ -51,7 +48,6 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   private static final int DEFAULT_RETRY_SECONDS = 10;
 
-  private RabbitMQQueueMonitor wpManager;
   private final BrokerConnectionFactory factory;
   private final String workerQueueName;
 
@@ -69,10 +65,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void start(final ExecutorService executorService, final QueueUpdateHandler workerPool) throws IOException {
-    wpManager = new RabbitMQQueueMonitor(factory.getConnectionConfiguration());
-    wpManager.addQueueUpdateHandler(workerQueueName, workerPool);
-    executorService.execute(wpManager);
+  public void start() {
     tryStartReplyConsumer();
   }
 
@@ -110,7 +103,6 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   @Override
   public void shutdown() {
     isShutdown = true;
-    wpManager.shutdown();
   }
 
   private String getWorkerReplyQueue() {

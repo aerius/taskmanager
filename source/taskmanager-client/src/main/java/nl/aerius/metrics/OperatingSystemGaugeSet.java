@@ -89,69 +89,24 @@ public class OperatingSystemGaugeSet implements MetricSet {
   }
 
   private void addFileDescriptorGauges(final Map<String, Metric> gauges) {
-    gauges.put("fileDescriptorRatio", new Gauge<Double>() {
-      @Override
-      public Double getValue() {
-        return invokeRatio(openFileDescriptorCount, maxFileDescriptorCount);
-      }
-    });
+    gauges.put("fileDescriptorRatio", (Gauge<Double>) () -> invokeRatio(openFileDescriptorCount, maxFileDescriptorCount));
   }
 
   private void addMemoryGauges(final Map<String, Metric> gauges) {
-    gauges.put("committedVirtualMemorySize", new Gauge<Long>() {
-      @Override
-      public Long getValue() {
-        return invokeLong(committedVirtualMemorySize);
-      }
-    });
-    gauges.put("freePhysicalMemorySize", new Gauge<Long>() {
-      @Override
-      public Long getValue() {
-        return invokeLong(freePhysicalMemorySize);
-      }
-    });
-    gauges.put("totalPhysicalMemorySize", new Gauge<Long>() {
-      @Override
-      public Long getValue() {
-        return invokeLong(totalPhysicalMemorySize);
-      }
-    });
+    gauges.put("committedVirtualMemorySize", (Gauge<Long>) () -> invokeLong(committedVirtualMemorySize));
+    gauges.put("freePhysicalMemorySize", (Gauge<Long>) () -> invokeLong(freePhysicalMemorySize));
+    gauges.put("totalPhysicalMemorySize", (Gauge<Long>) () -> invokeLong(totalPhysicalMemorySize));
   }
 
   private void addCpuGauges(final Map<String, Metric> gauges) {
-    gauges.put("processCpuTime", new Gauge<Long>() {
-      @Override
-      public Long getValue() {
-        return invokeLong(processCpuTime);
-      }
-    });
-    gauges.put("systemCpuLoad", new Gauge<Double>() {
-      @Override
-      public Double getValue() {
-        return invokeDouble(systemCpuLoad);
-      }
-    });
-    gauges.put("processCpuLoad", new Gauge<Double>() {
-      @Override
-      public Double getValue() {
-        return invokeDouble(processCpuLoad);
-      }
-    });
+    gauges.put("processCpuTime", (Gauge<Long>) () -> invokeLong(processCpuTime));
+    gauges.put("systemCpuLoad", (Gauge<Double>) () -> invokeDouble(systemCpuLoad));
+    gauges.put("processCpuLoad", (Gauge<Double>) () -> invokeDouble(processCpuLoad));
   }
 
   private void addSwapGauges(final Map<String, Metric> gauges) {
-    gauges.put("totalSwapSpaceSize", new Gauge<Long>() {
-      @Override
-      public Long getValue() {
-        return invokeLong(totalSwapSpaceSize);
-      }
-    });
-    gauges.put("freeSwapSpaceSize", new Gauge<Long>() {
-      @Override
-      public Long getValue() {
-        return invokeLong(freeSwapSpaceSize);
-      }
-    });
+    gauges.put("totalSwapSpaceSize", (Gauge<Long>) () -> invokeLong(totalSwapSpaceSize));
+    gauges.put("freeSwapSpaceSize", (Gauge<Long>) () -> invokeLong(freeSwapSpaceSize));
   }
 
   private Optional<Method> getMethod(final String name) {
@@ -170,7 +125,7 @@ public class OperatingSystemGaugeSet implements MetricSet {
       try {
         return (long) method.get().invoke(mxBean);
       } catch (IllegalAccessException | InvocationTargetException ite) {
-        LOG.error("Cannot invoke method. {}", method.toString(), ite);
+        LOG.error("Cannot invoke method. {}", method, ite);
         return 0L;
       }
     }
@@ -182,7 +137,7 @@ public class OperatingSystemGaugeSet implements MetricSet {
       try {
         return (double) method.get().invoke(mxBean);
       } catch (IllegalAccessException | InvocationTargetException ite) {
-        LOG.error("Cannot invoke method. {}", method.toString(), ite);
+        LOG.error("Cannot invoke method: {}", method, ite);
         return 0D;
       }
     }
