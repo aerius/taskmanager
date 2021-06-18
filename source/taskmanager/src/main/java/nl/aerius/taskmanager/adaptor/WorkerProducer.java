@@ -33,8 +33,6 @@ public interface WorkerProducer {
 
   /**
    * Starts the worker producer.
-   * @param queueSizeObserver set number of workers available on worker pool when number of workers changes.
-   * @throws IOException connection errors
    */
   void start();
 

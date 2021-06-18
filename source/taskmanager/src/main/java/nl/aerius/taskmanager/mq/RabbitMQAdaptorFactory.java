@@ -34,9 +34,9 @@ public class RabbitMQAdaptorFactory implements AdaptorFactory {
   private final BrokerConnectionFactory factory;
 
   /**
-   * Constructor, initialized with rabbitmq connection factory.
+   * Constructor, initialized with RabbitMQ connection factory.
+   *
    * @param executorService executor service
-   * @param queueChannelWatcher
    * @param factory connection factory
    */
   public RabbitMQAdaptorFactory(final ScheduledExecutorService executorService, final BrokerConnectionFactory factory) {

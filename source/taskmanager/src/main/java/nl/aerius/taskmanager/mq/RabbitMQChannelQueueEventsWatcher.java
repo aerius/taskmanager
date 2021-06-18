@@ -65,7 +65,7 @@ class RabbitMQChannelQueueEventsWatcher {
   /**
    * Start the watcher.
    *
-   * @throws IOException
+   * @throws IOException Throws IOException in case of communication problems with RabbitMQ
    */
   public void start() throws IOException {
     final Connection c = factory.getConnection();

@@ -66,9 +66,8 @@ public class RabbitMQQueueMonitor {
   private final HttpClientContext context;
 
   /**
-   * Constructor
+   * Constructor/
    *
-   * @param executorService scheduled executor to run the update process on a scheduled thread.
    * @param configuration Connection configuration
    */
   public RabbitMQQueueMonitor(final ConnectionConfiguration configuration) {

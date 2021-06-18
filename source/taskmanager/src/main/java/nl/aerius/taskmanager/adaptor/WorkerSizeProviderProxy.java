@@ -50,7 +50,7 @@ public interface WorkerSizeProviderProxy {
   /**
    * Starts the worker size provider.
    *
-   * @throws IOException
+   * @throws IOException Throws IOException in case of communication problems with RabbitMQ
    */
   void start() throws IOException;
 
