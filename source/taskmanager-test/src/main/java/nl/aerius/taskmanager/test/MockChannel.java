@@ -78,8 +78,7 @@ public class MockChannel extends MockShutdownNotifier implements Channel {
 
   @Override
   public final void basicPublish(final String exchange, final String routingKey, final boolean mandatory, final BasicProperties props,
-      final byte[] body)
-          throws IOException {
+      final byte[] body) throws IOException {
     basicPublish(exchange, routingKey, mandatory, false, props, body);
   }
 

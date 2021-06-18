@@ -78,8 +78,8 @@ class AbstractRabbitMQTest {
     adapterFactory = new RabbitMQAdaptorFactory(executor, factory);
   }
 
-
-  @AfterEach public void releaseMocks() throws Exception {
+  @AfterEach
+  void releaseMocks() throws Exception {
     closeable.close();
   }
 

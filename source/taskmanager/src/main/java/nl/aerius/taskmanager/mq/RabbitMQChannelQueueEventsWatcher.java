@@ -88,11 +88,10 @@ class RabbitMQChannelQueueEventsWatcher {
           return;
         }
 
-        LOG.trace("Event: {} - queue: {}", event , queueName);
+        LOG.trace("Event: {} - queue: {}", event, queueName);
         if (CONSUMER_CREATED.equals(event)) {
           observer.onDeltaNumberOfWorkersUpdate(1);
-        }
-        else /* consumer.deleted is the only other possibility */ {
+        } else { // consumer.deleted is the only other possibility
           observer.onDeltaNumberOfWorkersUpdate(-1);
         }
       }

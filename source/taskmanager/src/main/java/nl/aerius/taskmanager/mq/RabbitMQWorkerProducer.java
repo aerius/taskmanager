@@ -54,7 +54,6 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   private WorkerFinishedHandler workerFinishedHandler;
   private boolean isShutdown;
 
-
   public RabbitMQWorkerProducer(final BrokerConnectionFactory factory, final String workerQueueName) {
     this.factory = factory;
     this.workerQueueName = workerQueueName;

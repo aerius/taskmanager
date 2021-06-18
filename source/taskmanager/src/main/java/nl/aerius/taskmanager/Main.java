@@ -104,7 +104,8 @@ public final class Main {
     final AdaptorFactory aFactory = new RabbitMQAdaptorFactory(scheduledExecutorService, bcFactory);
     final WorkerSizeProviderProxy workerSizeObserver = aFactory.createWorkerSizeProvider();
     final PriorityTaskSchedulerFactory schedulerFactory = new PriorityTaskSchedulerFactory();
-    final TaskManager<PriorityTaskQueue, PriorityTaskSchedule> manager = new TaskManager<>(executorService, aFactory, schedulerFactory, workerSizeObserver);
+    final TaskManager<PriorityTaskQueue, PriorityTaskSchedule> manager = new TaskManager<>(executorService, aFactory, schedulerFactory,
+        workerSizeObserver);
     final TaskSchedulerWatcher<PriorityTaskQueue, PriorityTaskSchedule> watcher = new TaskSchedulerWatcher<>(manager, schedulerFactory,
         tmConfig.getConfigurationDirectory());
 

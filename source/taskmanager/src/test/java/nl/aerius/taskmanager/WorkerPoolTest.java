@@ -66,7 +66,8 @@ class WorkerPoolTest {
   @Test
   void testWorkerPoolSizing() throws InterruptedException, IOException {
     assertSame(0, workerPool.getCurrentWorkerSize(), "Check if workerPool size is empty at start");
-    workerPool.onNumberOfWorkersUpdate(10, 0);;
+    workerPool.onNumberOfWorkersUpdate(10, 0);
+    ;
     assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is changed after sizing");
     assertEquals(10, numberOfWorkers, "Check if workerPool change handler called.");
     workerPool.reserveWorker();
@@ -85,7 +86,8 @@ class WorkerPoolTest {
 
   @Test
   void testWorkerPoolScaleDown() throws IOException, InterruptedException {
-    workerPool.onNumberOfWorkersUpdate(5, 0);;
+    workerPool.onNumberOfWorkersUpdate(5, 0);
+    ;
     final Task task1 = createTask();
     workerPool.sendTaskToWorker(task1);
     final Task task2 = createTask();
@@ -93,7 +95,8 @@ class WorkerPoolTest {
     final Task task3 = createTask();
     workerPool.sendTaskToWorker(task3);
     assertSame(5, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after 2 workers running");
-    workerPool.onNumberOfWorkersUpdate(1, 0);;
+    workerPool.onNumberOfWorkersUpdate(1, 0);
+    ;
     assertSame(1, workerPool.getWorkerSize(), "Check if workerPool size is lower");
     assertSame(3, workerPool.getCurrentWorkerSize(), "Check if current workerPool size is same after decreasing # workers");
     workerPool.releaseWorker(task1.getId());
@@ -106,7 +109,8 @@ class WorkerPoolTest {
 
   @Test
   void testReleaseTaskTwice() throws IOException, InterruptedException {
-    workerPool.onNumberOfWorkersUpdate(2, 0);;
+    workerPool.onNumberOfWorkersUpdate(2, 0);
+    ;
     final Task task1 = createTask();
     workerPool.sendTaskToWorker(task1);
     final String id = task1.getId();
@@ -122,7 +126,8 @@ class WorkerPoolTest {
   @Test
   void testSendSameTaskTwice() throws IOException, InterruptedException {
     assertThrows(TaskAlreadySentException.class, () -> {
-      workerPool.onNumberOfWorkersUpdate(3, 0);;
+      workerPool.onNumberOfWorkersUpdate(3, 0);
+      ;
       final Task task1 = createTask();
       workerPool.sendTaskToWorker(task1);
       workerPool.sendTaskToWorker(task1);
@@ -131,7 +136,8 @@ class WorkerPoolTest {
 
   @Test
   void testMessageDeliverd() throws IOException, InterruptedException {
-    workerPool.onNumberOfWorkersUpdate(1, 0);;
+    workerPool.onNumberOfWorkersUpdate(1, 0);
+    ;
     final Task task1 = createTask();
     workerPool.sendTaskToWorker(task1);
     assertNotSame(0, message.getDeliveryTag(), "Check if message is delivered");

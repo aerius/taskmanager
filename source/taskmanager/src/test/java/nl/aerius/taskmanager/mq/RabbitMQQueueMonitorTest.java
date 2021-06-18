@@ -49,6 +49,7 @@ class RabbitMQQueueMonitorTest {
       public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
         workerSize.set(numberOfWorkers);
       }
+
       @Override
       public void onDeltaNumberOfWorkersUpdate(final int deltaNumberOfWorkers) {
         // not tested here.
