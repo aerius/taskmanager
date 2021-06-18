@@ -126,7 +126,7 @@ public class RabbitMQWorkerMonitor {
               // Eat error when closing channel.
             }
             start();
-            LOG.info("Restarted worker event monitor ; {}", consumerTag);
+            LOG.info("Restarted worker event monitor {}", consumerTag);
           } catch (final IOException e) {
             LOG.debug("Worker event monitor restart failed", e);
           }
@@ -169,7 +169,12 @@ public class RabbitMQWorkerMonitor {
   private int getParamInt(final Map<String, Object> headers, final String param, final int other) {
     final String value = getParam(headers, param);
 
-    return value == null ? other : Integer.valueOf(value);
+    try {
+      return value == null ? other : Integer.valueOf(value);
+    } catch (final NumberFormatException e) {
+      LOG.error("Error parsing param " + param + ", not an int value but: " + value, e);
+      return other;
+    }
   }
 
   /**

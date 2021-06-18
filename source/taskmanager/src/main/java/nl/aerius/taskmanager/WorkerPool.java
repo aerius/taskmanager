@@ -129,7 +129,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
           }
           runningWorkers.remove(taskId);
         } else {
-          LOG.info("[{}][taskId:{}] Task for queue '{} 'not found, maybe it was already released).", workerQueueName, taskId, queueName);
+          LOG.info("[{}][taskId:{}] Task for queue '{}' not found, maybe it was already released).", workerQueueName, taskId, queueName);
         }
       }
       workerUpdateHandler.onTaskFinished(queueName);

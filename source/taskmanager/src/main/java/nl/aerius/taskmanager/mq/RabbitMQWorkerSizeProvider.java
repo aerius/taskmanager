@@ -100,7 +100,9 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
 
   @Override
   public void shutdown() {
-    observers.forEach((k, v) -> removeObserver(k));
+    for (final String key : observers.keySet()) {
+      removeObserver(key);
+    }
     eventProducer.shutdown();
     channelQueueEventsWatcher.shutdown();
   }

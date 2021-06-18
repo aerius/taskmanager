@@ -131,7 +131,7 @@ public class RabbitMQWorkerEventProducer {
       headers.put(HEADER_PARAM_UTILISATION, utilisation);
       final BasicProperties props = new BasicProperties().builder().headers(headers).build();
       channel.basicPublish(AERIUS_EVENT_EXCHANGE, "", props, null);
-      LOG.info("Publish event for queue {} - size: {}, utilisation: {}", queueName, size, utilisation);
+      LOG.debug("Publish event for queue {} - size: {}, utilisation: {}", queueName, size, utilisation);
     } finally {
       channel.close();
     }

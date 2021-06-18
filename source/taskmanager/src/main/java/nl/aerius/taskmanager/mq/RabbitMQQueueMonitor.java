@@ -66,7 +66,7 @@ public class RabbitMQQueueMonitor {
   private final HttpClientContext context;
 
   /**
-   * Constructor/
+   * Constructor.
    *
    * @param configuration Connection configuration
    */
