@@ -26,7 +26,6 @@
   </parent>
 
   <artifactId>taskmanager-test</artifactId>
-  <packaging>jar</packaging>
 
   <name>Taskmanager :: Test Library</name>
   <description>A Library to help with testing Taskmanager (Client) code</description>
@@ -36,6 +35,11 @@
     <dependency>
       <groupId>com.rabbitmq</groupId>
       <artifactId>amqp-client</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
     </dependency>
 
     <!-- Logging -->

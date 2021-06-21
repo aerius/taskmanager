@@ -152,13 +152,8 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
   }
 
   private void lockClient(final TaskConsumer taskConsumer) {
-    synchronized (taskConsumerLocks) {
-      if (!taskConsumerLocks.containsKey(taskConsumer)) {
-        taskConsumerLocks.put(taskConsumer, new Semaphore(NUMBER_CONCURRENT_PREFETCHES));
-      }
-    }
     try {
-      taskConsumerLocks.get(taskConsumer).acquire();
+      taskConsumerLocks.computeIfAbsent(taskConsumer, tc -> new Semaphore(NUMBER_CONCURRENT_PREFETCHES)).acquire();
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
     }

@@ -160,9 +160,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
       if (old != null && !old.equals(queue)) {
         LOG.info("Queue {} was updated with new values: {}", queueName, queue);
       }
-      if (!tasksOnWorkersPerQueue.containsKey(queueName)) {
-        tasksOnWorkersPerQueue.put(queueName, new AtomicInteger());
-      }
+      tasksOnWorkersPerQueue.computeIfAbsent(queueName, qn -> new AtomicInteger());
     }
   }
 

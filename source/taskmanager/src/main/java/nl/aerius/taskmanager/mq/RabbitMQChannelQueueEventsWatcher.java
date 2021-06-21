@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -48,7 +47,6 @@ class RabbitMQChannelQueueEventsWatcher {
 
   private final BrokerConnectionFactory factory;
   private final WorkerSizeProviderProxy proxy;
-  private Consumer consumer;
   private Channel channel;
 
   /**
@@ -72,21 +70,24 @@ class RabbitMQChannelQueueEventsWatcher {
     channel = c.createChannel();
     final String q = channel.queueDeclare().getQueue();
     channel.queueBind(q, AMQ_RABBITMQ_EVENT, CHANNEL_PATTERN);
+    channel.basicConsume(q, true, createConsumer());
+  }
 
-    consumer = new DefaultConsumer(channel) {
+  private DefaultConsumer createConsumer() {
+    return new DefaultConsumer(channel) {
       @Override
       public void handleDelivery(final String consumerTag, final Envelope envelope, final AMQP.BasicProperties properties, final byte[] body)
           throws IOException {
-        final String event = envelope.getRoutingKey();
         final Map<String, Object> headers = properties.getHeaders();
         final Object queue = headers.get(HEADER_PARAM_QUEUE);
         final String queueName = queue == null ? null : queue.toString();
         final WorkerSizeObserver observer = proxy.getWorkerSizeObserver(queueName);
 
         if (observer == null) {
-          LOG.debug("No handler to watch channel changes for queue: " + queueName);
+          LOG.debug("No handler to watch channel changes for queue: {}", queueName);
           return;
         }
+        final String event = envelope.getRoutingKey();
 
         LOG.trace("Event: {} - queue: {}", event, queueName);
         if (CONSUMER_CREATED.equals(event)) {
@@ -104,11 +105,7 @@ class RabbitMQChannelQueueEventsWatcher {
           LOG.debug("Channel watcher {} was shut down.", consumerTag);
           // restart
           try {
-            try {
-              channel.abort();
-            } catch (final IOException e) {
-              // Eat error when closing channel.
-            }
+            safeAbort();
             start();
             LOG.info("Restarted channel watcher; {}", consumerTag);
           } catch (final IOException e) {
@@ -116,8 +113,15 @@ class RabbitMQChannelQueueEventsWatcher {
           }
         }
       }
+
+      private void safeAbort() {
+        try {
+          channel.abort();
+        } catch (final IOException e) {
+          // Eat error when closing channel.
+        }
+      }
     };
-    channel.basicConsume(q, true, consumer);
   }
 
   public void shutdown() {

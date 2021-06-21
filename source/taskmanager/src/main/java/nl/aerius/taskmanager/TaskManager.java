@@ -148,14 +148,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
 
     private void addOrUpdateTaskQueue(final T taskQueueConfiguration) {
       final String taskQueueName = taskQueueConfiguration.getQueueName();
-
-      if (!taskConsumers.containsKey(taskQueueName)) {
-        try {
-          addTaskConsumer(taskQueueName);
-        } catch (final IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }
+      addTaskConsumerIfAbsent(taskQueueName);
       taskScheduler.updateQueue(taskQueueConfiguration);
     }
 
@@ -165,11 +158,17 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
      * @param taskQueueName queue name of the task consumer
      * @throws IOException
      */
-    public void addTaskConsumer(final String taskQueueName) throws IOException {
-      final TaskConsumer taskConsumer = new TaskConsumer(taskQueueName, dispatcher, factory);
-      executorService.execute(taskConsumer);
-      taskConsumers.put(taskQueueName, taskConsumer);
-      LOG.info("Started task queue {}", taskQueueName);
+    public void addTaskConsumerIfAbsent(final String taskQueueName) {
+      taskConsumers.computeIfAbsent(taskQueueName, tqn -> {
+        try {
+          final TaskConsumer taskConsumer = new TaskConsumer(taskQueueName, dispatcher, factory);
+          executorService.execute(taskConsumer);
+          LOG.info("Started task queue {}", taskQueueName);
+          return taskConsumer;
+        } catch (final IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      });
     }
 
     /**

@@ -58,7 +58,8 @@ public final class MetricFactory {
     }
 
     final String host = getHost(properties);
-    if (host == null) {
+
+    if (host == null || host.isBlank()) {
       LOG.error("No graphite host specified. Metrics will not be reported (but they will be collected regardless;"
           + " if not reporting metrics is intended it is advised to make this an option in MetricFactory.)");
       return;
@@ -82,7 +83,7 @@ public final class MetricFactory {
     final int interval = Integer.parseInt(properties.getProperty(GRAPHITE_REPORT_INTERVAL, GRAPHITE_REPORT_INTERVAL_DEFAULT));
     graphiteReporter.start(interval, TimeUnit.SECONDS);
 
-    LOG.error("Metric reporting initialized on prefix [{}] toward Graphite instance {}:{}", fullPrefix, host, port);
+    LOG.info("Metric reporting initialized on prefix [{}] toward Graphite instance {}:{}", fullPrefix, host, port);
   }
 
   private static String getHost(final Properties properties) {

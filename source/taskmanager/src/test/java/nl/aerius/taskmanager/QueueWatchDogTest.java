@@ -16,12 +16,11 @@
  */
 package nl.aerius.taskmanager;
 
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.concurrent.TimeUnit;
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
@@ -32,24 +31,18 @@ class QueueWatchDogTest {
 
   @Test
   void testIsItDead() throws InterruptedException {
+    final AtomicReference<LocalDateTime> now = new AtomicReference<>(LocalDateTime.now());
     final QueueWatchDog qwd = new QueueWatchDog() {
       @Override
-      protected long calculatedDiffTime(final long diff) {
-        return diff / 100; //1th of a second
-      };
+      protected LocalDateTime now() {
+        return now.get();
+      }
     };
     assertFalse(qwd.isItDead(false, 0), "No running workers, with no messages, no problem");
     assertFalse(qwd.isItDead(false, 10), "No running workers, no problem");
     assertFalse(qwd.isItDead(true, 10), "Running workers, with messages, no problem");
     assertFalse(qwd.isItDead(true, 0), "Running workers, with no messages, possible problem, we just wait");
-    await().atMost(2, TimeUnit.SECONDS).until(() -> qwd.isItDead(true, 0));
+    now.set(now.get().plusMinutes(20)); //fast forward 20 minutes.
     assertTrue(qwd.isItDead(true, 0), "Running workers, with no messages, after specified time; yes reset");
-  }
-
-  @Test
-  void testCalculatedDiffTime() {
-    final QueueWatchDog qwd = new QueueWatchDog();
-    final long minutes = 10;
-    assertEquals(minutes, qwd.calculatedDiffTime(TimeUnit.MINUTES.toMillis(minutes)), "Check if correctly calcualted in minutes");
   }
 }
