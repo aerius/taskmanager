@@ -31,12 +31,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.client.TaskWrapper.TaskWrapperSender;
 import nl.aerius.taskmanager.client.util.QueueHelper;
 import nl.aerius.taskmanager.test.MockedChannelFactory;
-import nl.aerius.taskmanager.test.MockedChannelFactory.MockChannel;
 
 /**
  * Test class for {@link TaskResultConsumer}.
@@ -48,7 +48,7 @@ class TaskResultConsumerTest {
   private static final String FINAL_RESULT = "FINALLY! FREEDOM!";
 
   private MockTaskSender sender;
-  private MockChannel channel;
+  private Channel channel;
 
   @BeforeEach
   void setUp() throws Exception {
