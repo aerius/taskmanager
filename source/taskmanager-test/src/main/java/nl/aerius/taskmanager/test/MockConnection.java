@@ -65,7 +65,7 @@ public class MockConnection extends MockShutdownNotifier implements Connection {
 
   @Override
   public Channel createChannel() throws IOException {
-    return new MockChannel();
+    return MockedChannelFactory.create();
   }
 
   @Override

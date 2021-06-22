@@ -18,7 +18,6 @@ package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -122,12 +121,12 @@ public class RabbitMQQueueMonitor {
         observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
         LOG.trace("[{}] active workers:{}", queueName, numberOfWorkers);
       }
-    } catch (URISyntaxException | UnsupportedEncodingException e) {
+    } catch (final URISyntaxException e) {
       LOG.error("RabbitMQQueueMonitor", e);
     }
   }
 
-  private int getJsonIntPrimitive(final JsonObject jsonObject, final String key) {
+  private static int getJsonIntPrimitive(final JsonObject jsonObject, final String key) {
     final int value;
     if (jsonObject == null || jsonObject.getAsJsonPrimitive(key) == null) {
       value = 0;
@@ -137,7 +136,7 @@ public class RabbitMQQueueMonitor {
     return value;
   }
 
-  protected JsonElement getJsonResultFromApi(final String apiPath) throws URISyntaxException, UnsupportedEncodingException {
+  protected JsonElement getJsonResultFromApi(final String apiPath) throws URISyntaxException {
     JsonElement returnElement = null;
     final URI uri = new URI("http://" + configuration.getBrokerHost() + ":" + configuration.getBrokerManagementPort() + apiPath);
     try (final CloseableHttpResponse response = httpClient.execute(targetHost, new HttpGet(uri), context)) {
@@ -156,7 +155,7 @@ public class RabbitMQQueueMonitor {
     return returnElement;
   }
 
-  private RequestConfig getDefaultRequestConfig() {
+  private static RequestConfig getDefaultRequestConfig() {
     return RequestConfig.custom()
         .setConnectTimeout(TIMEOUT)
         .setConnectionRequestTimeout(TIMEOUT)

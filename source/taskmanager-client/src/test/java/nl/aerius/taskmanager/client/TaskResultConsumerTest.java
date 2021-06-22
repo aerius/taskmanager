@@ -35,7 +35,8 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.client.TaskWrapper.TaskWrapperSender;
 import nl.aerius.taskmanager.client.util.QueueHelper;
-import nl.aerius.taskmanager.test.MockChannel;
+import nl.aerius.taskmanager.test.MockedChannelFactory;
+import nl.aerius.taskmanager.test.MockedChannelFactory.MockChannel;
 
 /**
  * Test class for {@link TaskResultConsumer}.
@@ -52,7 +53,7 @@ class TaskResultConsumerTest {
   @BeforeEach
   void setUp() throws Exception {
     sender = new MockTaskSender();
-    channel = new MockChannel();
+    channel = MockedChannelFactory.create();
   }
 
   @Test

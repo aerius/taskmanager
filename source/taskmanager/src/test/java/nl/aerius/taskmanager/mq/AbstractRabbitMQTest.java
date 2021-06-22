@@ -23,18 +23,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
 
 import com.rabbitmq.client.Connection;
 
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
-import nl.aerius.taskmanager.test.MockChannel;
+import nl.aerius.taskmanager.test.MockedChannelFactory;
+import nl.aerius.taskmanager.test.MockedChannelFactory.MockChannel;
 
 /**
  * Abstract base class for RabbitMQ tests.
@@ -45,10 +44,6 @@ class AbstractRabbitMQTest {
   protected BrokerConnectionFactory factory;
   protected MockChannel mockChannel;
   protected AdaptorFactory adapterFactory;
-
-  private @Mock Connection mockConnection;
-  private @Mock RabbitMQChannelQueueEventsWatcher mockChannelWatcher;
-  private AutoCloseable closeable;
 
   @BeforeAll
   static void setupClass() {
@@ -63,10 +58,10 @@ class AbstractRabbitMQTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    closeable = MockitoAnnotations.openMocks(this);
-    mockChannel = new MockChannel();
+    final Connection mockConnection = Mockito.mock(Connection.class);
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost("localhost").brokerUsername("guest").brokerPassword("guest").build();
+    mockChannel = MockedChannelFactory.create();
 
     doReturn(mockChannel).when(mockConnection).createChannel();
     factory = new BrokerConnectionFactory(executor, configuration) {
@@ -76,11 +71,6 @@ class AbstractRabbitMQTest {
       }
     };
     adapterFactory = new RabbitMQAdaptorFactory(executor, factory);
-  }
-
-  @AfterEach
-  void releaseMocks() throws Exception {
-    closeable.close();
   }
 
   protected class DataDock {

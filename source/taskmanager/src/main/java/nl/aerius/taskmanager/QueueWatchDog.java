@@ -16,8 +16,7 @@
  */
 package nl.aerius.taskmanager;
 
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
+import java.time.LocalDateTime;
 
 /**
  * WatchDog to detect dead messages. Dead messages are messages once put on the queue, but those messages have gone. For example because
@@ -31,7 +30,7 @@ class QueueWatchDog {
    */
   private static final long RESET_TIME_MINUTES = 10;
 
-  private long firstProblem;
+  private LocalDateTime firstProblem;
 
   /**
    * Check if the condition is met to do a reset. This is if for more than {@link #RESET_TIME_MINUTES} workers are running,
@@ -43,23 +42,21 @@ class QueueWatchDog {
   public boolean isItDead(final boolean runningWorkers, final int numberOfMessages) {
     boolean doReset = false;
     if (runningWorkers && numberOfMessages == 0) {
-      if (firstProblem == 0) {
-        firstProblem = new Date().getTime();
+      if (firstProblem == null) {
+        firstProblem = now();
       } else {
-        doReset = calculatedDiffTime(new Date().getTime() - firstProblem) > RESET_TIME_MINUTES;
+        doReset = now().isAfter(firstProblem.plusMinutes(RESET_TIME_MINUTES));
       }
     } else {
-      firstProblem = 0;
+      firstProblem = null;
     }
     return doReset;
   }
 
   /**
-   * Convinces method for testing, because the time unit is in minutes, testing would take forever.
-   * @param diff time differences in milliseconds.
-   * @return time differences in minutes
+   * Wrap actual timestamp in this method to be able to use emulated time in unit tests.
    */
-  protected long calculatedDiffTime(final long diff) {
-    return TimeUnit.MILLISECONDS.toMinutes(diff);
+  protected LocalDateTime now() {
+    return LocalDateTime.now();
   }
 }

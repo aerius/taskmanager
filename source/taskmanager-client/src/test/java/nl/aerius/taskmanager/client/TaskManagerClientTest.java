@@ -49,26 +49,26 @@ class TaskManagerClientTest {
   private static final WorkerQueueType WORKER_TYPE_TEST = new WorkerQueueType("TEST");
   private static final String NORMAL_TASK_ID = "SomeTaskId";
   private static final String TASK_QUEUE_NAME = "taskmanagerclienttest.task";
-  private static ExecutorService executor;
+  private static ExecutorService EXECUTOR;
   private WorkerQueueType workerType;
   private TaskManagerClientSender taskManagerClient;
   private MockTaskResultHandler mockTaskResultHandler;
 
   @BeforeAll
   static void setupClass() {
-    executor = Executors.newSingleThreadExecutor();
+    EXECUTOR = Executors.newSingleThreadExecutor();
   }
 
   @AfterAll
   static void afterClass() {
-    executor.shutdown();
+    EXECUTOR.shutdown();
   }
 
   @BeforeEach
   void setUp() throws Exception {
     mockTaskResultHandler = new MockTaskResultHandler();
     workerType = WORKER_TYPE_TEST;
-    taskManagerClient = new TaskManagerClientSender(new BrokerConnectionFactory(executor) {
+    taskManagerClient = new TaskManagerClientSender(new BrokerConnectionFactory(EXECUTOR) {
       @Override
       protected Connection createNewConnection() throws IOException {
         return new MockConnection();

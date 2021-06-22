@@ -17,7 +17,6 @@
 package nl.aerius.taskmanager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -40,7 +39,7 @@ class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurationHand
   private final Gson gson = new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation().create();
 
   @Override
-  public PriorityTaskSchedule read(final File file) throws FileNotFoundException, IOException {
+  public PriorityTaskSchedule read(final File file) throws IOException {
     try (final Reader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
       return gson.fromJson(reader, PriorityTaskSchedule.class);
     }

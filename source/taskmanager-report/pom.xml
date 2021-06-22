@@ -26,10 +26,9 @@
   </parent>
 
   <artifactId>taskmanager-report</artifactId>
-  <packaging>jar</packaging>
 
   <name>Taskmanager :: Report</name>
-  <description>AERIUS Taskmanager SonarQube Jacoco module to collect Covarage reports</description>
+  <description>AERIUS Taskmanager SonarQube Jacoco module to collect Coverage reports</description>
 
   <properties>
     <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
