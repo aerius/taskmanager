@@ -27,13 +27,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 import nl.aerius.taskmanager.test.MockedChannelFactory;
-import nl.aerius.taskmanager.test.MockedChannelFactory.MockChannel;
 
 /**
  * Abstract base class for RabbitMQ tests.
@@ -42,7 +42,7 @@ class AbstractRabbitMQTest {
 
   protected static ScheduledExecutorService executor;
   protected BrokerConnectionFactory factory;
-  protected MockChannel mockChannel;
+  protected Channel mockChannel;
   protected AdaptorFactory adapterFactory;
 
   @BeforeAll

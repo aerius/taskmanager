@@ -44,7 +44,6 @@ import com.rabbitmq.client.AMQP.Queue.DeclareOk;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.ShutdownNotifier;
 
 /**
  * Factory class that creates a mocked channel.
@@ -53,13 +52,10 @@ import com.rabbitmq.client.ShutdownNotifier;
  */
 public class MockedChannelFactory {
 
-  public interface MockChannel extends ShutdownNotifier, Channel {
-  }
-
   private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
   private static final Map<String, PriorityBlockingQueue<Body>> QUEUES = new ConcurrentHashMap<>();
   private static final Map<Long, Body> QUEUED = new ConcurrentHashMap<>();
-  private static byte[] RECEIVED;
+  private static byte[] received;
 
   /**
    * Creates a new mocked channel.
@@ -67,7 +63,7 @@ public class MockedChannelFactory {
    * @return mocked channel
    * @throws IOException
    */
-  public static MockChannel create() throws IOException {
+  public static Channel create() throws IOException {
     return create((p, b) -> b);
   }
 
@@ -79,9 +75,9 @@ public class MockedChannelFactory {
    * @return mocked channel
    * @throws IOException
    */
-  public static MockChannel create(final BiFunction<BasicProperties, byte[], byte[]> mockResults) throws IOException {
+  public static Channel create(final BiFunction<BasicProperties, byte[], byte[]> mockResults) throws IOException {
     reset();
-    final MockChannel channel = Mockito.mock(MockChannel.class);
+    final Channel channel = Mockito.mock(Channel.class);
     mockBasicPublish(channel);
     mockBasicConsume(channel, mockResults);
     mockAck(channel);
@@ -93,14 +89,14 @@ public class MockedChannelFactory {
   private static void reset() {
     QUEUES.clear();
     QUEUED.clear();
-    RECEIVED = null;
+    received = null;
   }
 
   public static byte[] getReceived() {
-    return RECEIVED.clone();
+    return received.clone();
   }
 
-  private static void mockAck(final MockChannel channel) throws IOException {
+  private static void mockAck(final Channel channel) throws IOException {
     doAnswer(inv -> {
       QUEUED.remove(inv.getArgument(0));
       return null;
@@ -115,7 +111,7 @@ public class MockedChannelFactory {
     }).when(channel).basicNack(anyLong(), anyBoolean(), anyBoolean());
   }
 
-  private static void mockBasicPublish(final MockChannel channel) throws IOException {
+  private static void mockBasicPublish(final Channel channel) throws IOException {
     doAnswer(inv -> basicPublish(inv, 1, 2, 3)).when(channel).basicPublish(any(), any(), any(), any());
     doAnswer(inv -> basicPublish(inv, 1, 3, 4)).when(channel).basicPublish(any(), any(), anyBoolean(), any(), any());
     doAnswer(inv -> basicPublish(inv, 1, 4, 5)).when(channel).basicPublish(any(), any(), anyBoolean(), anyBoolean(), any(), any());
@@ -127,16 +123,16 @@ public class MockedChannelFactory {
   }
 
   private static void basicPublish(final String routingKey, final BasicProperties props, final byte[] body) {
-    RECEIVED = body == null ? new byte[0] : body.clone();
+    received = body == null ? new byte[0] : body.clone();
     if (routingKey != null) {
-      getQueue(routingKey).add(new Body(routingKey, RECEIVED, props));
+      getQueue(routingKey).add(new Body(routingKey, received, props));
     }
     if (props.getReplyTo() != null) {
-      getQueue(props.getReplyTo()).add(new Body(routingKey, RECEIVED, props));
+      getQueue(props.getReplyTo()).add(new Body(routingKey, received, props));
     }
   }
 
-  private static void mockBasicConsume(final MockChannel channel, final BiFunction<BasicProperties, byte[], byte[]> mockResults) throws IOException {
+  private static void mockBasicConsume(final Channel channel, final BiFunction<BasicProperties, byte[], byte[]> mockResults) throws IOException {
     final BiFunction<String, Consumer, String> scheduleSupplier = (q, c) -> {
       scheduleCallback(q, c, mockResults);
       return null;
@@ -170,13 +166,13 @@ public class MockedChannelFactory {
     return QUEUES.computeIfAbsent(key, k -> new PriorityBlockingQueue<>(10, (o1, o2) -> Integer.compare(o1.getPriority(), o2.getPriority())));
   }
 
-  private static void mockQueueDeclare(final MockChannel channel) throws IOException {
+  private static void mockQueueDeclare(final Channel channel) throws IOException {
     final DeclareOk mockDeclareOk = Mockito.mock(DeclareOk.class);
     when(mockDeclareOk.getQueue()).thenReturn(UUID.randomUUID().toString());
     when(channel.queueDeclare()).thenReturn(mockDeclareOk);
   }
 
-  private static void mockClosed(final MockChannel channel) throws IOException {
+  private static void mockClosed(final Channel channel) throws IOException {
     final AtomicBoolean closed = new AtomicBoolean();
     final Function<Boolean, Void> close = c -> {
       closed.set(c);

@@ -30,10 +30,6 @@
   <name>Taskmanager :: Application</name>
   <description>AERIUS Taskmanager actual manager/scheduler (standalone)</description>
 
-  <properties>
-    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>nl.aerius</groupId>
