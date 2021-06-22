@@ -5,13 +5,10 @@
       <pattern>%d [%t] %level %c{5} - %msg%n</pattern>
     </encoder>
   </appender>
- 
-  <root>
-    <level value="WARN" />
-    <appender-ref ref="CONSOLE" />
-  </root>
 
-  <logger name="nl.aerius">
-    <level value="INFO" />
-  </logger>
+  <logger name="nl.aerius" level="info" />
+ 
+  <root level="warn">
+    <appender-ref ref="STDOUT" />
+  </root>
 </configuration>
