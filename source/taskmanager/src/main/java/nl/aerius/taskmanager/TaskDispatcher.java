@@ -83,6 +83,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   @Override
   public void run() {
+    Thread.currentThread().setName("TaskDispatcher " + workerQueueName);
     running = true;
     try {
       while (running) {

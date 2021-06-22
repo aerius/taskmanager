@@ -63,7 +63,6 @@ public final class Main {
     if (cmdOptions.printIfInfoOption()) {
       return;
     }
-
     LOG.info("--------------------------------TASKMANAGER STARTED------------------------------------");
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
@@ -71,6 +70,7 @@ public final class Main {
         LOG.info("--------------------------------TASKMANAGER STOPPED-----------------------------------");
       }
     });
+    Thread.currentThread().setName("Main");
     final ExecutorService executorService = Executors.newCachedThreadPool();
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
 
@@ -88,7 +88,6 @@ public final class Main {
 
   /**
    * Starts the task manager.
-   * @param executorService
    *
    * @param executorService dynamic execution service
    * @param scheduledExecutorService scheduled execution service for scheduled tasks
