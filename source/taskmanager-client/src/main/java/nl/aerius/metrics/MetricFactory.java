@@ -60,7 +60,7 @@ public final class MetricFactory {
     final String host = getHost(properties);
 
     if (host == null || host.isBlank()) {
-      LOG.error("No graphite host specified. Metrics will not be reported (but they will be collected regardless;"
+      LOG.info("No graphite host specified. Metrics will not be reported (but they will be collected regardless;"
           + " if not reporting metrics is intended it is advised to make this an option in MetricFactory.)");
       return;
     }

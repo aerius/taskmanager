@@ -43,9 +43,9 @@ class QueueWatchDog {
     boolean doReset = false;
     if (runningWorkers && numberOfMessages == 0) {
       if (firstProblem == null) {
-        firstProblem = now().plusMinutes(RESET_TIME_MINUTES);
+        firstProblem = now();
       } else {
-        doReset = now().isAfter(firstProblem);
+        doReset = now().isAfter(firstProblem.plusMinutes(RESET_TIME_MINUTES));
       }
     } else {
       firstProblem = null;
@@ -54,7 +54,7 @@ class QueueWatchDog {
   }
 
   /**
-   * Convinces method for testing, because the time unit is in minutes, testing would take forever.
+   * Wrap actual timestamp in this method to be able to use emulated time in unit tests.
    */
   protected LocalDateTime now() {
     return LocalDateTime.now();
