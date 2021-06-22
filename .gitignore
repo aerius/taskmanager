@@ -26,9 +26,10 @@ Thumbs.db
 # Development files  #
 ######################
 # Excluded folders used for local configuration in development  
-*/src/test/config/
+**/src/test/config/
 *.bat
 dependency-reduced-pom.xml
+logback-test.xml
 
 # Eclipse files      #
 ######################
