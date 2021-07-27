@@ -65,12 +65,16 @@ class RabbitMQChannelQueueEventsWatcher {
    *
    * @throws IOException Throws IOException in case of communication problems with RabbitMQ
    */
-  public void start() throws IOException {
-    final Connection c = factory.getConnection();
-    channel = c.createChannel();
-    final String q = channel.queueDeclare().getQueue();
-    channel.queueBind(q, AMQ_RABBITMQ_EVENT, CHANNEL_PATTERN);
-    channel.basicConsume(q, true, createConsumer());
+  public void start() {
+    try {
+      final Connection c = factory.getConnection();
+      channel = c.createChannel();
+      final String q = channel.queueDeclare().getQueue();
+      channel.queueBind(q, AMQ_RABBITMQ_EVENT, CHANNEL_PATTERN);
+      channel.basicConsume(q, true, createConsumer());
+    } catch (final IOException e) {
+      LOG.error("Failed to bind to RabbitMQ event queue. No Queue Event watch not available.");
+    }
   }
 
   private DefaultConsumer createConsumer() {
@@ -104,13 +108,9 @@ class RabbitMQChannelQueueEventsWatcher {
         } else {
           LOG.debug("Channel watcher {} was shut down.", consumerTag);
           // restart
-          try {
-            safeAbort();
-            start();
-            LOG.info("Restarted channel watcher; {}", consumerTag);
-          } catch (final IOException e) {
-            LOG.debug("Channel watcher restart failed", e);
-          }
+          safeAbort();
+          start();
+          LOG.info("Restarted channel watcher; {}", consumerTag);
         }
       }
 
