@@ -73,7 +73,7 @@ class RabbitMQChannelQueueEventsWatcher {
       channel.queueBind(q, AMQ_RABBITMQ_EVENT, CHANNEL_PATTERN);
       channel.basicConsume(q, true, createConsumer());
     } catch (final IOException e) {
-      LOG.error("Failed to bind to RabbitMQ event queue. No Queue Event watch not available.");
+      LOG.error("Failed to bind to RabbitMQ event queue. No Queue Event watch not available. Message: {}", e.getMessage());
     }
   }
 
