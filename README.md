@@ -106,7 +106,7 @@ Each queue configuration consists of 3 parameters:
 * `queueName`: The postfix of the client queue of which the task manager constructs the full queue name using the worker queue name.
 So `calculator_ui` becomes `aerius.ops.calculator_ui`, when the `workerQueueName` is `ops`.
 * `priority`: A positive int value determining the priority of the tasks.
-A lower number means a higher priority.
+A higher number means a higher priority.
 * `maxCapacityUse`: A number between 0 and 1 that limits the amount of tasks that are concurrently run for the queue based on the available number of workers.
 For example if the value is `0.6` and there are `10` workers.
 This would mean a maximum of `6` workers will be given a tasks from this queue.
