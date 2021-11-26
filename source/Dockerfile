@@ -21,7 +21,8 @@ WORKDIR /app
 ENV AERIUS_BROKER_HOST="localhost" \
     AERIUS_BROKER_PORT="5672" \
     AERIUS_BROKER_USERNAME="aerius" \
-    AERIUS_BROKER_PASSWORD="aerius"
+    AERIUS_BROKER_PASSWORD="aerius" \
+    JAVA_OPTIONS="-XX:MaxRAMPercentage=75"
 
 # Make queue directory
 RUN mkdir /app/queue
@@ -29,4 +30,4 @@ RUN mkdir /app/queue
 COPY --from=builder /app/app.jar /app/
 COPY taskmanager/src/main/docker/taskmanager.properties /app/
 
-ENTRYPOINT ["java","-jar","app.jar", "-config", "taskmanager.properties"]
+CMD java -server $JAVA_OPTIONS -jar app.jar -config taskmanager.properties
