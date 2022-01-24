@@ -18,6 +18,7 @@ package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,10 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
   private MessageReceivedHandler messageReceivedHandler;
   private RabbitMQMessageConsumer consumer;
   private boolean isShutdown;
+  /**
+   * Set a boolean that is set as long as we're trying to (re)connect to RabbitMQ.
+   */
+  private final AtomicBoolean tryConnecting = new AtomicBoolean();
 
   /**
    * Constructor.
@@ -100,7 +105,9 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
 
   @Override
   public void onConsumerShutdown(final ShutdownSignalException sig) {
-    tryStartConsuming();
+    if (tryConnecting.compareAndSet(false, true)) {
+      tryStartConsuming();
+    }
   }
 
   private void tryStartConsuming() {
@@ -108,7 +115,7 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
     while (!isShutdown) {
       try {
         stopAndStartConsumer();
-        LOG.info("Succesfully (re)started consumer for {}", taskQueueName);
+        LOG.info("Successfully (re)started consumer for {}", taskQueueName);
         break;
       } catch (final ShutdownSignalException | IOException e1) {
         if (warn) {
@@ -140,6 +147,7 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
           this);
 
       consumer.startConsuming();
+      tryConnecting.set(false);
     }
   }
 }
