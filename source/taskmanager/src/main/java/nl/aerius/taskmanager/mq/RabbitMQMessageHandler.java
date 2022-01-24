@@ -100,9 +100,7 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
 
   @Override
   public void onConsumerShutdown(final ShutdownSignalException sig) {
-    if (!sig.isInitiatedByApplication()) {
-      tryStartConsuming();
-    }
+    tryStartConsuming();
   }
 
   private void tryStartConsuming() {
