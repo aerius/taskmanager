@@ -21,10 +21,4 @@ package nl.aerius.taskmanager.domain;
  */
 public class PriorityTaskSchedule extends TaskSchedule<PriorityTaskQueue> {
 
-  /**
-   * @param workerQueueName worker type
-   */
-  public PriorityTaskSchedule(final String workerQueueName) {
-    setWorkerQueueName(workerQueueName);
-  }
 }

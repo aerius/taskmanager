@@ -68,7 +68,8 @@ class PriorityTaskSchedulerTest {
     taskConsumer1 = createMockTaskConsumer(QUEUE1);
     taskConsumer2 = createMockTaskConsumer(QUEUE2);
     final TaskConsumer taskConsumer3 = createMockTaskConsumer(QUEUE3);
-    final PriorityTaskSchedule configuration = new PriorityTaskSchedule("TEST");
+    final PriorityTaskSchedule configuration = new PriorityTaskSchedule();
+    configuration.setWorkerQueueName("TEST");
     final PriorityTaskQueue tc1 = new PriorityTaskQueue(QUEUE1, "", 0, TEST_CAPACITY);
     final PriorityTaskQueue tc2 = new PriorityTaskQueue(QUEUE2, "", 1, TEST_CAPACITY);
     final PriorityTaskQueue tc3 = new PriorityTaskQueue(QUEUE3, "", 1, TEST_CAPACITY);
