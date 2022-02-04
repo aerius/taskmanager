@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -272,7 +273,7 @@ class PriorityTaskSchedulerTest {
   }
 
   private TaskConsumer createMockTaskConsumer(final String taskQueueName) throws IOException {
-    return new TaskConsumer(taskQueueName, new MockForwardTaskHandler(), new MockAdaptorFactory()) {
+    return new TaskConsumer(taskQueueName, mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData messageMetaData) {
         //no-op.
