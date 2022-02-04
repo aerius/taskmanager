@@ -70,7 +70,9 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
   public void stopConsuming() {
     LOG.debug("Stopping consumer {}.", queueName);
     try {
-      getChannel().basicCancel(queueName);
+      if (getChannel().isOpen()) {
+        getChannel().basicCancel(queueName);
+      }
     } catch (final AlreadyClosedException | IOException e) {
       LOG.debug("Exception while stopping consuming, ignoring.", e);
     }
