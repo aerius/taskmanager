@@ -201,7 +201,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
           // no need to log.
           Thread.currentThread().interrupt();
         }
-        LOG.info("Retrying to send task (id:" + wrapper.getTaskId() + ")");
+        LOG.info("Retrying to send task (id: {})", wrapper.getTaskId());
       }
     }
   }

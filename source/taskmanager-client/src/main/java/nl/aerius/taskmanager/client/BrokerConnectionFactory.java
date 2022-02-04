@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ShutdownListener;
 
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 
@@ -70,13 +71,28 @@ public class BrokerConnectionFactory {
 
   /**
    * Returns a connection. If the connection doesn't exists of is closed the connection is created.
-   * @return connection The connection to use.
+   * @return connection An open RabbitMQ connection.
    */
   public Connection getConnection() {
+    return getConnection(null);
+  }
+
+  /**
+  /**
+   * Returns a connection. If the connection doesn't exists of is closed the connection is created.
+   * If a new connection is created it adds the shutdown listener.
+   *
+   * @param shutdownListener listener to add when new connection is created
+   * @return connection An open RabbitMQ connection.
+   */
+  public Connection getConnection(final ShutdownListener shutdownListener) {
     lock.lock();
     try {
       if (connection == null || !connection.isOpen()) {
         connection = openConnection();
+        if (shutdownListener != null) {
+          connection.addShutdownListener(shutdownListener);
+        }
       }
     } finally {
       lock.unlock();

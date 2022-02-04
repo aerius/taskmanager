@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +56,9 @@ public class RabbitMQWorkerEventProducer {
   private final Map<String, WorkerMetrics> metrics = new HashMap<>();
   private final ScheduledExecutorService executor;
   private ScheduledFuture<?> future;
+  // maps to keep track of last know values to only log differences.
+  private final Map<String, Integer> logCacheSize = new HashMap<>();
+  private final Map<String, Integer> logCacheUtilisation = new HashMap<>();
 
   /**
    * Constructor.
@@ -131,9 +135,20 @@ public class RabbitMQWorkerEventProducer {
       headers.put(HEADER_PARAM_UTILISATION, utilisation);
       final BasicProperties props = new BasicProperties().builder().headers(headers).build();
       channel.basicPublish(AERIUS_EVENT_EXCHANGE, "", props, null);
-      LOG.debug("Publish event for queue {} - size: {}, utilisation: {}", queueName, size, utilisation);
+      debugLogState(queueName, size, utilisation);
     } finally {
       channel.close();
+    }
+  }
+
+  private void debugLogState(final String queueName, final int size, final int utilisation) {
+    if (LOG.isDebugEnabled()) {
+      final Integer previousSize = Optional.ofNullable(logCacheSize.put(queueName, size)).orElse(0);
+      final Integer previousUtilisation = Optional.ofNullable(logCacheUtilisation.put(queueName, utilisation)).orElse(0);
+
+      if (utilisation != previousUtilisation || size != previousSize) {
+        LOG.debug("Publish event for queue {} - size: {}, utilisation: {}", queueName, size, utilisation);
+      }
     }
   }
 }

@@ -122,7 +122,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
           }
         });
         startReplyConsumer(connection);
-        LOG.info("Succesfully (re)started reply consumer for queue {}", workerQueueName);
+        LOG.info("Successfully (re)started reply consumer for queue {}", workerQueueName);
         break;
       } catch (final ShutdownSignalException | IOException e1) {
         if (warn) {

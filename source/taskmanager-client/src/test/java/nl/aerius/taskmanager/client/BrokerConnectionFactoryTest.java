@@ -16,7 +16,15 @@
  */
 package nl.aerius.taskmanager.client;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +33,9 @@ import java.util.concurrent.Executors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ShutdownListener;
 
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 
@@ -115,6 +126,28 @@ class BrokerConnectionFactoryTest {
       builder.brokerVirtualHost("");
       new BrokerConnectionFactory(executor, builder.build());
     });
+  }
+
+  @Test
+  void testGetConnectionWithShutdownlistener() throws IOException {
+    final Connection mockConnection = mock(Connection.class);
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
+    final BrokerConnectionFactory factory = new BrokerConnectionFactory(executor, builder.build()) {
+      @Override
+      protected Connection createNewConnection() throws IOException {
+        return mockConnection;
+      }
+    };
+    final ShutdownListener listener = mock(ShutdownListener.class);
+    final Connection connection = factory.getConnection(listener);
+    assertNotNull(connection, "Should not return a null connection");
+    verify(connection, times(2)).addShutdownListener(any());
+
+    // Test if called again with open connection listener is not added.
+    reset(mockConnection);
+    doReturn(true).when(mockConnection).isOpen();
+    final Connection connection2 = factory.getConnection(listener);
+    verify(connection2, never()).addShutdownListener(any());
   }
 
   private ConnectionConfiguration.Builder getFullConnectionConfigurationBuilder() {
