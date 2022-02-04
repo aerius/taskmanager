@@ -121,8 +121,8 @@ public class RabbitMQQueueMonitor {
         observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
         LOG.trace("[{}] active workers:{}", queueName, numberOfWorkers);
       }
-    } catch (final URISyntaxException e) {
-      LOG.error("RabbitMQQueueMonitor", e);
+    } catch (final URISyntaxException | IOException e) {
+      LOG.info("Error getting RabbitMQ status from admin api: {}", e.getMessage());
     }
   }
 
@@ -136,7 +136,7 @@ public class RabbitMQQueueMonitor {
     return value;
   }
 
-  protected JsonElement getJsonResultFromApi(final String apiPath) throws URISyntaxException {
+  protected JsonElement getJsonResultFromApi(final String apiPath) throws URISyntaxException, IOException {
     JsonElement returnElement = null;
     final URI uri = new URI("http://" + configuration.getBrokerHost() + ":" + configuration.getBrokerManagementPort() + apiPath);
     try (final CloseableHttpResponse response = httpClient.execute(targetHost, new HttpGet(uri), context)) {
@@ -146,11 +146,9 @@ public class RabbitMQQueueMonitor {
           returnElement = JsonParser.parseReader(jr);
         }
       } else {
-        LOG.error("Status code wasn't 200 when retrieving json result. Status was: {}, {}",
-            response.getStatusLine().getStatusCode(), response.getStatusLine());
+        throw new IOException(String.format("Status code wasn't 200 when retrieving json result. Status was: %d, %s",
+            response.getStatusLine().getStatusCode(), response.getStatusLine()));
       }
-    } catch (final IOException e) {
-      LOG.error("Exception while trying to retrieve json result.", e);
     }
     return returnElement;
   }
