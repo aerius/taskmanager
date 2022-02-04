@@ -62,7 +62,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     final TaskConsumer taskConsumer = task.getTaskConsumer();
     lockClient(taskConsumer);
     scheduler.addTask(task);
-    LOG.trace("Task for {} added to scheduler {}", workerQueueName, task.getId());
+    LOG.debug("Task for {} added to scheduler {}", workerQueueName, task.getId());
   }
 
   /**
@@ -88,13 +88,13 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     try {
       while (running) {
         state = State.WAIT_FOR_WORKER;
-        LOG.trace("Wait for worker {}", workerQueueName);
+        LOG.debug("Wait for worker {}", workerQueueName);
         workerPool.reserveWorker();
 
         state = State.WAIT_FOR_TASK;
-        LOG.trace("Wait for task {}", workerQueueName);
+        LOG.debug("Wait for task {}", workerQueueName);
         final Task task = scheduler.getNextTask();
-        LOG.trace("Send task to worker {}, ({})", workerQueueName, task.getId());
+        LOG.debug("Send task to worker {}, ({})", workerQueueName, task.getId());
         state = State.DISPATCH_TASK;
         dispatch(task);
       }
@@ -112,7 +112,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
       workerPool.sendTaskToWorker(task);
       unLockClient(task);
     } catch (final NoFreeWorkersException e) {
-      LOG.info("[NoFreeWorkersException] Workers decreased while waiting for task. Rescheduling task.");
+      LOG.info("[NoFreeWorkersException] Workers for queue {} decreased while waiting for task. Rescheduling task.", e.getWorkerQueueName());
       LOG.trace("NoFreeWorkersException thrown", e);
       scheduler.addTask(task);
     } catch (final TaskAlreadySentException e) {
