@@ -47,12 +47,11 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
     tmh.start();
     tmh.addMessageReceivedHandler(new MessageReceivedHandler() {
       @Override
-      public boolean onMessageReceived(final Message message) {
+      public void onMessageReceived(final Message message) {
         if (message instanceof RabbitMQMessage) {
           data.setData(((RabbitMQMessage) message).getBody());
         }
         lock.release(1);
-        return true;
       }
     });
     mockChannel.basicPublish("", taskQueueName, new BasicProperties(), receivedBody);

@@ -46,6 +46,7 @@ public interface TaskMessageHandler<E extends MessageMetaData, M extends Message
 
   /**
    * Called when a message is delivered to a worker.
+   *
    * @param message message delivered to the worker
    * @throws IOException connection errors
    */
@@ -74,10 +75,10 @@ public interface TaskMessageHandler<E extends MessageMetaData, M extends Message
 
     /**
      * Message received from queue.
+     *
      * @param message the message
-     * @return if message handling failed return false else return true
      */
-    boolean onMessageReceived(Message<?> message);
+    void onMessageReceived(Message<?> message);
   }
 
 }

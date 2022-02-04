@@ -60,14 +60,13 @@ class TaskConsumer implements MessageReceivedHandler, Runnable {
   }
 
   @Override
-  public boolean onMessageReceived(final Message<?> message) {
+  public void onMessageReceived(final Message<?> message) {
     if (running) {
       final Task task = new Task(this);
       task.setData(message);
       LOG.trace("Task received from {} for worker send to scheduler ({}).", taskQueueName, task.getId());
       forwardTaskHandler.forwardTask(task);
     }
-    return false;
   }
 
   /**
