@@ -68,6 +68,7 @@ class RabbitMQChannelQueueEventsWatcher {
   public void start() {
     try {
       final Connection c = factory.getConnection();
+      c.addShutdownListener(this::handleShutdownSignal);
       channel = c.createChannel();
       final String q = channel.queueDeclare().getQueue();
       channel.queueBind(q, AMQ_RABBITMQ_EVENT, CHANNEL_PATTERN);
@@ -75,6 +76,20 @@ class RabbitMQChannelQueueEventsWatcher {
     } catch (final IOException e) {
       LOG.error("Failed to bind to RabbitMQ event queue. No Queue Event watch not available. Message: {}", e.getMessage());
     }
+  }
+
+  private void handleShutdownSignal(final ShutdownSignalException sig) {
+    LOG.debug("Channel RabbitMQChannelQueueEventsWatcher was shut down.");
+    // restart
+    try {
+      if (channel != null) {
+        channel.abort();
+      }
+    } catch (final IOException e) {
+      // Eat error when closing channel.
+    }
+    start();
+    LOG.info("Restarted RabbitMQChannelQueueEventsWatcher");
   }
 
   private DefaultConsumer createConsumer() {
@@ -98,27 +113,6 @@ class RabbitMQChannelQueueEventsWatcher {
           observer.onDeltaNumberOfWorkersUpdate(1);
         } else { // consumer.deleted is the only other possibility
           observer.onDeltaNumberOfWorkersUpdate(-1);
-        }
-      }
-
-      @Override
-      public void handleShutdownSignal(final String consumerTag, final ShutdownSignalException sig) {
-        if (sig.isInitiatedByApplication()) {
-          LOG.info("Channel watcher {} was shut down.", consumerTag);
-        } else {
-          LOG.debug("Channel watcher {} was shut down.", consumerTag);
-          // restart
-          safeAbort();
-          start();
-          LOG.info("Restarted channel watcher; {}", consumerTag);
-        }
-      }
-
-      private void safeAbort() {
-        try {
-          channel.abort();
-        } catch (final IOException e) {
-          // Eat error when closing channel.
         }
       }
     };

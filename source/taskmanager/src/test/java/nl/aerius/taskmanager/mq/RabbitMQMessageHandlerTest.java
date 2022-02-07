@@ -53,6 +53,11 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
         }
         lock.release(1);
       }
+
+      @Override
+      public void handleShutdownSignal() {
+        // No-op
+      }
     });
     mockChannel.basicPublish("", taskQueueName, new BasicProperties(), receivedBody);
     lock.tryAcquire(1, 5, TimeUnit.SECONDS);

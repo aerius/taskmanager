@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,13 +36,17 @@ class TaskConsumer implements MessageReceivedHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskConsumer.class);
 
+  private final ExecutorService executorService;
   private final String taskQueueName;
   private final ForwardTaskHandler forwardTaskHandler;
   private final TaskMessageHandler<MessageMetaData, Message<MessageMetaData>> taskMessageHandler;
+
   private boolean running = true;
 
   @SuppressWarnings("unchecked")
-  public TaskConsumer(final String taskQueueName, final ForwardTaskHandler forwardTaskHandler, final AdaptorFactory factory) throws IOException {
+  public TaskConsumer(final ExecutorService executorService, final String taskQueueName, final ForwardTaskHandler forwardTaskHandler,
+      final AdaptorFactory factory) throws IOException {
+    this.executorService = executorService;
     this.taskQueueName = taskQueueName;
     this.forwardTaskHandler = forwardTaskHandler;
     this.taskMessageHandler = factory.createTaskMessageHandler(taskQueueName);
@@ -67,6 +72,12 @@ class TaskConsumer implements MessageReceivedHandler {
       LOG.trace("Task received from {} for worker send to scheduler ({}).", taskQueueName, task.getId());
       forwardTaskHandler.forwardTask(task);
     }
+  }
+
+  @Override
+  public void handleShutdownSignal() {
+    forwardTaskHandler.killTasks();
+    start();
   }
 
   /**
@@ -100,11 +111,13 @@ class TaskConsumer implements MessageReceivedHandler {
   }
 
   public void start() {
-    try {
-      taskMessageHandler.start();
-    } catch (final IOException e) {
-      LOG.error("TaskConsumer for {} got IO problems.", taskQueueName, e);
-    }
+    executorService.submit(() -> {
+      try {
+        taskMessageHandler.start();
+      } catch (final IOException e) {
+        LOG.error("TaskConsumer for {} got IO problems.", taskQueueName, e);
+      }
+    });
   }
 
   /**

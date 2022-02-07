@@ -64,9 +64,15 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   public void addTask(final Task task) {
     synchronized (this) {
       queue.add(task);
-      if (semaphore.hasQueuedThreads() || (semaphore.availablePermits() == 0)) {
-        semaphore.release();
-      }
+      semaphoreRelease();
+    }
+  }
+
+  @Override
+  public void killTasks() {
+    synchronized (this) {
+      queue.stream().forEach(Task::killTask);
+      semaphore.release();
     }
   }
 
@@ -145,8 +151,12 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   @Override
   public void onWorkerPoolSizeChange(final int numberOfWorkers) {
     synchronized (this) {
+      final int oldNumberOfWorkers = this.numberOfWorkers;
       this.numberOfWorkers = numberOfWorkers;
-      semaphoreRelease();
+
+      if (numberOfWorkers > oldNumberOfWorkers) {
+        semaphoreRelease();
+      }
     }
   }
 
@@ -218,6 +228,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   private int comparePrioWithoutTask(final String queueName1, final String queueName2) {
     int cmp = comparePriority(queueName1, queueName2);
+
     if (cmp < 0) {
       cmp = (tasksOnWorkersPerQueue.get(queueName2).intValue() == 0) && (tasksOnWorkersPerQueue.get(queueName1).intValue() > 0) ? 1 : -1;
     } else if (cmp > 0) {

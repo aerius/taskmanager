@@ -36,6 +36,11 @@ interface TaskScheduler<T extends TaskQueue> extends WorkerUpdateHandler {
   void addTask(Task task);
 
   /**
+   * Mark all tasks still waiting to be processed as dead as they can't be processed anymore.
+   */
+  void killTasks();
+
+  /**
    * Returns the next task to process. When no task is present it should wait until a task becomes available.
    * If this method is called it means a worker is available. Therefore the implementation should not be checking
    * something regarding availability of workers.
@@ -70,6 +75,11 @@ interface TaskScheduler<T extends TaskQueue> extends WorkerUpdateHandler {
      */
     TaskScheduler<T> createScheduler(String workerQueueName);
 
+    /**
+     * Returns the handler that persists the scheduler configurations.
+     *
+     * @return handler to read/write scheduler configurations
+     */
     SchedulerFileConfigurationHandler<T, S> getHandler();
   }
 }

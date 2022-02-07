@@ -273,7 +273,7 @@ class PriorityTaskSchedulerTest {
   }
 
   private TaskConsumer createMockTaskConsumer(final String taskQueueName) throws IOException {
-    return new TaskConsumer(taskQueueName, mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
+    return new TaskConsumer(mock(ExecutorService.class), taskQueueName, mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData messageMetaData) {
         //no-op.

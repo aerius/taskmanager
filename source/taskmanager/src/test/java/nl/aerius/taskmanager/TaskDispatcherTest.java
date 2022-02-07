@@ -20,13 +20,13 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +58,7 @@ class TaskDispatcherTest {
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, workerProducer, scheduler);
     dispatcher = new TaskDispatcher(WORKER_QUEUE_NAME_TEST, scheduler, workerPool);
     factory = new MockAdaptorFactory();
-    taskConsumer = new TaskConsumer("testqueue", dispatcher, factory);
+    taskConsumer = new TaskConsumer(executor, "testqueue", dispatcher, factory);
   }
 
   @AfterEach
@@ -71,7 +71,6 @@ class TaskDispatcherTest {
   @Test
   @Timeout(3000)
   void testNoFreeWorkers() throws InterruptedException {
-    final AtomicBoolean unLocked = new AtomicBoolean(false);
     // Add Worker which will unlock
     workerPool.onNumberOfWorkersUpdate(1, 0);
     executor.execute(dispatcher);
@@ -79,7 +78,7 @@ class TaskDispatcherTest {
     // Remove worker, 1 worker locked but at this point no actual workers available.
     workerPool.onNumberOfWorkersUpdate(0, 0);
     // Send task, should get NoFreeWorkersException in dispatcher.
-    forwardTask(unLocked);
+    forwardTaskAsync(createTask(), null);
     // Dispatcher should go back to wait for worker to become available.
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     assertEquals(0, workerPool.getCurrentWorkerSize(), "WorkerPool should be empty");
@@ -90,14 +89,14 @@ class TaskDispatcherTest {
   @Test
   @Timeout(3000)
   void testForwardTest() throws InterruptedException {
-    final AtomicBoolean unLocked = new AtomicBoolean(false);
-    dispatcher.forwardTask(createTask());
+    final Task task = createTask();
+    final Future<?> future = forwardTaskAsync(task, null);
     executor.execute(dispatcher);
-    forwardTask(unLocked);
-    assertFalse(unLocked.get(), "Taskconsumer must be locked at this point");
+    await().until(() -> dispatcher.isLocked(task));
     workerPool.onNumberOfWorkersUpdate(1, 0); //add worker which will unlock
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
-    assertTrue(unLocked.get(), "Taskconsumer must be unlocked at this point");
+    await().until(() -> future.isDone());
+    assertFalse(future.isCancelled(), "Taskconsumer must be unlocked at this point without error");
   }
 
   @Disabled("TaskAlreadySendexception error willl not be thrown")
@@ -106,7 +105,7 @@ class TaskDispatcherTest {
   void testForwardDuplicateTask() throws InterruptedException {
     final Task task = createTask();
     executor.execute(dispatcher);
-    dispatcher.forwardTask(task);
+    final Future<?> future = forwardTaskAsync(task, null);
     await().until(() -> dispatcher.isLocked(task));
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     workerPool.onNumberOfWorkersUpdate(2, 0); //add worker which will unlock
@@ -114,11 +113,11 @@ class TaskDispatcherTest {
     // Now force the issue.
     assertSame(TaskDispatcher.State.WAIT_FOR_TASK, dispatcher.getState(), "Taskdispatcher must be waiting for task");
     // Forwarding same Task object, so same id.
-    dispatcher.forwardTask(task);
+    forwardTaskAsync(task, future);
     await().until(() -> factory.getMockTaskMessageHandler().getAbortedMessage() == null);
     await().until(() -> !dispatcher.isLocked(task));
     // Now test with a non-duplicate Task.
-    dispatcher.forwardTask(createTask());
+    forwardTaskAsync(createTask(), future);
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
   }
 
@@ -128,41 +127,43 @@ class TaskDispatcherTest {
     workerProducer.setShutdownExceptionOnForward(true);
     final Task task = createTask();
     executor.execute(dispatcher);
-    dispatcher.forwardTask(task);
+    final Future<?> future = forwardTaskAsync(task, null);
     await().until(() -> dispatcher.isLocked(task));
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
-    //now open up a worker
+    // Now open up a worker
     workerPool.onNumberOfWorkersUpdate(1, 0);
     // At this point the exception should be thrown. This could be the case when rabbitmq connection is lost for a second.
     // Wait for it to be unlocked again
-    await().until(() -> !dispatcher.isLocked(task));
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_TASK);
     //simulate workerpool being reset
     workerPool.onNumberOfWorkersUpdate(0, 0);
     //now stop throwing exception to indicate connection is restored again
     workerProducer.setShutdownExceptionOnForward(false);
     //simulate connection being restored by first forwarding task again
-    dispatcher.forwardTask(task);
-    await().until(() -> dispatcher.isLocked(task));
+    forwardTaskAsync(task, future);
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     //now simulate the worker being back
     workerPool.onNumberOfWorkersUpdate(1, 0);
     //should now be unlocked, but waiting for worker to be done
-    await().until(() -> !dispatcher.isLocked(task));
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     workerPool.onWorkerFinished(task.getId());
     //should now again be ready to be used
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_TASK);
     // Check if we can send a task again.
-    dispatcher.forwardTask(createTask());
+    forwardTaskAsync(createTask(), future);
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     // If state changed at this point we're reasonably sure the dispatcher is still functional.
   }
 
-  private void forwardTask(final AtomicBoolean unLocked) {
-    executor.execute(() -> {
-      dispatcher.forwardTask(createTask());
-      unLocked.set(true);
+  private Future<?> forwardTaskAsync(final Task task, final Future<?> previous) {
+    return executor.submit(() -> {
+      try {
+        if (previous != null) {
+          previous.get();
+        }
+        dispatcher.forwardTask(task);
+      } catch (InterruptedException | ExecutionException e) {
+      }
     });
   }
 

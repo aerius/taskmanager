@@ -53,10 +53,16 @@ public interface WorkerProducer {
    */
   interface WorkerFinishedHandler {
     /**
-     * Called when worker finished task.
+     * Called when worker finished a task.
      * @param taskId id of the task finished
      */
     void onWorkerFinished(String taskId);
+
+    /**
+     * Instruct the handler to reset; that means all tasks that are waiting to be finished will never be marked as finished and therefor should
+     * be cleaned up.
+     */
+    void reset();
   }
 
   /**
