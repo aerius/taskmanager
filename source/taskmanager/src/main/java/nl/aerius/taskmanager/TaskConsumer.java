@@ -100,7 +100,6 @@ class TaskConsumer implements MessageReceivedHandler {
   }
 
   public void start() {
-    Thread.currentThread().setName("TaskConsumer " + taskQueueName);
     try {
       taskMessageHandler.start();
     } catch (final IOException e) {
