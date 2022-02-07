@@ -21,7 +21,6 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -110,13 +109,13 @@ class TaskSchedulerWatcher<T extends TaskQueue, S extends TaskSchedule<T>> imple
     }
   }
 
-  private void updateTaskScheduler(final File file) throws FileNotFoundException, IOException, InterruptedException {
+  private void updateTaskScheduler(final File file) throws IOException, InterruptedException {
     final TaskSchedule<T> schedule = rewriteQueueNames(file);
     schedulerManager.updateTaskScheduler(schedule);
     schedulerFiles.put(file.getName(), schedule.getWorkerQueueName());
   }
 
-  private S rewriteQueueNames(final File file) throws FileNotFoundException, IOException {
+  private S rewriteQueueNames(final File file) throws IOException {
     final S schedule = schedulerFactory.getHandler().read(file);
     final WorkerQueueType workerQueueType = new WorkerQueueType(schedule.getWorkerQueueName());
 
@@ -133,7 +132,7 @@ class TaskSchedulerWatcher<T extends TaskQueue, S extends TaskSchedule<T>> imple
     }
   }
 
-  private void init() throws FileNotFoundException, IOException, InterruptedException {
+  private void init() throws IOException, InterruptedException {
     final File directory = watchDirectoryPath.toFile();
     final String[] files = directory.list((f, s) -> s.endsWith(CONFIG_FILE_EXTENSION));
 

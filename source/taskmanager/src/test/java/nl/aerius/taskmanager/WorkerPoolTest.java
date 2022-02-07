@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 
@@ -55,7 +56,7 @@ class WorkerPoolTest {
       }
     };
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, new MockWorkerProducer(), workerUpdateHandler);
-    taskConsumer = new TaskConsumer("testqueue", new MockForwardTaskHandler(), new MockAdaptorFactory()) {
+    taskConsumer = new TaskConsumer("testqueue", mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData message) {
         WorkerPoolTest.this.message = (RabbitMQMessageMetaData) message;

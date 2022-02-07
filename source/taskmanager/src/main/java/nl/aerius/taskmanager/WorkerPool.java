@@ -133,7 +133,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
         }
       }
       workerUpdateHandler.onTaskFinished(queueName);
-      LOG.trace("[{}][taskId:{}] Task released).", workerQueueName, taskId);
+      LOG.debug("[{}][taskId:{}] Task released).", workerQueueName, taskId);
     }
   }
 
@@ -171,7 +171,6 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
    *
    * @param numberOfWorkers Actual size of number of workers in operation
    * @param numberOfMessages Actual total number of messages on the queue
-   * @param numberOfMessagesReady Actual number of messages waiting to be picked up
    */
   @Override
   public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {

@@ -17,7 +17,6 @@
 package nl.aerius.taskmanager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import nl.aerius.taskmanager.domain.TaskQueue;
@@ -35,10 +34,9 @@ interface SchedulerFileConfigurationHandler<T extends TaskQueue, S extends TaskS
    *
    * @param file file to read
    * @return data object
-   * @throws FileNotFoundException
    * @throws IOException
    */
-  S read(File file) throws FileNotFoundException, IOException;
+  S read(File file) throws IOException;
 
   /**
    * Writes the schedule to a file.

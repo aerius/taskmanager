@@ -16,19 +16,9 @@
  */
 package nl.aerius.taskmanager.domain;
 
-import java.io.Serializable;
-
 /**
  * The configuration of a TaskScheduler.
  */
-public class PriorityTaskSchedule extends TaskSchedule<PriorityTaskQueue> implements Serializable {
+public class PriorityTaskSchedule extends TaskSchedule<PriorityTaskQueue> {
 
-  private static final long serialVersionUID = 2L;
-
-  /**
-   * @param workerQueueName worker type
-   */
-  public PriorityTaskSchedule(final String workerQueueName) {
-    setWorkerQueueName(workerQueueName);
-  }
 }

@@ -88,7 +88,7 @@ class RabbitMQChannelQueueEventsWatcher {
         final WorkerSizeObserver observer = proxy.getWorkerSizeObserver(queueName);
 
         if (observer == null) {
-          LOG.debug("No handler to watch channel changes for queue: {}", queueName);
+          LOG.trace("No handler to watch channel changes for queue: {}", queueName);
           return;
         }
         final String event = envelope.getRoutingKey();

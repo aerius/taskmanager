@@ -162,7 +162,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       taskConsumers.computeIfAbsent(taskQueueName, tqn -> {
         try {
           final TaskConsumer taskConsumer = new TaskConsumer(taskQueueName, dispatcher, factory);
-          executorService.execute(taskConsumer);
+          taskConsumer.start();
           LOG.info("Started task queue {}", taskQueueName);
           return taskConsumer;
         } catch (final IOException e) {

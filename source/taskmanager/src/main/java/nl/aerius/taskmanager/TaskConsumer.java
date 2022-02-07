@@ -31,7 +31,7 @@ import nl.aerius.taskmanager.domain.MessageMetaData;
  * Task manager part of retrieving tasks from the client queues and send them to the dispatcher, which in case will send them to the scheduler.
  * It also listens to if the message was successfully send to the worker.
  */
-class TaskConsumer implements MessageReceivedHandler, Runnable {
+class TaskConsumer implements MessageReceivedHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskConsumer.class);
 
@@ -60,14 +60,13 @@ class TaskConsumer implements MessageReceivedHandler, Runnable {
   }
 
   @Override
-  public boolean onMessageReceived(final Message<?> message) {
+  public void onMessageReceived(final Message<?> message) {
     if (running) {
       final Task task = new Task(this);
       task.setData(message);
       LOG.trace("Task received from {} for worker send to scheduler ({}).", taskQueueName, task.getId());
       forwardTaskHandler.forwardTask(task);
     }
-    return false;
   }
 
   /**
@@ -100,9 +99,7 @@ class TaskConsumer implements MessageReceivedHandler, Runnable {
     taskMessageHandler.messageDeliveryAborted(message, exception);
   }
 
-  @Override
-  public void run() {
-    Thread.currentThread().setName("TaskConsumer " + taskQueueName);
+  public void start() {
     try {
       taskMessageHandler.start();
     } catch (final IOException e) {

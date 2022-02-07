@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -68,7 +69,8 @@ class PriorityTaskSchedulerTest {
     taskConsumer1 = createMockTaskConsumer(QUEUE1);
     taskConsumer2 = createMockTaskConsumer(QUEUE2);
     final TaskConsumer taskConsumer3 = createMockTaskConsumer(QUEUE3);
-    final PriorityTaskSchedule configuration = new PriorityTaskSchedule("TEST");
+    final PriorityTaskSchedule configuration = new PriorityTaskSchedule();
+    configuration.setWorkerQueueName("TEST");
     final PriorityTaskQueue tc1 = new PriorityTaskQueue(QUEUE1, "", 0, TEST_CAPACITY);
     final PriorityTaskQueue tc2 = new PriorityTaskQueue(QUEUE2, "", 1, TEST_CAPACITY);
     final PriorityTaskQueue tc3 = new PriorityTaskQueue(QUEUE3, "", 1, TEST_CAPACITY);
@@ -271,7 +273,7 @@ class PriorityTaskSchedulerTest {
   }
 
   private TaskConsumer createMockTaskConsumer(final String taskQueueName) throws IOException {
-    return new TaskConsumer(taskQueueName, new MockForwardTaskHandler(), new MockAdaptorFactory()) {
+    return new TaskConsumer(taskQueueName, mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData messageMetaData) {
         //no-op.
