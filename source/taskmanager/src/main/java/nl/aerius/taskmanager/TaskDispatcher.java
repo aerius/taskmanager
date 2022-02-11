@@ -72,10 +72,10 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   @Override
   public void killTasks() {
-    // Remove all locks to let RabbitMQ message handlers continue and close shutdown.
-    taskConsumerLocks.forEach((t, s) -> s.release());
     // Tell the scheduler to mark all tasks it tracks to be dead.
     scheduler.killTasks();
+    // Remove all locks to let RabbitMQ message handlers continue and close shutdown.
+    taskConsumerLocks.forEach((t, s) -> s.release());
     LOG.debug("Tasks removed from scheduler {}", workerQueueName);
   }
 
