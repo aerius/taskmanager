@@ -103,12 +103,6 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
     }
   }
 
-  @Override
-  public void onConsumerShutdown(final ShutdownSignalException sig) {
-    if (tryConnecting.compareAndSet(false, true)) {
-      tryStartConsuming();
-    }
-  }
 
   private void tryStartConsuming() {
     boolean warn = true;
@@ -145,9 +139,17 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
           factory.getConnection().createChannel(),
           taskQueueName,
           this);
-
+      consumer.getChannel().addShutdownListener(e -> handleShutdownSignal(e));
       consumer.startConsuming();
       tryConnecting.set(false);
+    }
+  }
+
+  private void handleShutdownSignal(final ShutdownSignalException sig) {
+    if (tryConnecting.compareAndSet(false, true)) {
+      if (messageReceivedHandler != null) {
+        messageReceivedHandler.handleShutdownSignal();
+      }
     }
   }
 }

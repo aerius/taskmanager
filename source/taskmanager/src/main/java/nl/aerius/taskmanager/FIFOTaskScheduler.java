@@ -35,6 +35,11 @@ class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
   }
 
   @Override
+  public void killTasks() {
+    tasks.stream().forEach(Task::killTask);
+  }
+
+  @Override
   public Task getNextTask() throws InterruptedException {
     return tasks.take();
   }

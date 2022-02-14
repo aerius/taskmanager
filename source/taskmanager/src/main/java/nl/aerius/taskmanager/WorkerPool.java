@@ -103,6 +103,16 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
     releaseWorker(taskId);
   }
 
+  @Override
+  public void reset() {
+    synchronized (this) {
+      for (final Entry<String, String> taskEntry : runningWorkers.entrySet()) {
+        releaseWorker(taskEntry.getKey(), taskEntry.getValue());
+      }
+      updateNumberOfWorkers(0);
+    }
+  }
+
   /**
    * Adds the worker to the pool of available workers and calls onWorkerReady.
    *
@@ -199,12 +209,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   private void checkDeadTasks(final int numberOfMessages) {
     if (watchDog.isItDead(!runningWorkers.isEmpty(), numberOfMessages)) {
       LOG.info("It looks like some tasks are zombies on {} worker queue, so all tasks currently in state running are released.", workerQueueName);
-      for (final Entry<String, String> taskEntry : runningWorkers.entrySet()) {
-        //TODO releasing a worker also should send an error to the originator as a result to inform the
-        //     sender the task was cancelled. The originator can then check if the task already was received correctly
-        //     or if it will be received later on to see if the job must be done again.
-        releaseWorker(taskEntry.getKey(), taskEntry.getValue());
-      }
+      reset();
     }
   }
 }

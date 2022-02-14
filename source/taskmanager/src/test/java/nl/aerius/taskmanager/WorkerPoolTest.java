@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -56,7 +57,7 @@ class WorkerPoolTest {
       }
     };
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, new MockWorkerProducer(), workerUpdateHandler);
-    taskConsumer = new TaskConsumer("testqueue", mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
+    taskConsumer = new TaskConsumer(mock(ExecutorService.class), "testqueue", mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData message) {
         WorkerPoolTest.this.message = (RabbitMQMessageMetaData) message;

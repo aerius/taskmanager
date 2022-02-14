@@ -27,7 +27,6 @@ import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.ShutdownSignalException;
 
 /**
  * Implementation of RabbitMQ's DefaultConsumer for the taskmanager.
@@ -39,9 +38,6 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
   interface ConsumerCallback {
 
     void onMessageReceived(RabbitMQMessage message);
-
-    void onConsumerShutdown(final ShutdownSignalException sig);
-
   }
 
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQMessageConsumer.class);
@@ -69,6 +65,7 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
 
   public void stopConsuming() {
     LOG.debug("Stopping consumer {}.", queueName);
+
     try {
       if (getChannel().isOpen()) {
         getChannel().basicCancel(queueName);
@@ -76,12 +73,6 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
     } catch (final AlreadyClosedException | IOException e) {
       LOG.debug("Exception while stopping consuming, ignoring.", e);
     }
-  }
-
-  @Override
-  public void handleShutdownSignal(final String consumerTag, final ShutdownSignalException sig) {
-    LOG.debug("Consumer {} was shut down.", consumerTag);
-    callback.onConsumerShutdown(sig);
   }
 
   @Override
@@ -107,7 +98,9 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
   }
 
   public void nack(final RabbitMQMessageMetaData message) throws IOException {
-    getChannel().basicNack(message.getDeliveryTag(), false, true);
+    final Channel channel = getChannel();
+    if (channel.isOpen()) {
+      channel.basicNack(message.getDeliveryTag(), false, true);
+    }
   }
-
 }

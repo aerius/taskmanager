@@ -79,6 +79,11 @@ public interface TaskMessageHandler<E extends MessageMetaData, M extends Message
      * @param message the message
      */
     void onMessageReceived(Message<?> message);
+
+    /**
+     * Called when the Consumer was shutdown.
+     */
+    void handleShutdownSignal();
   }
 
 }

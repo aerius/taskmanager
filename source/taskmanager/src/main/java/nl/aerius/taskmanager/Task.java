@@ -26,6 +26,7 @@ import nl.aerius.taskmanager.domain.MessageMetaData;
 class Task {
   private Message<?> data;
   private final TaskConsumer taskConsumer;
+  private boolean alive = true;
 
   public Task(final TaskConsumer taskConsumer) {
     this.taskConsumer = taskConsumer;
@@ -46,6 +47,14 @@ class Task {
 
   public void setData(final Message<?> data) {
     this.data = data;
+  }
+
+  public void killTask() {
+    this.alive = false;
+  }
+
+  public boolean isAlive() {
+    return alive;
   }
 
   @Override

@@ -56,6 +56,6 @@ public class RabbitMQAdaptorFactory implements AdaptorFactory {
 
   @Override
   public WorkerProducer createWorkerProducer(final String workerQueueName) {
-    return new RabbitMQWorkerProducer(factory, workerQueueName);
+    return new RabbitMQWorkerProducer(executorService, factory, workerQueueName);
   }
 }

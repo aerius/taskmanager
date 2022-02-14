@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -29,12 +30,11 @@ import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 import nl.aerius.taskmanager.exception.TaskAlreadySentException;
 
 /**
- * Control center for processing tasks. Task
+ * Control center for processing tasks.
  */
 class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskDispatcher.class);
-  private static final int NUMBER_CONCURRENT_PREFETCHES = 1;
 
   /**
    * Represents the current state the TaskDispatcher is in.
@@ -43,26 +43,40 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     WAIT_FOR_WORKER, WAIT_FOR_TASK, DISPATCH_TASK;
   }
 
-  private final ConcurrentHashMap<TaskConsumer, Semaphore> taskConsumerLocks = new ConcurrentHashMap<>();
+  private final Map<TaskConsumer, Semaphore> taskConsumerLocks = new ConcurrentHashMap<>();
   private final WorkerPool workerPool;
-  private final TaskScheduler scheduler;
+  private final TaskScheduler<?> scheduler;
 
   private boolean running;
   private State state;
   private final String workerQueueName;
 
-  public TaskDispatcher(final String workerQueueName, final TaskScheduler scheduler, final WorkerPool workerPool) {
+  public TaskDispatcher(final String workerQueueName, final TaskScheduler<?> scheduler, final WorkerPool workerPool) {
     this.workerQueueName = workerQueueName;
     this.scheduler = scheduler;
     this.workerPool = workerPool;
   }
 
+  /**
+   * Forwards task to the scheduler. It allows only one task per taskconsumer to be ready to be scheduled.
+   * To do this it blocks completing this method after passing the task to the scheduler.
+   * Since each taskconsumer runs in it's own thread this blocks per taskconsumer.
+   */
   @Override
   public void forwardTask(final Task task) {
     final TaskConsumer taskConsumer = task.getTaskConsumer();
-    lockClient(taskConsumer);
     scheduler.addTask(task);
     LOG.debug("Task for {} added to scheduler {}", workerQueueName, task.getId());
+    lockClient(taskConsumer);
+  }
+
+  @Override
+  public void killTasks() {
+    // Tell the scheduler to mark all tasks it tracks to be dead.
+    scheduler.killTasks();
+    // Remove all locks to let RabbitMQ message handlers continue and close shutdown.
+    taskConsumerLocks.forEach((t, s) -> s.release());
+    LOG.debug("Tasks removed from scheduler {}", workerQueueName);
   }
 
   /**
@@ -83,7 +97,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   @Override
   public void run() {
-    Thread.currentThread().setName("TaskDispatcher " + workerQueueName);
+    Thread.currentThread().setName("TaskDispatcher-" + workerQueueName);
     running = true;
     try {
       while (running) {
@@ -93,7 +107,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
         state = State.WAIT_FOR_TASK;
         LOG.debug("Wait for task {}", workerQueueName);
-        final Task task = scheduler.getNextTask();
+        final Task task = getNextTask();
         LOG.debug("Send task to worker {}, ({})", workerQueueName, task.getId());
         state = State.DISPATCH_TASK;
         dispatch(task);
@@ -105,6 +119,14 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
       Thread.currentThread().interrupt();
     }
     running = false;
+  }
+
+  private Task getNextTask() throws InterruptedException {
+    Task task;
+    do {
+      task = scheduler.getNextTask();
+    } while (!task.isAlive());
+    return task;
   }
 
   private void dispatch(final Task task) {
@@ -154,7 +176,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   private void lockClient(final TaskConsumer taskConsumer) {
     try {
-      taskConsumerLocks.computeIfAbsent(taskConsumer, tc -> new Semaphore(NUMBER_CONCURRENT_PREFETCHES)).acquire();
+      taskConsumerLocks.computeIfAbsent(taskConsumer, tc -> new Semaphore(0)).acquire();
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
     }

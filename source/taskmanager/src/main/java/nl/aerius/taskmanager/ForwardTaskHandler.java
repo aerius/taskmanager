@@ -31,4 +31,9 @@ interface ForwardTaskHandler {
    * @param task task to schedule
    */
   void forwardTask(Task task);
+
+  /**
+   * Call to kill all tasks still waiting to be processed.
+   */
+  void killTasks();
 }

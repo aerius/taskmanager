@@ -19,6 +19,7 @@ package nl.aerius.taskmanager.mq;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -29,7 +30,6 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
@@ -48,13 +48,15 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   private static final int DEFAULT_RETRY_SECONDS = 10;
 
+  private final ScheduledExecutorService executorService;
   private final BrokerConnectionFactory factory;
   private final String workerQueueName;
 
   private WorkerFinishedHandler workerFinishedHandler;
   private boolean isShutdown;
 
-  public RabbitMQWorkerProducer(final BrokerConnectionFactory factory, final String workerQueueName) {
+  public RabbitMQWorkerProducer(final ScheduledExecutorService executorService, final BrokerConnectionFactory factory, final String workerQueueName) {
+    this.executorService = executorService;
     this.factory = factory;
     this.workerQueueName = workerQueueName;
   }
@@ -66,7 +68,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   @Override
   public void start() {
-    tryStartReplyConsumer();
+    executorService.schedule(this::tryStartReplyConsumer, DEFAULT_RETRY_SECONDS, TimeUnit.SECONDS);
   }
 
   @Override
@@ -114,13 +116,8 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     while (!isShutdown) {
       try {
         final Connection connection = factory.getConnection();
-        connection.addShutdownListener(new ShutdownListener() {
 
-          @Override
-          public void shutdownCompleted(final ShutdownSignalException cause) {
-            tryStartReplyConsumer();
-          }
-        });
+        connection.addShutdownListener(this::restartConnection);
         startReplyConsumer(connection);
         LOG.info("Successfully (re)started reply consumer for queue {}", workerQueueName);
         break;
@@ -132,6 +129,13 @@ class RabbitMQWorkerProducer implements WorkerProducer {
         delayRetry(DEFAULT_RETRY_SECONDS);
       }
     }
+  }
+
+  private void restartConnection(final ShutdownSignalException cause) {
+    if (workerFinishedHandler != null) {
+      workerFinishedHandler.reset();
+    }
+    tryStartReplyConsumer();
   }
 
   private void delayRetry(final int retryTime) {
