@@ -111,6 +111,17 @@ A higher number means a higher priority.
 For example if the value is `0.6` and there are `10` workers.
 This would mean a maximum of `6` workers will be given a tasks from this queue.
 
+### Overriding queue configuration
+Queue configuration for a specific worker can be overridden by creating an environment variable.
+When an environment variable exists with a matching worker queue name, that configuration is used instead of the file.
+
+```
+AERIUS_PRIORITY_TASK_SCHEDULER_{WORKER QUEUE NAME} = {
+  "workerQueueName": "<type of the queue>",
+  "queues": [...]
+}
+```
+
 ## Building the Task Manager
 
 To build the task manager java and maven are needed.
