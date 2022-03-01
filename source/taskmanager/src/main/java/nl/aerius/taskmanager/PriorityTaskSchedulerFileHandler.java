@@ -49,10 +49,7 @@ class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurationHand
   public PriorityTaskSchedule read(final File file) throws IOException {
     final PriorityTaskSchedule fileSchedule = readFromFile(file);
     final PriorityTaskSchedule environmentSchedule = readFromEnvironment(fileSchedule.getWorkerQueueName());
-    if (environmentSchedule != null) {
-      return environmentSchedule;
-    }
-    return fileSchedule;
+    return environmentSchedule == null ? fileSchedule : environmentSchedule;
   }
 
   private PriorityTaskSchedule readFromFile(final File file) throws IOException {
