@@ -54,11 +54,14 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   private WorkerFinishedHandler workerFinishedHandler;
   private boolean isShutdown;
+  private final boolean durable;
 
-  public RabbitMQWorkerProducer(final ScheduledExecutorService executorService, final BrokerConnectionFactory factory, final String workerQueueName) {
+  public RabbitMQWorkerProducer(final ScheduledExecutorService executorService, final BrokerConnectionFactory factory, final String workerQueueName,
+      final boolean durable) {
     this.executorService = executorService;
     this.factory = factory;
     this.workerQueueName = workerQueueName;
+    this.durable = durable;
   }
 
   @Override
@@ -78,7 +81,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     // or do we expect worker to send instead of CC the message?
     final Channel channel = factory.getConnection().createChannel();
     try {
-      channel.queueDeclare(workerQueueName, true, false, false, null);
+      channel.queueDeclare(workerQueueName, durable, false, false, null);
       final BasicProperties.Builder forwardBuilder = rabbitMQMessage.getProperties().builder();
       // new header map (even in case of existing headers, original can be a UnmodifiableMap)
       final Map<String, Object> headers = rabbitMQMessage.getProperties().getHeaders() == null ? new HashMap<>()
@@ -158,7 +161,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     replyChannel.queueDeclare(workerReplyQueue, false, true, true, null);
     // ensure the worker queue is around as well (so we can retrieve number of customers later on).
     // Worker queue is durable and non-exclusive with autodelete off.
-    replyChannel.queueDeclare(workerQueueName, true, false, false, null);
+    replyChannel.queueDeclare(workerQueueName, durable, false, false, null);
     replyChannel.basicConsume(workerReplyQueue, true, workerReplyQueue, new DefaultConsumer(replyChannel) {
       @Override
       public void handleDelivery(final String consumerTag, final Envelope envelope, final BasicProperties properties, final byte[] body) {

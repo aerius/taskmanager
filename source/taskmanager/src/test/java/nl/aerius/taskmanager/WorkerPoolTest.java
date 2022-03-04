@@ -57,7 +57,7 @@ class WorkerPoolTest {
       }
     };
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, new MockWorkerProducer(), workerUpdateHandler);
-    taskConsumer = new TaskConsumer(mock(ExecutorService.class), "testqueue", mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
+    taskConsumer = new TaskConsumer(mock(ExecutorService.class), "testqueue", false, mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData message) {
         WorkerPoolTest.this.message = (RabbitMQMessageMetaData) message;

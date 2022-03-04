@@ -41,7 +41,7 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
   void testMessageReceivedHandler() throws IOException, InterruptedException {
     final String taskQueueName = "queue1";
     final byte[] receivedBody = "4321".getBytes();
-    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(taskQueueName);
+    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(taskQueueName, false);
     final Semaphore lock = new Semaphore(0);
     final DataDock data = new DataDock();
     tmh.start();

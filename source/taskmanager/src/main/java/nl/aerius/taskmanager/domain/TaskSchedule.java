@@ -31,6 +31,9 @@ public class TaskSchedule<T extends TaskQueue> {
   private String workerQueueName;
 
   @Expose
+  private boolean durable;
+
+  @Expose
   private List<T> queues = new ArrayList<>();
 
   public String getWorkerQueueName() {
@@ -47,5 +50,13 @@ public class TaskSchedule<T extends TaskQueue> {
 
   public void setTaskConfigurations(final List<T> taskConfigurations) {
     this.queues = taskConfigurations;
+  }
+
+  public void setDurable(final boolean durable) {
+    this.durable = durable;
+  }
+
+  public boolean isDurable() {
+    return durable;
   }
 }

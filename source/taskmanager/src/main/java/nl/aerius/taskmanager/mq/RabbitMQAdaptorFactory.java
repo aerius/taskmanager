@@ -45,8 +45,8 @@ public class RabbitMQAdaptorFactory implements AdaptorFactory {
   }
 
   @Override
-  public TaskMessageHandler createTaskMessageHandler(final String taskQueueName) throws IOException {
-    return new RabbitMQMessageHandler(factory, taskQueueName);
+  public TaskMessageHandler createTaskMessageHandler(final String taskQueueName, final boolean durable) throws IOException {
+    return new RabbitMQMessageHandler(factory, taskQueueName, durable);
   }
 
   @Override
@@ -55,7 +55,7 @@ public class RabbitMQAdaptorFactory implements AdaptorFactory {
   }
 
   @Override
-  public WorkerProducer createWorkerProducer(final String workerQueueName) {
-    return new RabbitMQWorkerProducer(executorService, factory, workerQueueName);
+  public WorkerProducer createWorkerProducer(final String workerQueueName, final boolean durable) {
+    return new RabbitMQWorkerProducer(executorService, factory, workerQueueName, durable);
   }
 }

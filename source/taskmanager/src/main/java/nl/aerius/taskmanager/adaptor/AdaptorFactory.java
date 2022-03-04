@@ -32,15 +32,17 @@ public interface AdaptorFactory {
   /**
    * Creates a new worker producer for the given worker type.
    * @param workerQueueName name of queue of the worker
+   * @param durable true if the queue created should be persistent during server restart
    * @return new worker producer object
    */
-  WorkerProducer createWorkerProducer(String workerQueueName);
+  WorkerProducer createWorkerProducer(String workerQueueName, boolean durable);
 
   /**
    * Creates a new TaksMessageHandler for the given worker type and queue.
    * @param taskQueueName queue name
+   * @param durable true if the queue created should be persistent during server restart
    * @return new TaksMessageHandler object
    * @throws IOException error in case or connection problems
    */
-  TaskMessageHandler createTaskMessageHandler(String taskQueueName) throws IOException;
+  TaskMessageHandler createTaskMessageHandler(String taskQueueName, boolean durable) throws IOException;
 }

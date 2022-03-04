@@ -72,11 +72,11 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     final String workerQueueName = schedule.getWorkerQueueName();
     if (!buckets.containsKey(workerQueueName)) {
       LOG.info("Added scheduler for worker queue {}", workerQueueName);
-      buckets.put(workerQueueName, new TaskScheduleBucket(workerQueueName));
+      buckets.put(workerQueueName, new TaskScheduleBucket(workerQueueName, schedule.isDurable()));
     }
     final TaskScheduleBucket taskScheduleBucket = buckets.get(workerQueueName);
 
-    taskScheduleBucket.updateQueues(schedule.getTaskQueues());
+    taskScheduleBucket.updateQueues(schedule.getTaskQueues(), schedule.isDurable());
     return taskScheduleBucket.isRunning();
   }
 
@@ -110,11 +110,11 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     private final TaskScheduler<T> taskScheduler;
     private final String workerQueueName;
 
-    public TaskScheduleBucket(final String workerQueueName) throws IOException, InterruptedException {
+    public TaskScheduleBucket(final String workerQueueName, final boolean durable) throws IOException, InterruptedException {
       this.workerQueueName = workerQueueName;
       taskScheduler = schedulerFactory.createScheduler(workerQueueName);
-      LOG.info("Worker Queue Name:{}", workerQueueName);
-      workerProducer = factory.createWorkerProducer(workerQueueName);
+      LOG.info("Worker Queue Name:{} (durable:{})", workerQueueName, durable);
+      workerProducer = factory.createWorkerProducer(workerQueueName, durable);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerProducer.start();
@@ -135,7 +135,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       return dispatcher.isRunning();
     }
 
-    private void updateQueues(final List<T> newTaskQueues) {
+    private void updateQueues(final List<T> newTaskQueues, final boolean durable) {
       final Map<String, ? extends TaskQueue> newTaskQueuesMap = newTaskQueues.stream().filter(Objects::nonNull)
           .collect(Collectors.toMap(TaskQueue::getQueueName, Function.identity()));
       // Remove queues that are not in the new list
@@ -143,12 +143,12 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
           .collect(Collectors.toList());
       removedQueues.forEach(e -> removeTaskConsumer(e.getKey()));
       // Add and Update existing queues
-      newTaskQueues.stream().filter(Objects::nonNull).forEach(this::addOrUpdateTaskQueue);
+      newTaskQueues.stream().filter(Objects::nonNull).forEach(tc -> addOrUpdateTaskQueue(tc, durable));
     }
 
-    private void addOrUpdateTaskQueue(final T taskQueueConfiguration) {
+    private void addOrUpdateTaskQueue(final T taskQueueConfiguration, final boolean durable) {
       final String taskQueueName = taskQueueConfiguration.getQueueName();
-      addTaskConsumerIfAbsent(taskQueueName);
+      addTaskConsumerIfAbsent(taskQueueName, durable);
       taskScheduler.updateQueue(taskQueueConfiguration);
     }
 
@@ -156,14 +156,15 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
      * Adds a task consumer.
      *
      * @param taskQueueName queue name of the task consumer
+     * @param durable true if consumer queue should be created durable
      * @throws IOException
      */
-    public void addTaskConsumerIfAbsent(final String taskQueueName) {
+    public void addTaskConsumerIfAbsent(final String taskQueueName, final boolean durable) {
       taskConsumers.computeIfAbsent(taskQueueName, tqn -> {
         try {
-          final TaskConsumer taskConsumer = new TaskConsumer(executorService, taskQueueName, dispatcher, factory);
+          final TaskConsumer taskConsumer = new TaskConsumer(executorService, taskQueueName, durable, dispatcher, factory);
           taskConsumer.start();
-          LOG.info("Started task queue {}", taskQueueName);
+          LOG.info("Started task queue {} (durable:{})", taskQueueName, durable);
           return taskConsumer;
         } catch (final IOException e) {
           throw new UncheckedIOException(e);

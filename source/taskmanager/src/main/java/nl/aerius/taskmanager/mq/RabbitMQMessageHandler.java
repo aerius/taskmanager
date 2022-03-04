@@ -42,6 +42,7 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
 
   private final BrokerConnectionFactory factory;
   private final String taskQueueName;
+  private final boolean durable;
 
   private MessageReceivedHandler messageReceivedHandler;
   private RabbitMQMessageConsumer consumer;
@@ -51,16 +52,19 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
    */
   private final AtomicBoolean tryConnecting = new AtomicBoolean();
 
+
   /**
    * Constructor.
    *
    * @param factory the factory to get the a RabbitMQ connection from
    * @param taskQueueName the name of the task queue
+   * @param durable if true the queue will be created persistent
    * @throws IOException
    */
-  public RabbitMQMessageHandler(final BrokerConnectionFactory factory, final String taskQueueName) throws IOException {
+  public RabbitMQMessageHandler(final BrokerConnectionFactory factory, final String taskQueueName, final boolean durable) throws IOException {
     this.factory = factory;
     this.taskQueueName = taskQueueName;
+    this.durable = durable;
   }
 
   @Override
@@ -138,6 +142,7 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
       consumer = new RabbitMQMessageConsumer(
           factory.getConnection().createChannel(),
           taskQueueName,
+          durable,
           this);
       consumer.getChannel().addShutdownListener(e -> handleShutdownSignal(e));
       consumer.startConsuming();
