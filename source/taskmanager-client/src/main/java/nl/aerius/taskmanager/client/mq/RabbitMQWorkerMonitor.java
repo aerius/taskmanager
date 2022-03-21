@@ -81,7 +81,9 @@ public class RabbitMQWorkerMonitor {
    * @param observer observer to add
    */
   public void addObserver(final RabbitMQWorkerObserver observer) {
-    observers.add(observer);
+    synchronized (observers) {
+      observers.add(observer);
+    }
   }
 
   /**
@@ -90,7 +92,9 @@ public class RabbitMQWorkerMonitor {
    * @param observer observer to remove
    */
   public void removeObserver(final RabbitMQWorkerObserver observer) {
-    observers.remove(observer);
+    synchronized (observers) {
+      observers.remove(observer);
+    }
   }
 
   /**
@@ -142,7 +146,9 @@ public class RabbitMQWorkerMonitor {
     final int workerSize = getParamInt(headers, HEADER_PARAM_WORKER_SIZE, -1);
     final int utilisationSize = getParamInt(headers, HEADER_PARAM_UTILISATION, -1);
 
-    observers.forEach(ro -> ro.updateWorkers(queueName, workerSize, utilisationSize));
+    synchronized (observers) {
+      observers.forEach(ro -> ro.updateWorkers(queueName, workerSize, utilisationSize));
+    }
   }
 
   /**
