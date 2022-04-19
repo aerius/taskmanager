@@ -18,6 +18,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          ROOT_POM_DIRECTORY: source
       - uses: aerius/github-actions/publish-docker-action@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
