@@ -1,0 +1,34 @@
+name: push-event
+
+on:
+  push:
+
+jobs:
+  job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out github-actions repo
+        uses: actions/checkout@v2
+        with:
+          repository: aerius/github-actions
+          path: aerius-github-actions
+          ref: main
+
+      - uses: aerius/github-actions/events/push-event-action@main
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          ROOT_POM_DIRECTORY: repo/source
+
+      - uses: aerius/github-actions/extras/docker-build-or-publish-based-on-maven-project-version-action@main
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_REGISTRY_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          DOCKER_REGISTRY_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
+          ROOT_POM_DIRECTORY: repo/source
+          DOCKERFILE_DIRECTORY: repo/source
+
