@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager.client;
 
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Contains the names of the group of queues.
@@ -29,14 +30,26 @@ public class WorkerQueueType {
   private static final char DOT = '.';
 
   private final String name;
+  private final boolean persistent;
 
   public WorkerQueueType(final String name) {
+    this(name, true);
+  }
+
+  /**
+   * Constructor
+   *
+   * @param name name of the queue type
+   * @param persistent true if the queue messages should be persistent
+   */
+  public WorkerQueueType(final String name, final boolean persistent) {
     this.name = name.toLowerCase(Locale.ENGLISH);
+    this.persistent = persistent;
   }
 
   @Override
   public int hashCode() {
-    return name.hashCode();
+    return Objects.hash(name, persistent);
   }
 
   @Override
@@ -47,7 +60,7 @@ public class WorkerQueueType {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    return name.equals(((WorkerQueueType) obj).name);
+    return name.equals(((WorkerQueueType) obj).name) && persistent == ((WorkerQueueType) obj).persistent;
   }
 
   /**
@@ -60,6 +73,13 @@ public class WorkerQueueType {
 
   public String getWorkerQueueName() {
     return NAMING_PREFIX + "worker." + propertyName();
+  }
+
+  /**
+   * @return True if the messages on this queue should be persisted.
+   */
+  public boolean isPersistent() {
+    return persistent;
   }
 
   public String propertyName() {

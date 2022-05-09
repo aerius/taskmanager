@@ -47,7 +47,13 @@ public class TaskManagerClientSender implements TaskWrapperSender {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskManagerClientSender.class);
 
+  private static final boolean QUEUE_DURABLE = true;
+  private static final boolean QUEUE_EXCLUSIVE = false;
+  private static final boolean QUEUE_AUTO_DELETE = false;
+
+  private static final int DELIVERY_MODE_NON_PERSISTENT = 1;
   private static final int DELIVERY_MODE_PERSISTENT = 2;
+
   private static final int CLIENT_START_RETRY_PERIOD = 5000;
 
   private final BrokerConnectionFactory factory;
@@ -168,7 +174,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
         final String queueName = wrapper.getNaming().getTaskQueueName(wrapper.getQueueName());
         // create a consumer and let it listen to a reply queue.
         // Ensure a queue is available.
-        channel.queueDeclare(queueName, true, false, false, null);
+        channel.queueDeclare(queueName, QUEUE_DURABLE, QUEUE_EXCLUSIVE, QUEUE_AUTO_DELETE, null);
         // send the task.
         final Serializable task = wrapper.getTask();
         // set a unique message ID.
@@ -177,7 +183,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
         final String correlationId = wrapper.getCorrelationId();
         // Set the right properties for the message (endurable, replyTo, etc).
         final BasicProperties.Builder builder = new BasicProperties.Builder().correlationId(correlationId).messageId(messageId)
-            .deliveryMode(DELIVERY_MODE_PERSISTENT);
+            .deliveryMode(wrapper.getNaming().isPersistent() ? DELIVERY_MODE_PERSISTENT : DELIVERY_MODE_NON_PERSISTENT);
 
         if (wrapper.getResultCallback().isPresent()) {
           final String replyQueueName = startConsumer(wrapper);
