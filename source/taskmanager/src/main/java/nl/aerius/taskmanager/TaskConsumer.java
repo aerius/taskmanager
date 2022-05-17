@@ -44,12 +44,12 @@ class TaskConsumer implements MessageReceivedHandler {
   private boolean running = true;
 
   @SuppressWarnings("unchecked")
-  public TaskConsumer(final ExecutorService executorService, final String taskQueueName, final ForwardTaskHandler forwardTaskHandler,
-      final AdaptorFactory factory) throws IOException {
+  public TaskConsumer(final ExecutorService executorService, final String taskQueueName, final boolean durable,
+      final ForwardTaskHandler forwardTaskHandler, final AdaptorFactory factory) throws IOException {
     this.executorService = executorService;
     this.taskQueueName = taskQueueName;
     this.forwardTaskHandler = forwardTaskHandler;
-    this.taskMessageHandler = factory.createTaskMessageHandler(taskQueueName);
+    this.taskMessageHandler = factory.createTaskMessageHandler(taskQueueName, durable);
     taskMessageHandler.addMessageReceivedHandler(this);
   }
 

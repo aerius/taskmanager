@@ -86,6 +86,7 @@ The json format of the configuration files is as follows:
 ```
 {
   "workerQueueName": "<type of the queue>",
+  "durable" : <true|false>
   "queues": [
     {
       "queueName": "<client queue name>",
@@ -100,6 +101,12 @@ The json format of the configuration files is as follows:
 The parameter `workerQueueName` is required and should match the name related to the worker.
 The task manager derives the full worker queue name from it.
 So `ops` becomes the worker queue name: `aerius.worker.ops`.
+
+The parameter `durable` indicates if the worker queue and related client queues should be created with the `durable` or non-`durable` flag (defaults to `durable`).
+If a queue is made `durable` and the RabbitMQ server goes down, the queue and it's messages will be restored after startup.
+Some queues can have derived messages on the queue, that are recreated by the parent task after a RabbitMQ shutdown.
+For these queues it would make sense to not make them durable.
+RabbitMQ will require less storage space/IOPS and be faster as it won't need to depend on disk I/O for these queues.
 
 In `queues` there can be 1 or more queue configurations.
 Each queue configuration consists of 3 parameters:

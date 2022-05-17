@@ -39,12 +39,12 @@ public class MockAdaptorFactory implements AdaptorFactory {
   }
 
   @Override
-  public WorkerProducer createWorkerProducer(final String workerQueueName) {
+  public WorkerProducer createWorkerProducer(final String workerQueueName, final boolean durable) {
     return mockWorkerProducer;
   }
 
   @Override
-  public TaskMessageHandler createTaskMessageHandler(final String taskQueueName) throws IOException {
+  public TaskMessageHandler createTaskMessageHandler(final String taskQueueName, final boolean durable) throws IOException {
     return mockTaskMessageHandler;
   }
 

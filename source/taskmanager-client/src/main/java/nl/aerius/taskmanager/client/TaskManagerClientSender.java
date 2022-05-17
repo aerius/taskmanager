@@ -172,10 +172,6 @@ public class TaskManagerClientSender implements TaskWrapperSender {
         // Create a channel to send the message over.
         final Channel channel = getConnection().createChannel();
         final String queueName = wrapper.getNaming().getTaskQueueName(wrapper.getQueueName());
-        // create a consumer and let it listen to a reply queue.
-        // Ensure a queue is available.
-        channel.queueDeclare(queueName, QUEUE_DURABLE, QUEUE_EXCLUSIVE, QUEUE_AUTO_DELETE, null);
-        // send the task.
         final Serializable task = wrapper.getTask();
         // set a unique message ID.
         final String messageId = wrapper.getTaskId();

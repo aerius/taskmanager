@@ -44,10 +44,12 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
 
   private final String queueName;
   private final ConsumerCallback callback;
+  private final boolean durable;
 
-  RabbitMQMessageConsumer(final Channel channel, final String queueName, final ConsumerCallback callback) {
+  RabbitMQMessageConsumer(final Channel channel, final String queueName, final boolean durable, final ConsumerCallback callback) {
     super(channel);
     this.queueName = queueName;
+    this.durable = durable;
     this.callback = callback;
   }
 
@@ -55,7 +57,7 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
     LOG.debug("Starting consumer {}.", queueName);
     final Channel taskChannel = getChannel();
     // ensure a durable channel exists
-    taskChannel.queueDeclare(queueName, true, false, false, null);
+    taskChannel.queueDeclare(queueName, durable, false, false, null);
     //ensure only one message gets delivered at a time.
     taskChannel.basicQos(1);
 
