@@ -31,7 +31,7 @@ public class TaskSchedule<T extends TaskQueue> {
   private String workerQueueName;
 
   @Expose
-  private boolean durable;
+  private Boolean durable;
 
   @Expose
   private List<T> queues = new ArrayList<>();
@@ -57,6 +57,6 @@ public class TaskSchedule<T extends TaskQueue> {
   }
 
   public boolean isDurable() {
-    return durable;
+    return !Boolean.FALSE.equals(durable);
   }
 }
