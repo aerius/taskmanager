@@ -65,6 +65,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
   @Override
   public void forwardTask(final Task task) {
     final TaskConsumer taskConsumer = task.getTaskConsumer();
+    ensureClientHasLockable(taskConsumer);
     scheduler.addTask(task);
     LOG.debug("Task for {} added to scheduler {}", workerQueueName, task.getId());
     lockClient(taskConsumer);
@@ -174,9 +175,13 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     }
   }
 
+  private void ensureClientHasLockable(final TaskConsumer taskConsumer) {
+    taskConsumerLocks.computeIfAbsent(taskConsumer, tc -> new Semaphore(0));
+  }
+
   private void lockClient(final TaskConsumer taskConsumer) {
     try {
-      taskConsumerLocks.computeIfAbsent(taskConsumer, tc -> new Semaphore(0)).acquire();
+      taskConsumerLocks.get(taskConsumer).acquire();
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();
     }
