@@ -21,8 +21,11 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +44,13 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   private static final Logger LOG = LoggerFactory.getLogger(PriorityTaskScheduler.class);
   private static final int INITIAL_SIZE = 20;
+  private static final int NEXT_TASK_MAX_WAIT_TIME_SECONDS = 120;
 
   private final Queue<Task> queue;
   private final Map<String, PriorityTaskQueue> taskQueueConfigurations = new ConcurrentHashMap<>();
   private final Map<String, AtomicInteger> tasksOnWorkersPerQueue = new ConcurrentHashMap<>();
-  private final Semaphore semaphore = new Semaphore(0);
+  private final Lock lock = new ReentrantLock();
+  private final Condition nextTaskCondition = lock.newCondition();
   private final String workerQueueName;
   private int numberOfWorkers;
   private int tasksOnWorkers;
@@ -62,17 +67,23 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   @Override
   public void addTask(final Task task) {
-    synchronized (this) {
+    lock.lock();
+    try {
       queue.add(task);
-      semaphoreRelease();
+      signalNextTask();
+    } finally {
+      lock.unlock();
     }
   }
 
   @Override
   public void killTasks() {
-    synchronized (this) {
+    lock.lock();
+    try {
       queue.stream().forEach(Task::killTask);
-      semaphore.release();
+      signalNextTask();
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -80,8 +91,9 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   public Task getNextTask() throws InterruptedException {
     Task task;
     boolean taskPresent;
-    do {
-      synchronized (this) {
+    lock.lock();
+    try {
+      do {
         task = queue.peek();
         if (task == null) { // if task is null, queueName can't be get so do this check first.
           taskPresent = false;
@@ -94,11 +106,15 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
             task = queue.poll();
           }
         }
-      }
-      if (!taskPresent) { // only wait if no task present, but outside synchronized block
-        semaphore.acquire();
-      }
-    } while (!taskPresent);
+        // If no task present, await till we get a signal that there could be a new one (or a max time to avoid 'deadlocks')
+        if (!taskPresent) {
+          nextTaskCondition.await(NEXT_TASK_MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
+        }
+
+      } while (!taskPresent);
+    } finally {
+      lock.unlock();
+    }
     return task;
   }
 
@@ -137,32 +153,39 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   @Override
   public void onTaskFinished(final String queueName) {
-    synchronized (this) {
+    lock.lock();
+    try {
       tasksOnWorkersPerQueue.get(queueName).decrementAndGet();
       tasksOnWorkers--;
-      semaphoreRelease();
+      signalNextTask();
       // clean up queue if it has been removed.
       if (!taskQueueConfigurations.containsKey(queueName)) {
         tasksOnWorkersPerQueue.remove(queueName);
       }
+    } finally {
+      lock.unlock();
     }
   }
 
   @Override
   public void onWorkerPoolSizeChange(final int numberOfWorkers) {
-    synchronized (this) {
+    lock.lock();
+    try {
       final int oldNumberOfWorkers = this.numberOfWorkers;
       this.numberOfWorkers = numberOfWorkers;
 
       if (numberOfWorkers > oldNumberOfWorkers) {
-        semaphoreRelease();
+        signalNextTask();
       }
+    } finally {
+      lock.unlock();
     }
   }
 
   @Override
   public void updateQueue(final PriorityTaskQueue queue) {
-    synchronized (this) {
+    lock.lock();
+    try {
       final String queueName = queue.getQueueName();
 
       final PriorityTaskQueue old = taskQueueConfigurations.put(queueName, queue);
@@ -171,13 +194,18 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
         LOG.info("Queue {} was updated with new values: {}", queueName, queue);
       }
       tasksOnWorkersPerQueue.computeIfAbsent(queueName, qn -> new AtomicInteger());
+    } finally {
+      lock.unlock();
     }
   }
 
   @Override
   public void removeQueue(final String queueName) {
-    synchronized (this) {
+    lock.lock();
+    try {
       taskQueueConfigurations.remove(queueName);
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -186,7 +214,8 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
     final String qN1 = task1.getTaskConsumer().getQueueName();
     final String qN2 = task2.getTaskConsumer().getQueueName();
     int cmp;
-    synchronized (this) {
+    lock.lock();
+    try {
       cmp = compareWith1Worker(qN1, qN2);
       if (cmp == 0) {
         cmp = compareCapacityRemaining(qN1, qN2);
@@ -197,6 +226,8 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
       if (cmp == 0) {
         cmp = compareTaskOnQueue(qN2, qN1);
       }
+    } finally {
+      lock.unlock();
     }
     return cmp;
   }
@@ -238,12 +269,10 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   }
 
   /**
-   * Release semaphore, but only when someone is waiting.
+   * Signal that the next task process can check again..
    */
-  private void semaphoreRelease() {
-    if (semaphore.hasQueuedThreads()) {
-      semaphore.release();
-    }
+  private void signalNextTask() {
+    nextTaskCondition.signalAll();
   }
 
   /**
