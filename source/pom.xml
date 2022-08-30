@@ -63,8 +63,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <aerius-tools.version>1.2.0-SNAPSHOT</aerius-tools.version>
-    <spotless.version>2.5.0</spotless.version>
-    <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
+    <spotless.version>2.25.0</spotless.version>
+    <dropwizard.metrics.version>4.2.11</dropwizard.metrics.version>
 
     <sonar.projectKey>aerius_taskmanager</sonar.projectKey>
     <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
