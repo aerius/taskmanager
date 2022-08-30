@@ -20,10 +20,12 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
 
+import com.rabbitmq.client.BlockedCallback;
 import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ExceptionHandler;
+import com.rabbitmq.client.UnblockedCallback;
 
 /**
  * Mock class for a {@link Connection}.
@@ -131,5 +133,20 @@ public class MockConnection extends MockShutdownNotifier implements Connection {
   @Override
   public ExceptionHandler getExceptionHandler() {
     return null;
+  }
+
+  @Override
+  public BlockedListener addBlockedListener(final BlockedCallback blockedCallback, final UnblockedCallback unblockedCallback) {
+    return null;
+  }
+
+  @Override
+  public String getId() {
+    return null;
+  }
+
+  @Override
+  public void setId(final String id) {
+
   }
 }
