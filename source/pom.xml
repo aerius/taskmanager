@@ -62,7 +62,7 @@
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <aerius-tools.version>1.1.0</aerius-tools.version>
+    <aerius-tools.version>1.2.0-SNAPSHOT</aerius-tools.version>
     <spotless.version>2.5.0</spotless.version>
     <dropwizard.metrics.version>3.1.2</dropwizard.metrics.version>
 
@@ -211,6 +211,29 @@
           <artifactId>maven-shade-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>2.11.0</version>
+          <configuration>
+            <rulesUri>classpath:///versions_maven_plugin_rules.xml</rulesUri>
+            <allowMajorUpdates>false</allowMajorUpdates>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>nl.aerius</groupId>
+              <artifactId>tools</artifactId>
+              <version>${aerius-tools.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>7.1.2</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -304,6 +327,27 @@
           </dependency>
         </dependencies>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>[3.6.3,)</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -333,5 +377,34 @@
       </modules>
     </profile>
 
+    <profile>
+      <id>dependency-check</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <inherited>false</inherited>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>aggregate</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <!-- If we ever want to fail on high CVSS scores, this is an example how -->
+              <!-- <failBuildOnCVSS>8</failBuildOnCVSS> -->
+              <!-- Generate all report formats -->
+              <format>ALL</format>
+              <!-- Don't use Nexus Analyzer -->
+              <centralAnalyzerEnabled>false</centralAnalyzerEnabled>
+              <!-- Am I the latest version? -->
+              <versionCheckEnabled>true</versionCheckEnabled>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
