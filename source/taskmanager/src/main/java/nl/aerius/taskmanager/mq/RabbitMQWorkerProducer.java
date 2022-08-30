@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +96,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     } finally {
       try {
         channel.close();
-      } catch (final IOException e) {
+      } catch (final IOException | TimeoutException e) {
         // eat error.
         LOG.trace("Exception while forwarding message", e);
       }

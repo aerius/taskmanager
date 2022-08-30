@@ -16,8 +16,6 @@
  */
 package nl.aerius.taskmanager.test;
 
-import java.io.IOException;
-
 import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownNotifier;
 import com.rabbitmq.client.ShutdownSignalException;
@@ -52,10 +50,8 @@ class MockShutdownNotifier implements ShutdownNotifier {
 
   /**
    * Mockes closing the connection.
-   *
-   * @throws IOException
    */
-  public void close() throws IOException {
+  public void close() {
     closed = true;
   }
 

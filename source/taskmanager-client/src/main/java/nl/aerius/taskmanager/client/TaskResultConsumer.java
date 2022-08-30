@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager.client;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,7 @@ class TaskResultConsumer extends DefaultConsumer implements TaskCancelListener {
       if (getChannel().isOpen()) {
         getChannel().close();
       }
-    } catch (final IOException e) {
+    } catch (final IOException | TimeoutException e) {
       LOG.debug("Error while closing channel.", e);
     }
   }

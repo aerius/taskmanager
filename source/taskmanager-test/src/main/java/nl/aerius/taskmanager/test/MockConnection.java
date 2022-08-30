@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
 
+import com.rabbitmq.client.BlockedListener;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ExceptionHandler;
 
 /**
  * Mock class for a {@link Connection}.
@@ -90,11 +92,7 @@ public class MockConnection extends MockShutdownNotifier implements Connection {
 
   @Override
   public void abort() {
-    try {
-      close();
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
+    close();
   }
 
   @Override
@@ -110,5 +108,28 @@ public class MockConnection extends MockShutdownNotifier implements Connection {
   @Override
   public void abort(final int closeCode, final String closeMessage, final int timeout) {
     abort();
+  }
+
+  @Override
+  public String getClientProvidedName() {
+    return null;
+  }
+
+  @Override
+  public void addBlockedListener(final BlockedListener listener) {
+  }
+
+  @Override
+  public boolean removeBlockedListener(final BlockedListener listener) {
+    return false;
+  }
+
+  @Override
+  public void clearBlockedListeners() {
+  }
+
+  @Override
+  public ExceptionHandler getExceptionHandler() {
+    return null;
   }
 }

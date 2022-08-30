@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,6 +117,8 @@ public class RabbitMQWorkerEventProducer {
           publish(q, size, utilisation);
         } catch (final IOException e) {
           throw new UncheckedIOException(e);
+        } catch (final TimeoutException e) {
+          throw new RuntimeException(e);
         }
       });
     } catch (final RuntimeException e) {
@@ -123,7 +126,7 @@ public class RabbitMQWorkerEventProducer {
     }
   }
 
-  private void publish(final String queueName, final int size, final int utilisation) throws IOException {
+  private void publish(final String queueName, final int size, final int utilisation) throws IOException, TimeoutException {
     final Channel channel = factory.getConnection().createChannel();
 
     try {

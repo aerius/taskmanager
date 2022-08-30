@@ -179,7 +179,7 @@ class TaskResultConsumerTest {
     final SingleResultCallback resultCallback = new SingleResultCallback();
     final TaskWrapper taskWrapper = getExampleTaskWrapper(resultCallback);
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, taskWrapper, sender);
-    consumer.handleShutdownSignal(CONSUMER_TAG, new ShutdownSignalException(true, false, "", ""));
+    consumer.handleShutdownSignal(CONSUMER_TAG, new ShutdownSignalException(true, false, null, ""));
     assertEquals(taskWrapper, sender.wrapperSendAgain, "A retry on sending the task again should occur");
     assertNull(resultCallback.receivedException, "Received exception should be null");
     assertNull(resultCallback.successObject, "Received result should be null");
@@ -191,7 +191,7 @@ class TaskResultConsumerTest {
     final SingleResultCallback resultCallback = new SingleResultCallback();
     final TaskWrapper taskWrapper = getExampleTaskWrapper(resultCallback);
     final TaskResultConsumer consumer = new TaskResultConsumer(channel, taskWrapper, sender);
-    consumer.handleShutdownSignal(CONSUMER_TAG, new ShutdownSignalException(true, true, "", ""));
+    consumer.handleShutdownSignal(CONSUMER_TAG, new ShutdownSignalException(true, true, null, ""));
     assertNull(sender.wrapperSendAgain, "No retry, we shut ourselves down");
     assertNull(resultCallback.receivedException, "Received exception should be null");
     assertNull(resultCallback.successObject, "Received result should be null");

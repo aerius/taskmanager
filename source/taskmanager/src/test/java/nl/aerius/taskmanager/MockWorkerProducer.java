@@ -18,7 +18,7 @@ package nl.aerius.taskmanager;
 
 import java.io.IOException;
 
-import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.domain.Message;
@@ -43,7 +43,7 @@ public class MockWorkerProducer implements WorkerProducer {
   @Override
   public void forwardMessage(final Message message) throws IOException {
     if (shutdownExceptionOnForward) {
-      throw new AlreadyClosedException("Mocking exception when using a closed connection", message);
+      throw new ShutdownSignalException(true, true, null, null);
     }
   }
 

@@ -21,12 +21,12 @@ import java.io.Serializable;
 import java.net.ConnectException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
@@ -164,7 +164,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
       throw new IllegalArgumentException("Blank taskQueueName not allowed.");
     }
     if (!running) {
-      throw new AlreadyClosedException("Attempt to use closed connection", null);
+      throw new IllegalStateException("Attempt to use closed connection");
     }
     boolean done = false;
     while (running && !done) {
@@ -192,7 +192,7 @@ public class TaskManagerClientSender implements TaskWrapperSender {
         channel.close();
         // task has been send successfully, return.
         done = true;
-      } catch (final ConnectException e) {
+      } catch (final ConnectException | TimeoutException e) {
         // don't catch all IOExceptions, just ConnectExceptions.
         // exceptions like wrong host-name should cause a bigger disturbance.
         // those indicate that connection has temporarily been lost with RabbitMQ, though could be not that temporarily...
