@@ -23,6 +23,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.LongString;
@@ -46,7 +48,9 @@ public final class QueueHelper {
   public static Serializable bytesToObject(final byte[] bytes) throws IOException, ClassNotFoundException {
     final Serializable object;
     if (bytes != null && bytes.length > 0) {
-      try (final ByteArrayInputStream bi = new ByteArrayInputStream(bytes); final ObjectInputStream in = new ObjectInputStream(bi)) {
+      try (final ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
+          final GZIPInputStream gzip = new GZIPInputStream(bi);
+          final ObjectInputStream in = new ObjectInputStream(gzip)) {
         object = (Serializable) in.readObject();
       }
     } else {
@@ -66,8 +70,12 @@ public final class QueueHelper {
     if (object == null) {
       bytes = new byte[0];
     } else {
-      try (final ByteArrayOutputStream bo = new ByteArrayOutputStream(); final ObjectOutputStream out = new ObjectOutputStream(bo)) {
-        out.writeObject(object);
+      try (final ByteArrayOutputStream bo = new ByteArrayOutputStream()) {
+        // separate try-block is intended, `GZIPOutputStream` must be closed before calling `toByteArray()`
+        try (final GZIPOutputStream gzip = new GZIPOutputStream(bo);
+            final ObjectOutputStream out = new ObjectOutputStream(gzip)) {
+          out.writeObject(object);
+        }
         bytes = bo.toByteArray();
       }
     }
