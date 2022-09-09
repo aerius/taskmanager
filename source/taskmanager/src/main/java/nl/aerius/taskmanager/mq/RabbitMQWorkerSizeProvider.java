@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -100,7 +101,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
 
   @Override
   public void shutdown() {
-    for (final String key : observers.keySet()) {
+    for (final String key : new ArrayList<>(observers.keySet())) {
       removeObserver(key);
     }
     eventProducer.shutdown();
