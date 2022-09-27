@@ -15,6 +15,15 @@ RUN mv -v "$(ls taskmanager/target/taskmanager-*.jar | grep -v -e '-javadoc' -e 
 # Final image containing only the application
 FROM openjdk:11-jre-buster
 
+# Set up a non root account to run containers as
+RUN groupadd -r taskmanager \
+    && useradd -r -g taskmanager taskmanager \
+    && mkdir /app \
+    && chown taskmanager:taskmanager /app \
+    # Make queue directory
+    && mkdir /app/queue
+USER taskmanager
+
 WORKDIR /app
 
 # The following ENV variables are set by default. Overwrite them to suit your configuration.
@@ -23,9 +32,6 @@ ENV AERIUS_BROKER_HOST="localhost" \
     AERIUS_BROKER_USERNAME="aerius" \
     AERIUS_BROKER_PASSWORD="aerius" \
     JAVA_OPTIONS="-XX:MaxRAMPercentage=75"
-
-# Make queue directory
-RUN mkdir /app/queue
 
 COPY --from=builder /app/app.jar /app/
 COPY taskmanager/src/main/docker/taskmanager.properties /app/
