@@ -19,7 +19,6 @@ package nl.aerius.taskmanager.mq;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -48,7 +47,6 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   private static final int DEFAULT_RETRY_SECONDS = 10;
 
-  private final ScheduledExecutorService executorService;
   private final BrokerConnectionFactory factory;
   private final String workerQueueName;
 
@@ -56,9 +54,8 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   private boolean isShutdown;
   private final boolean durable;
 
-  public RabbitMQWorkerProducer(final ScheduledExecutorService executorService, final BrokerConnectionFactory factory, final String workerQueueName,
+  public RabbitMQWorkerProducer(final BrokerConnectionFactory factory, final String workerQueueName,
       final boolean durable) {
-    this.executorService = executorService;
     this.factory = factory;
     this.workerQueueName = workerQueueName;
     this.durable = durable;
@@ -71,7 +68,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   @Override
   public void start() {
-    executorService.schedule(this::tryStartReplyConsumer, DEFAULT_RETRY_SECONDS, TimeUnit.SECONDS);
+    tryStartReplyConsumer();
   }
 
   @Override
