@@ -20,8 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -97,11 +96,11 @@ public class MockedChannelFactory {
   }
 
   private static void mockAck(final Channel channel) throws IOException {
-    doAnswer(inv -> {
+    lenient().doAnswer(inv -> {
       QUEUED.remove(inv.getArgument(0));
       return null;
     }).when(channel).basicAck(anyLong(), anyBoolean());
-    doAnswer(inv -> {
+    lenient().doAnswer(inv -> {
       if (QUEUED.containsKey(inv.getArgument(0))) {
         final Body body = QUEUED.remove(inv.getArgument(0));
         body.setPriority(1);
@@ -112,9 +111,9 @@ public class MockedChannelFactory {
   }
 
   private static void mockBasicPublish(final Channel channel) throws IOException {
-    doAnswer(inv -> basicPublish(inv, 1, 2, 3)).when(channel).basicPublish(any(), any(), any(), any());
-    doAnswer(inv -> basicPublish(inv, 1, 3, 4)).when(channel).basicPublish(any(), any(), anyBoolean(), any(), any());
-    doAnswer(inv -> basicPublish(inv, 1, 4, 5)).when(channel).basicPublish(any(), any(), anyBoolean(), anyBoolean(), any(), any());
+    lenient().doAnswer(inv -> basicPublish(inv, 1, 2, 3)).when(channel).basicPublish(any(), any(), any(), any());
+    lenient().doAnswer(inv -> basicPublish(inv, 1, 3, 4)).when(channel).basicPublish(any(), any(), anyBoolean(), any(), any());
+    lenient().doAnswer(inv -> basicPublish(inv, 1, 4, 5)).when(channel).basicPublish(any(), any(), anyBoolean(), anyBoolean(), any(), any());
   }
 
   private static Void basicPublish(final InvocationOnMock inv, final int rkIdx, final int bpIdx, final int bodyIdx) {
@@ -137,10 +136,10 @@ public class MockedChannelFactory {
       scheduleCallback(q, c, mockResults);
       return null;
     };
-    doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(1))).when(channel).basicConsume(any(), any());
-    doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(2))).when(channel).basicConsume(any(), anyBoolean(), any());
-    doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(3))).when(channel).basicConsume(any(), anyBoolean(), any(), any());
-    doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(6))).when(channel).basicConsume(any(), anyBoolean(), any(),
+    lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(1))).when(channel).basicConsume(any(), any());
+    lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(2))).when(channel).basicConsume(any(), anyBoolean(), any());
+    lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(3))).when(channel).basicConsume(any(), anyBoolean(), any(), any());
+    lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(6))).when(channel).basicConsume(any(), anyBoolean(), any(),
         anyBoolean(), anyBoolean(), any(), any());
   }
 
@@ -168,8 +167,8 @@ public class MockedChannelFactory {
 
   private static void mockQueueDeclare(final Channel channel) throws IOException {
     final DeclareOk mockDeclareOk = Mockito.mock(DeclareOk.class);
-    when(mockDeclareOk.getQueue()).thenReturn(UUID.randomUUID().toString());
-    when(channel.queueDeclare()).thenReturn(mockDeclareOk);
+    lenient().when(mockDeclareOk.getQueue()).thenReturn(UUID.randomUUID().toString());
+    lenient().when(channel.queueDeclare()).thenReturn(mockDeclareOk);
   }
 
   private static void mockClosed(final Channel channel) throws IOException {
@@ -179,9 +178,9 @@ public class MockedChannelFactory {
       return null;
     };
 
-    doAnswer(inv -> !closed.get()).when(channel).isOpen();
-    doAnswer(inv -> close.apply(true)).when(channel).close();
-    doAnswer(inv -> close.apply(true)).when(channel).close(anyInt(), any());
+    lenient().doAnswer(inv -> !closed.get()).when(channel).isOpen();
+    lenient().doAnswer(inv -> close.apply(true)).when(channel).close();
+    lenient().doAnswer(inv -> close.apply(true)).when(channel).close(anyInt(), any());
   }
 
   private static class Body {
