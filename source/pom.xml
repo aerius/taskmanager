@@ -21,7 +21,7 @@
 
   <groupId>nl.aerius</groupId>
   <artifactId>taskmanager-parent</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Taskmanager</name>
   <url>https://www.aerius.nl</url>
