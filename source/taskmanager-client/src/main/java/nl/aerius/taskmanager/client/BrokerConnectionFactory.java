@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -94,7 +95,7 @@ public class BrokerConnectionFactory {
       try {
         connection = createNewConnection();
         retry = false;
-      } catch (final IOException e) {
+      } catch (final IOException | TimeoutException e) {
         LOG.error("Connecting to rabbitmq failed, retry in {} seconds. Cause: {}", retryTime, e.getMessage());
         delayRetry(retryTime);
       }
@@ -164,7 +165,7 @@ public class BrokerConnectionFactory {
     }
   }
 
-  protected Connection createNewConnection() throws IOException {
+  protected Connection createNewConnection() throws IOException, TimeoutException {
     return factory.newConnection(executorService);
   }
 }

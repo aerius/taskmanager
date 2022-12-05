@@ -18,6 +18,7 @@ package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,7 @@ class RabbitMQChannelQueueEventsWatcher {
   public void shutdown() {
     try {
       channel.close();
-    } catch (final IOException e) {
+    } catch (final IOException | TimeoutException e) {
       LOG.trace("Channel watcher shutdown failed", e);
     }
   }

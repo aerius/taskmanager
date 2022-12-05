@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -60,7 +62,7 @@ public class MockedChannelFactory {
    * Creates a new mocked channel.
    *
    * @return mocked channel
-   * @throws IOException
+   * @throws IOException Due to mocking methods
    */
   public static Channel create() throws IOException {
     return create((p, b) -> b);
@@ -72,7 +74,7 @@ public class MockedChannelFactory {
    *
    * @param mockResults method to return mocked results
    * @return mocked channel
-   * @throws IOException
+   * @throws IOException Due to mocking methods
    */
   public static Channel create(final BiFunction<BasicProperties, byte[], byte[]> mockResults) throws IOException {
     reset();
@@ -81,7 +83,11 @@ public class MockedChannelFactory {
     mockBasicConsume(channel, mockResults);
     mockAck(channel);
     mockQueueDeclare(channel);
-    mockClosed(channel);
+    try {
+      mockClosed(channel);
+    } catch (final TimeoutException e) {
+      throw new IOException(e);
+    }
     return channel;
   }
 
@@ -138,7 +144,8 @@ public class MockedChannelFactory {
     };
     lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(1))).when(channel).basicConsume(any(), any());
     lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(2))).when(channel).basicConsume(any(), anyBoolean(), any());
-    lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(3))).when(channel).basicConsume(any(), anyBoolean(), any(), any());
+    lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(3))).when(channel).basicConsume(any(), anyBoolean(),
+        anyString(), any());
     lenient().doAnswer(inv -> scheduleSupplier.apply(inv.getArgument(0), inv.getArgument(6))).when(channel).basicConsume(any(), anyBoolean(), any(),
         anyBoolean(), anyBoolean(), any(), any());
   }
@@ -171,7 +178,7 @@ public class MockedChannelFactory {
     lenient().when(channel.queueDeclare()).thenReturn(mockDeclareOk);
   }
 
-  private static void mockClosed(final Channel channel) throws IOException {
+  private static void mockClosed(final Channel channel) throws IOException, TimeoutException {
     final AtomicBoolean closed = new AtomicBoolean();
     final Function<Boolean, Void> close = c -> {
       closed.set(c);

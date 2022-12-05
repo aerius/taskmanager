@@ -36,7 +36,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Connection;
 
 import nl.aerius.taskmanager.test.MockConnection;
@@ -160,7 +159,7 @@ class TaskManagerClientTest {
    */
   @Test
   void testSendTaskAfterExit() throws IOException, InterruptedException {
-    assertThrows(AlreadyClosedException.class, () -> {
+    assertThrows(IllegalStateException.class, () -> {
       taskManagerClient.shutdown();
       testSendTask();
     });

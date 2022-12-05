@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,7 +190,7 @@ public class RabbitMQWorkerMonitor {
   public void shutdown() {
     try {
       channel.close();
-    } catch (final IOException e) {
+    } catch (final IOException | TimeoutException e) {
       LOG.trace("Worker event monitor shutdown failed", e);
     }
   }
