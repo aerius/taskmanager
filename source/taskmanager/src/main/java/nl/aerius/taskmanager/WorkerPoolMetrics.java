@@ -17,22 +17,18 @@
 package nl.aerius.taskmanager;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.ObservableDoubleGauge;
+
+import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
 
 /**
  * Set up metric collection for this worker pool with the given type name.
  */
 public final class WorkerPoolMetrics {
-
-  private static final Meter METER = GlobalOpenTelemetry.getMeter("nl.aerius.taskmanager");
 
   private static final Map<String, ObservableDoubleGauge> REGISTERED_METRICS = new HashMap<>();
 
@@ -66,13 +62,14 @@ public final class WorkerPoolMetrics {
   }
 
   private WorkerPoolMetrics() {
+    // Util-like class
   }
 
   public static void setupMetrics(final WorkerPool workerPool, final String workerQueueName) {
-    final Attributes attributes = Attributes.of(AttributeKey.stringKey("worker_type"), workerIdentifier(workerQueueName));
+    final Attributes attributes = OpenTelemetryMetrics.workerDefaultAttributes(workerQueueName);
     for (final WorkerPoolMetricType metricType : WorkerPoolMetricType.values()) {
       REGISTERED_METRICS.put(gaugeIdentifier(workerQueueName, metricType),
-          METER.gaugeBuilder(metricType.getGaugeName())
+          OpenTelemetryMetrics.METER.gaugeBuilder(metricType.getGaugeName())
               .setDescription(metricType.getDescription())
               .buildWithCallback(
                   result -> result.record(metricType.getValue(workerPool), attributes)));
@@ -86,12 +83,6 @@ public final class WorkerPoolMetrics {
         REGISTERED_METRICS.remove(gaugeId).close();
       }
     }
-  }
-
-  private static String workerIdentifier(final String workerQueueName) {
-    final int workerTypeIndex = workerQueueName.lastIndexOf('.');
-
-    return (workerTypeIndex > 0 ? workerQueueName.substring(workerTypeIndex) : workerQueueName).toUpperCase(Locale.ROOT);
   }
 
   private static String gaugeIdentifier(final String workerQueueName, final WorkerPoolMetricType gaugeType) {
