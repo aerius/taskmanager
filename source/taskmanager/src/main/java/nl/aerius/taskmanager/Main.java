@@ -26,7 +26,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.aerius.metrics.MetricFactory;
 import nl.aerius.taskmanager.PriorityTaskScheduler.PriorityTaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
@@ -97,7 +96,6 @@ public final class Main {
   static void startupFromConfiguration(final ExecutorService executorService, final ScheduledExecutorService scheduledExecutorService,
       final String configurationFile) throws IOException {
     final Properties props = ConfigurationManager.getPropertiesFromFile(configurationFile);
-    MetricFactory.init(props, "taskmanager");
     final TaskManagerConfiguration tmConfig = ConfigurationManager.loadConfiguration(props);
     final BrokerConnectionFactory bcFactory = new BrokerConnectionFactory(executorService, tmConfig.getBrokerConfiguration());
     final AdaptorFactory aFactory = new RabbitMQAdaptorFactory(scheduledExecutorService, bcFactory);

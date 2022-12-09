@@ -49,20 +49,6 @@
       <artifactId>httpclient</artifactId>
     </dependency>
 
-    <!-- Metrics -->
-    <dependency>
-      <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-graphite</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.dropwizard.metrics</groupId>
-      <artifactId>metrics-jvm</artifactId>
-    </dependency>
-
     <!-- Logging -->
     <dependency>
       <groupId>ch.qos.logback</groupId>

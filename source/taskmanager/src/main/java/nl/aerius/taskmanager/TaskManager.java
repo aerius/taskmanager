@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.aerius.metrics.MetricFactory;
 import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
@@ -119,7 +118,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerProducer.start();
       // Set up metrics
-      WorkerPoolMetrics.setupMetrics(MetricFactory.getMetrics(), workerPool, workerQueueName);
+      WorkerPoolMetrics.setupMetrics(workerPool, workerQueueName);
 
       // Set up dispatcher
       dispatcher = new TaskDispatcher(workerQueueName, taskScheduler, workerPool);
@@ -186,7 +185,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     public void shutdown() {
       dispatcher.shutdown();
       workerProducer.shutdown();
-      WorkerPoolMetrics.removeMetrics(MetricFactory.getMetrics(), workerQueueName);
+      WorkerPoolMetrics.removeMetrics(workerQueueName);
       taskConsumers.forEach((k, v) -> v.shutdown());
     }
   }

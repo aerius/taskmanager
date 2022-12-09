@@ -16,12 +16,10 @@
  */
 package nl.aerius.taskmanager;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -30,9 +28,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.codahale.metrics.MetricRegistry;
-
-import nl.aerius.metrics.MetricFactory;
 import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
@@ -51,7 +46,6 @@ class TaskManagerTest {
   @BeforeEach
   void setUp() throws IOException, InterruptedException {
     executor = Executors.newCachedThreadPool();
-    MetricFactory.init(new Properties(), "test");
     final AdaptorFactory factory = new MockAdaptorFactory();
     final TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> schedulerFactory = new FIFOTaskScheduler.FIFOSchedulerFactory();
     taskManager = new TaskManager<>(executor, factory, schedulerFactory, factory.createWorkerSizeProvider());
@@ -63,7 +57,6 @@ class TaskManagerTest {
     taskManager.shutdown();
     executor.shutdownNow();
     executor.awaitTermination(10, TimeUnit.MILLISECONDS);
-    MetricFactory.getMetrics().removeMatching((name, metric) -> true);
   }
 
   @Test
@@ -86,12 +79,5 @@ class TaskManagerTest {
     schedule.getTaskQueues().remove(0);
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
-  }
-
-  @Test
-  void testMetricAvailable() throws IOException, InterruptedException {
-    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
-    final MetricRegistry metrics = MetricFactory.getMetrics();
-    assertEquals(3, metrics.getGauges((name, metric) -> name.startsWith("OPS")).size(), "There should be 3 gauges in a scheduler.");
   }
 }

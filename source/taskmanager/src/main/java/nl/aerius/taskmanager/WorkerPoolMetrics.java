@@ -16,11 +16,6 @@
  */
 package nl.aerius.taskmanager;
 
-import java.util.Locale;
-
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-
 /**
  * Set up metric collection for this worker pool with the given type name.
  */
@@ -28,29 +23,15 @@ public final class WorkerPoolMetrics {
   private WorkerPoolMetrics() {
   }
 
-  public static void setupMetrics(final MetricRegistry metrics, final WorkerPool workerPool, final String workerQueueName) {
-    metrics.register(metricName(workerQueueName, "workerSize"), (Gauge<Integer>) () -> workerPool.getWorkerSize());
-    metrics.register(metricName(workerQueueName, "currentWorkerSize"), (Gauge<Integer>) () -> workerPool.getCurrentWorkerSize());
-    metrics.register(metricName(workerQueueName, "runningWorkerSize"), (Gauge<Integer>) () -> workerPool.getRunningWorkerSize());
+  public static void setupMetrics(final WorkerPool workerPool, final String workerQueueName) {
+    // TODO use OpenTelemetry to register the following as gauge.
+    // workerPool.getWorkerSize()
+    // workerPool.getCurrentWorkerSize()
+    // workerPool.getRunningWorkerSize()
   }
 
-  public static void removeMetrics(final MetricRegistry metrics, final String workerQueueName) {
-    metrics.remove(metricName(workerQueueName, "workerSize"));
-    metrics.remove(metricName(workerQueueName, "currentWorkerSize"));
-    metrics.remove(metricName(workerQueueName, "runningWorkerSize"));
+  public static void removeMetrics(final String workerQueueName) {
+    // TODO unregister OpenTelemetry gauges (if possible)
   }
 
-  /**
-   * Constructs the metric name which consists of WorkerType in upper case dot metric type. For example: OPS.workerSize
-   *
-   * @param workerQueueName full name of the worker queue
-   * @param metricName name of the metric
-   * @return metric name as used to register metrics
-   */
-  private static String metricName(final String workerQueueName, final String metricName) {
-    final int workerTypeIndex = workerQueueName.lastIndexOf('.');
-
-    return MetricRegistry.name((workerTypeIndex > 0 ? workerQueueName.substring(workerTypeIndex) : workerQueueName).toUpperCase(Locale.ROOT),
-        metricName);
-  }
 }
