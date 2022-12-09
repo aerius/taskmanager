@@ -117,6 +117,8 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerProducer.start();
+      // Set up metrics
+      WorkerPoolMetrics.setupMetrics(workerPool, workerQueueName);
 
       // Set up dispatcher
       dispatcher = new TaskDispatcher(workerQueueName, taskScheduler, workerPool);
@@ -183,6 +185,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     public void shutdown() {
       dispatcher.shutdown();
       workerProducer.shutdown();
+      WorkerPoolMetrics.removeMetrics(workerQueueName);
       taskConsumers.forEach((k, v) -> v.shutdown());
     }
   }
