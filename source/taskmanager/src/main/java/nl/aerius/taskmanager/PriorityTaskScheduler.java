@@ -30,6 +30,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.opentelemetry.context.Context;
+
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 
@@ -69,6 +71,8 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   public void addTask(final Task task) {
     lock.lock();
     try {
+      final Context currentContext = Context.current();
+      task.setContext(currentContext);
       queue.add(task);
       signalNextTask();
     } finally {
@@ -104,6 +108,9 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
             tasksOnWorkers++;
             tasksOnWorkersPerQueue.get(queueName).incrementAndGet();
             task = queue.poll();
+            if (task.getContext() != null) {
+              task.getContext().makeCurrent();
+            }
           }
         }
         // If no task present, await till we get a signal that there could be a new one (or a max time to avoid 'deadlocks')
