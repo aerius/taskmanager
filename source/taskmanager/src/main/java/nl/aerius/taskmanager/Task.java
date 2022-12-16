@@ -16,6 +16,8 @@
  */
 package nl.aerius.taskmanager;
 
+import io.opentelemetry.context.Context;
+
 import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.MessageMetaData;
 
@@ -27,6 +29,7 @@ class Task {
   private Message<?> data;
   private final TaskConsumer taskConsumer;
   private boolean alive = true;
+  private Context context;
 
   public Task(final TaskConsumer taskConsumer) {
     this.taskConsumer = taskConsumer;
@@ -55,6 +58,14 @@ class Task {
 
   public boolean isAlive() {
     return alive;
+  }
+
+  public Context getContext() {
+    return context;
+  }
+
+  public void setContext(final Context context) {
+    this.context = context;
   }
 
   @Override
