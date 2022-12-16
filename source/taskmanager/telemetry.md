@@ -1,6 +1,6 @@
 # Telemetry in Taskmanager
 
-The taskmanager application is equiped with OpenTelemetry capabilities.
+The taskmanager application is equipped with OpenTelemetry capabilities.
 That means that it supports the use of an opentelemetry java agent, even though it is not manually instrumented.
 
 ## Traces
