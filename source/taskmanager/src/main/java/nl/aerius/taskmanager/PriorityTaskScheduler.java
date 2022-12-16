@@ -71,8 +71,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   public void addTask(final Task task) {
     lock.lock();
     try {
-      final Context currentContext = Context.current();
-      task.setContext(currentContext);
+      task.setContext(Context.current());
       queue.add(task);
       signalNextTask();
     } finally {
