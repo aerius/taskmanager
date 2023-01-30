@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -42,7 +43,7 @@ public final class WorkerPoolMetrics {
     private final Function<WorkerPool, Integer> function;
     private final String description;
 
-    private WorkerPoolMetricType(final Function<WorkerPool, Integer> function, final String description) {
+    WorkerPoolMetricType(final Function<WorkerPool, Integer> function, final String description) {
       this.function = function;
       this.description = description;
     }
@@ -52,7 +53,7 @@ public final class WorkerPoolMetrics {
     }
 
     String getGaugeName() {
-      return "aer.taskmanager." + name().toLowerCase();
+      return "aer.taskmanager." + name().toLowerCase(Locale.ROOT);
     }
 
     String getDescription() {
