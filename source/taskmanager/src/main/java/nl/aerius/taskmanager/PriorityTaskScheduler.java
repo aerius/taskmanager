@@ -45,9 +45,11 @@ import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Comparator<Task> {
 
   private static final Logger LOG = LoggerFactory.getLogger(PriorityTaskScheduler.class);
+  private static final AtomicInteger EMPTY_QUEUE = new AtomicInteger();
   private static final int INITIAL_SIZE = 20;
   private static final int NEXT_TASK_MAX_WAIT_TIME_SECONDS = 120;
 
+  private final PriorityTaskSchedulerMetrics metrics = new PriorityTaskSchedulerMetrics();
   private final Queue<Task> queue;
   private final Map<String, PriorityTaskQueue> taskQueueConfigurations = new ConcurrentHashMap<>();
   private final Map<String, AtomicInteger> tasksOnWorkersPerQueue = new ConcurrentHashMap<>();
@@ -167,6 +169,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
       // clean up queue if it has been removed.
       if (!taskQueueConfigurations.containsKey(queueName)) {
         tasksOnWorkersPerQueue.remove(queueName);
+        metrics.removeMetric(queueName);
       }
     } finally {
       lock.unlock();
@@ -198,6 +201,9 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
       if (old != null && !old.equals(queue)) {
         LOG.info("Queue {} was updated with new values: {}", queueName, queue);
+      }
+      if (!tasksOnWorkersPerQueue.containsKey(queueName)) {
+        metrics.addMetric(() -> tasksOnWorkersPerQueue.getOrDefault(queueName, EMPTY_QUEUE).get(), workerQueueName, queueName);
       }
       tasksOnWorkersPerQueue.computeIfAbsent(queueName, qn -> new AtomicInteger());
     } finally {
