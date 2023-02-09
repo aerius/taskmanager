@@ -196,7 +196,7 @@ class TaskManagerClientTest {
    */
   @Test
   void testSendTaskWithoutResultHandler() throws IOException {
-    taskManagerClient.sendTask(new MockTaskInput(), workerType, TASK_QUEUE_NAME);
+    taskManagerClient.sendTask(new MockTaskInput(), UUID.randomUUID().toString(), null, workerType, TASK_QUEUE_NAME);
     assertTrue(taskManagerClient.isUsable(), "Taskmanagerclient should still be usable.");
   }
 

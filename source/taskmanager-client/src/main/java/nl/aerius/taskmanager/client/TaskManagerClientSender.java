@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.ConnectException;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
@@ -71,53 +70,6 @@ public class TaskManagerClientSender implements TaskWrapperSender {
     }
     this.factory = factory;
     factory.registerClient(this);
-  }
-
-  /**
-   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
-   * Should be used when results are not important and should not be waited for.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param queueNaming name of the queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public void sendTask(final Serializable input, final WorkerQueueType queueNaming, final String taskQueueName) throws IOException {
-    final String uniqueId = UUID.randomUUID().toString();
-    sendTask(input, uniqueId, queueNaming, taskQueueName);
-  }
-
-  /**
-   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
-   * Should be used when results are not important and should not be waited for.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param uniqueId The unique ID to use for this task. Can be used in worker to link results to this task
-   * @param queueNaming name of the queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public void sendTask(final Serializable input, final String uniqueId, final WorkerQueueType queueNaming, final String taskQueueName)
-      throws IOException {
-    sendTask(new TaskWrapper(Optional.empty(), input, uniqueId, uniqueId, taskQueueName, queueNaming));
-  }
-
-  /**
-   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param resultCallback The resultCallback which will receive results. Can be null, in which case the messages are only send and no results can be
-   *          retrieved.
-   * @param queueNaming name of the queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @return a random unique task ID. Will be used when a result is received to tell the TaskResultCallback which task was the cause.
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public String sendTask(final Serializable input, final TaskResultCallback resultCallback, final WorkerQueueType queueNaming,
-      final String taskQueueName) throws IOException {
-    final String uniqueId = UUID.randomUUID().toString();
-    sendTask(input, uniqueId, resultCallback, queueNaming, taskQueueName);
-    return uniqueId;
   }
 
   /**
