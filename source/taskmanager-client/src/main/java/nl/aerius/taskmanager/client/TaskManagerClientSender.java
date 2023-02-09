@@ -120,9 +120,8 @@ public class TaskManagerClientSender implements TaskWrapperSender {
     }
     boolean done = false;
     while (running && !done) {
-      try {
+      try (final Channel channel = getConnection().createChannel()) {
         // Create a channel to send the message over.
-        final Channel channel = getConnection().createChannel();
         final String queueName = wrapper.getNaming().getTaskQueueName(wrapper.getQueueName());
         final Serializable task = wrapper.getTask();
         // set a unique message ID.
@@ -140,8 +139,6 @@ public class TaskManagerClientSender implements TaskWrapperSender {
         final BasicProperties props = builder.build();
         // Send the message to the taskmanager.
         channel.basicPublish("", queueName, props, QueueHelper.objectToBytes(task));
-        // Close this channel.
-        channel.close();
         // task has been send successfully, return.
         done = true;
       } catch (final ConnectException | TimeoutException e) {
