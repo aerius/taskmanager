@@ -57,7 +57,11 @@ public class WorkerResultSender implements WorkerIntermediateResultSender {
   public void sendFinalResult(final Serializable data) throws IOException {
     sendIntermediateResult(data);
     if (properties.getHeaders() != null) {
-      sendMessage(QueueHelper.getHeaderString(properties, QueueConstants.TASKMANAGER_REPLY_QUEUE), EMPTY_ARRAY);
+      final String taskManagerReplyQueue = QueueHelper.getHeaderString(properties, QueueConstants.TASKMANAGER_REPLY_QUEUE);
+
+      if (taskManagerReplyQueue != null) {
+        sendMessage(taskManagerReplyQueue, EMPTY_ARRAY);
+      }
     }
   }
 
@@ -70,5 +74,4 @@ public class WorkerResultSender implements WorkerIntermediateResultSender {
     // reply to the requested queue, converting the object to bytes first.
     channel.basicPublish(EXCHANGE, queue, basicProperties, data);
   }
-
 }
