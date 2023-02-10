@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.ConnectException;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
@@ -74,71 +73,27 @@ public class TaskManagerClientSender implements TaskWrapperSender {
   }
 
   /**
-   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
-   * Should be used when results are not important and should not be waited for.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param queueNaming name of the queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public void sendTask(final Serializable input, final WorkerQueueType queueNaming, final String taskQueueName) throws IOException {
-    final String uniqueId = UUID.randomUUID().toString();
-    sendTask(input, uniqueId, queueNaming, taskQueueName);
-  }
-
-  /**
-   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
-   * Should be used when results are not important and should not be waited for.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param uniqueId The unique ID to use for this task. Can be used in worker to link results to this task
-   * @param queueNaming name of the queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public void sendTask(final Serializable input, final String uniqueId, final WorkerQueueType queueNaming, final String taskQueueName)
-      throws IOException {
-    sendTask(new TaskWrapper(Optional.empty(), input, uniqueId, uniqueId, taskQueueName, queueNaming));
-  }
-
-  /**
-   * Convenience method of {@link #sendTask(Serializable, String, TaskResultCallback, WorkerQueueType, String)}.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param resultCallback The resultCallback which will receive results. Can be null, in which case the messages are only send and no results can be
-   *          retrieved.
-   * @param queueNaming name of the queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @return a random unique task ID. Will be used when a result is received to tell the TaskResultCallback which task was the cause.
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public String sendTask(final Serializable input, final TaskResultCallback resultCallback, final WorkerQueueType queueNaming,
-      final String taskQueueName) throws IOException {
-    final String uniqueId = UUID.randomUUID().toString();
-    sendTask(input, uniqueId, resultCallback, queueNaming, taskQueueName);
-    return uniqueId;
-  }
-
-  /**
-   * Convenience method of {@link #sendTask(Serializable, String, String, TaskResultCallback, WorkerQueueType, String)}. Should be used when the callback wants to correspond a
-   * result based on a unique ID.
+   * Convenience method of {@link #sendTask(Serializable, String, String, TaskResultCallback, WorkerQueueType, String)}. Should be used when the
+   * callback wants to correspond a result based on a unique ID.
    *
    * @param input The input object which the worker needs to do the work.
    * @param uniqueId The unique ID to use for this task. Will be used when a result is received to tell the TaskResultCallback which task was the
    *          cause.
    * @param resultCallback The resultCallback which will receive results. Can be null, in which case the messages are only send and no results can be
    *          retrieved.
-   * @param queueNaming name of the queue
+   * @param workerQueueType name of the worker queue
    * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
    * @throws IOException In case of errors communicating with queue.
    */
-  public void sendTask(final Serializable input, final String uniqueId, final TaskResultCallback resultCallback, final WorkerQueueType queueNaming,
+  public void sendTask(final Serializable input, final String uniqueId, final TaskResultCallback resultCallback,
+      final WorkerQueueType workerQueueType,
       final String taskQueueName) throws IOException {
-    sendTask(new TaskWrapper(Optional.ofNullable(resultCallback), input, uniqueId, uniqueId, taskQueueName, queueNaming));
+    sendTask(input, uniqueId, uniqueId, resultCallback, workerQueueType, taskQueueName);
   }
 
   /**
+   * Send a task to the client queue belonging to a client queue for the worker in workerTypeQueue.
+   *
    * @param input The input object which the worker needs to do the work.
    * @param correlationId The correlation ID to use for this task. Will be used when a result is received to
    *          tell the TaskResultCallback which task was the cause. Can be used to correlate a task in the callback.
@@ -146,13 +101,33 @@ public class TaskManagerClientSender implements TaskWrapperSender {
    *          tell the TaskResultCallback which task was the cause. Should be unique.
    * @param resultCallback The resultCallback which will receive results.
    *          Can be null, in which case the messages are only send and no results can be retrieved.
-   * @param queueNaming name of the queue
+   * @param workerQueueType name of the worker queue
    * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
    * @throws IOException In case of errors communicating with queue.
    */
   public void sendTask(final Serializable input, final String correlationId, final String messageId, final TaskResultCallback resultCallback,
-      final WorkerQueueType queueNaming, final String taskQueueName) throws IOException {
-    sendTask(new TaskWrapper(Optional.ofNullable(resultCallback), input, correlationId, messageId, taskQueueName, queueNaming));
+      final WorkerQueueType workerQueueType, final String taskQueueName) throws IOException {
+    sendTask(new TaskWrapper(Optional.ofNullable(resultCallback), input, correlationId, messageId, workerQueueType.getTaskQueueName(taskQueueName),
+        workerQueueType));
+  }
+
+  /**
+   * Sends the task directly to the worker queue bypassing the taskmanager.
+   *
+   * @param input The input object which the worker needs to do the work.
+   * @param correlationId The correlation ID to use for this task. Will be used when a result is received to
+   *          tell the TaskResultCallback which task was the cause. Can be used to correlate a task in the callback.
+   * @param messageId The message ID to use for this task. Will be used when a result is received to
+   *          tell the TaskResultCallback which task was the cause. Should be unique.
+   * @param resultCallback The resultCallback which will receive results.
+   *          Can be null, in which case the messages are only send and no results can be retrieved.
+   * @param workerQueueType name of the worker queue
+   * @throws IOException In case of errors communicating with queue.
+   */
+  public void sendTask(final Serializable input, final String correlationId, final String messageId, final TaskResultCallback resultCallback,
+      final WorkerQueueType workerQueueType) throws IOException {
+    sendTask(
+        new TaskWrapper(Optional.ofNullable(resultCallback), input, correlationId, messageId, workerQueueType.getWorkerQueueName(), workerQueueType));
   }
 
   @Override
@@ -168,10 +143,9 @@ public class TaskManagerClientSender implements TaskWrapperSender {
     }
     boolean done = false;
     while (running && !done) {
-      try {
+      try (final Channel channel = getConnection().createChannel()) {
         // Create a channel to send the message over.
-        final Channel channel = getConnection().createChannel();
-        final String queueName = wrapper.getNaming().getTaskQueueName(wrapper.getQueueName());
+        final String queueName = wrapper.getQueueName();
         final Serializable task = wrapper.getTask();
         // set a unique message ID.
         final String messageId = wrapper.getTaskId();
@@ -188,8 +162,6 @@ public class TaskManagerClientSender implements TaskWrapperSender {
         final BasicProperties props = builder.build();
         // Send the message to the taskmanager.
         channel.basicPublish("", queueName, props, QueueHelper.objectToBytes(task));
-        // Close this channel.
-        channel.close();
         // task has been send successfully, return.
         done = true;
       } catch (final ConnectException | TimeoutException e) {

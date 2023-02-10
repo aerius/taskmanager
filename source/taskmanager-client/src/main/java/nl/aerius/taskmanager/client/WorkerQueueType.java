@@ -68,7 +68,7 @@ public class WorkerQueueType {
    * @return The queuename that should be used for declaring the queue.
    */
   public String getTaskQueueName(final String taskName) {
-    return NAMING_PREFIX + propertyName() + DOT + taskName;
+    return taskName == null ? null : (NAMING_PREFIX + propertyName() + DOT + taskName);
   }
 
   public String getWorkerQueueName() {
