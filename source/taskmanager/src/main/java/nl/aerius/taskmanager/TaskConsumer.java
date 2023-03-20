@@ -17,7 +17,9 @@
 package nl.aerius.taskmanager;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,8 @@ class TaskConsumer implements MessageReceivedHandler {
   private final TaskMessageHandler<MessageMetaData, Message<MessageMetaData>> taskMessageHandler;
 
   private boolean running = true;
+
+  private Future<?> messageHandlerFuture;
 
   @SuppressWarnings("unchecked")
   public TaskConsumer(final ExecutorService executorService, final String taskQueueName, final boolean durable,
@@ -110,12 +114,21 @@ class TaskConsumer implements MessageReceivedHandler {
     taskMessageHandler.messageDeliveryAborted(message, exception);
   }
 
-  public void start() {
-    executorService.submit(() -> {
+  public synchronized void start() {
+    if (messageHandlerFuture != null && !messageHandlerFuture.isDone()) {
+      try {
+        messageHandlerFuture.get();
+      } catch (final InterruptedException e) {
+        Thread.currentThread().interrupt();
+      } catch (final ExecutionException e) {
+        LOG.trace("TaskConsumer shutdown {} got exception.", taskQueueName, e);
+      }
+    }
+    messageHandlerFuture = executorService.submit(() -> {
       try {
         taskMessageHandler.start();
       } catch (final IOException e) {
-        LOG.error("TaskConsumer for {} got IO problems.", taskQueueName, e);
+        LOG.trace("TaskConsumer for {} got IO problems.", taskQueueName, e);
       }
     });
   }
