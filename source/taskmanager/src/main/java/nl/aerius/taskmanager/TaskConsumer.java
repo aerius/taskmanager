@@ -121,14 +121,14 @@ class TaskConsumer implements MessageReceivedHandler {
       } catch (final InterruptedException e) {
         Thread.currentThread().interrupt();
       } catch (final ExecutionException e) {
-        LOG.trace("TaskConsumer shutdown {} got exception.", taskQueueName, e);
+        LOG.info("TaskConsumer shutdown {} got exception.", taskQueueName, e);
       }
     }
     messageHandlerFuture = executorService.submit(() -> {
       try {
         taskMessageHandler.start();
       } catch (final IOException e) {
-        LOG.trace("TaskConsumer for {} got IO problems.", taskQueueName, e);
+        LOG.error("TaskConsumer for {} got IO problems.", taskQueueName, e);
       }
     });
   }
