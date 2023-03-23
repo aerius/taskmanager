@@ -47,11 +47,19 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
   private MessageReceivedHandler messageReceivedHandler;
   private RabbitMQMessageConsumer consumer;
   private boolean isShutdown;
+  private boolean warned;
+
   /**
    * Set a boolean that is set as long as we're trying to (re)connect to RabbitMQ.
    */
   private final AtomicBoolean tryConnecting = new AtomicBoolean();
 
+  private final AtomicBoolean tryStartingConsuming = new AtomicBoolean();
+
+  /**
+   * Time to wait before retrying connection.
+   */
+  private long retryTimeMilliseconds = TimeUnit.SECONDS.toMillis(DEFAULT_RETRY_SECONDS);
 
   /**
    * Constructor.
@@ -74,13 +82,31 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
 
   @Override
   public void start() throws IOException {
-    tryStartConsuming();
+    tryStartingConsuming.set(true);
+    while (!isShutdown) {
+      try {
+        stopAndStartConsumer();
+        LOG.info("Successfully (re)started consumer for {}", taskQueueName);
+        if (consumer.getChannel().isOpen()) {
+          tryStartingConsuming.set(false);
+          break;
+        }
+      } catch (final ShutdownSignalException | IOException e1) {
+        if (!warned) {
+          LOG.warn("(Re)starting consumer for {} failed, retrying in a while", taskQueueName, e1);
+          warned = true;
+        }
+        delayRetry();
+      }
+    }
   }
 
   @Override
   public void shutDown() throws IOException {
     isShutdown = true;
-    consumer.stopConsuming();
+    if (consumer != null) {
+      consumer.stopConsuming();
+    }
   }
 
   @Override
@@ -107,27 +133,13 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
     }
   }
 
-
-  private void tryStartConsuming() {
-    boolean warn = true;
-    while (!isShutdown) {
-      try {
-        stopAndStartConsumer();
-        LOG.info("Successfully (re)started consumer for {}", taskQueueName);
-        break;
-      } catch (final ShutdownSignalException | IOException e1) {
-        if (warn) {
-          LOG.warn("(Re)starting consumer for {} failed, retrying in a while", taskQueueName, e1);
-          warn = false;
-        }
-        delayRetry(DEFAULT_RETRY_SECONDS);
-      }
-    }
+  public void setRetryTimeMilliseconds(final long retryTimeMilliseconds) {
+    this.retryTimeMilliseconds = retryTimeMilliseconds;
   }
 
-  private void delayRetry(final int retryTime) {
+  private void delayRetry() {
     try {
-      Thread.sleep(TimeUnit.SECONDS.toMillis(retryTime));
+      Thread.sleep(retryTimeMilliseconds);
     } catch (final InterruptedException ex) {
       LOG.debug("Waiting interrupted", ex);
       Thread.currentThread().interrupt();
@@ -144,17 +156,20 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
           taskQueueName,
           durable,
           this);
-      consumer.getChannel().addShutdownListener(e -> handleShutdownSignal(e));
+      consumer.getChannel().addShutdownListener(this::handleShutdownSignal);
       consumer.startConsuming();
       tryConnecting.set(false);
+      warned = false;
     }
   }
 
-  private void handleShutdownSignal(final ShutdownSignalException sig) {
-    if (tryConnecting.compareAndSet(false, true)) {
-      if (messageReceivedHandler != null) {
-        messageReceivedHandler.handleShutdownSignal();
-      }
+  private void handleShutdownSignal(final ShutdownSignalException ssg) {
+    if (ssg != null && ssg.isInitiatedByApplication()) {
+      return;
+    }
+    if (!tryStartingConsuming.get() && tryConnecting.compareAndSet(false, true) && messageReceivedHandler != null) {
+      delayRetry();
+      messageReceivedHandler.handleShutdownSignal();
     }
   }
 }
