@@ -15,7 +15,7 @@ jobs:
           path: aerius-github-actions
           ref: v1.0.2
 
-      - uses: aerius/github-actions/events/push-event-action@v1
+      - uses: aerius/github-actions/events/push-event-action@v1.0.2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -23,11 +23,11 @@ jobs:
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
           ROOT_POM_DIRECTORY: repo/source
 
-      - uses: aerius/github-actions/extras/docker-build-or-publish-based-on-maven-project-version-action@v1
+      - uses: aerius/github-actions/extras/docker-build-or-publish-based-on-maven-project-version-action@v1.0.2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_REGISTRY_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           DOCKER_REGISTRY_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
           DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
+          DOCKER_WORK_DIRECTORY: repo/source
           ROOT_POM_DIRECTORY: repo/source
-          DOCKERFILE_DIRECTORY: repo/source
