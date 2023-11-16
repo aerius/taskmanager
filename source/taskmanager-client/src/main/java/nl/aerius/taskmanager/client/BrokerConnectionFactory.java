@@ -86,28 +86,28 @@ public class BrokerConnectionFactory {
   }
 
   private Connection openConnection() {
-    Connection connection = null;
+    Connection localConnection = null;
     boolean retry = true;
     int retryTime = 0;
 
     while (retry) {
       retryTime += WAIT_BEFORE_RETRY_SECONDS;
       try {
-        connection = createNewConnection();
+        localConnection = createNewConnection();
         retry = false;
       } catch (final IOException | TimeoutException e) {
         LOG.error("Connecting to rabbitmq failed, retry in {} seconds. Cause: {}", retryTime, e.getMessage());
         delayRetry(retryTime);
       }
     }
-    connection.addShutdownListener((cause) -> {
+    localConnection.addShutdownListener((cause) -> {
       if (cause.isInitiatedByApplication()) {
         LOG.info("Connection was shut down (by application)");
       } else {
         LOG.warn("Connection has been shut down, trying to reconnect", cause);
       }
     });
-    return connection;
+    return localConnection;
   }
 
   private void delayRetry(final int retryTime) {
