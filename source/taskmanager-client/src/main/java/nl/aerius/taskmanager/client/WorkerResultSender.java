@@ -69,7 +69,7 @@ public class WorkerResultSender implements WorkerIntermediateResultSender {
     final BasicProperties basicProperties = new BasicProperties.Builder()
         .correlationId(properties.getCorrelationId())
         .messageId(properties.getMessageId())
-        .headers(new HashMap<String, Object>())
+        .headers(new HashMap<>())
         .build();
     // reply to the requested queue, converting the object to bytes first.
     channel.basicPublish(EXCHANGE, queue, basicProperties, data);
