@@ -149,6 +149,7 @@ public class RabbitMQWorkerMonitor {
         @Override
         public void handleShutdownSignal(final String consumerTag, final ShutdownSignalException sig) {
           if (sig.isInitiatedByApplication()) {
+            isShutdown = true;
             LOG.info("Worker event monitor {} was shut down by the application.", consumerTag);
           } else {
             LOG.debug("Worker event monitor {} was shut down.", consumerTag);
