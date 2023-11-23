@@ -115,15 +115,17 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   private void tryStartReplyConsumer() {
     boolean warn = true;
     while (!isShutdown) {
-      final Connection connection = factory.getConnection();
-
+      Connection connection = null;
       try {
+        connection = factory.getConnection();
         connection.addShutdownListener(this::restartConnection);
         startReplyConsumer(connection);
         LOG.info("Successfully (re)started reply consumer for queue {}", workerQueueName);
         break;
       } catch (final ShutdownSignalException | IOException e1) {
-        connection.removeShutdownListener(this::restartConnection);
+        if (connection != null) {
+          connection.removeShutdownListener(this::restartConnection);
+        }
         if (warn) {
           LOG.warn("(Re)starting reply consumer for queue {} failed, retrying in a while", workerQueueName);
           LOG.trace("(Re)starting failed with exception:", e1);
