@@ -131,7 +131,9 @@ class RabbitMQWorkerProducer implements WorkerProducer {
           LOG.trace("(Re)starting failed with exception:", e1);
           warn = false;
         }
-        delayRetry(DEFAULT_RETRY_SECONDS);
+        if (!isShutdown) {
+          delayRetry(DEFAULT_RETRY_SECONDS);
+        }
       }
     }
   }
