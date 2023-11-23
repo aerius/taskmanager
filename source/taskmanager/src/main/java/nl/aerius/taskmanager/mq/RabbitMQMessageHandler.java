@@ -96,7 +96,9 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
           LOG.warn("(Re)starting consumer for {} failed, retrying in a while", taskQueueName, e1);
           warned = true;
         }
-        delayRetry();
+        if (!isShutdown) {
+          delayRetry();
+        }
       }
     }
   }
@@ -168,7 +170,6 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
       return;
     }
     if (!tryStartingConsuming.get() && tryConnecting.compareAndSet(false, true) && messageReceivedHandler != null) {
-      delayRetry();
       messageReceivedHandler.handleShutdownSignal();
     }
   }
