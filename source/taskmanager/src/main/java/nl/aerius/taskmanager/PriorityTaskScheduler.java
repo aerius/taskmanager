@@ -106,22 +106,29 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
           final String queueName = task.getTaskConsumer().getQueueName();
           taskPresent = isTaskNext(queueName);
           if (taskPresent) {
-            tasksOnWorkers++;
-            tasksOnWorkersPerQueue.get(queueName).incrementAndGet();
-            task = queue.poll();
-            if (task.getContext() != null) {
-              task.getContext().makeCurrent();
-            }
+            obtainTask(queueName);
           }
         }
         // If no task present, await till we get a signal that there could be a new one (or a max time to avoid 'deadlocks')
         if (!taskPresent) {
-          nextTaskCondition.await(NEXT_TASK_MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
+          final boolean receivedSignal = nextTaskCondition.await(NEXT_TASK_MAX_WAIT_TIME_SECONDS, TimeUnit.SECONDS);
+          if (!receivedSignal) {
+            LOG.trace("Waited long enough for next task, trying again");
+          }
         }
-
       } while (!taskPresent);
     } finally {
       lock.unlock();
+    }
+    return task;
+  }
+
+  private Task obtainTask(final String queueName) {
+    tasksOnWorkers++;
+    tasksOnWorkersPerQueue.get(queueName).incrementAndGet();
+    final Task task = queue.poll();
+    if (task.getContext() != null) {
+      task.getContext().makeCurrent();
     }
     return task;
   }
