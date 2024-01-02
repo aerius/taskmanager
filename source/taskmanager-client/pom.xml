@@ -37,12 +37,6 @@
       <artifactId>amqp-client</artifactId>
     </dependency>
 
-    <!-- json -->
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-    </dependency>
-
     <!-- Commons -->
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>

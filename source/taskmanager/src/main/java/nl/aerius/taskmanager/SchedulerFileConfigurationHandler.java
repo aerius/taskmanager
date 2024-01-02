@@ -37,13 +37,4 @@ interface SchedulerFileConfigurationHandler<T extends TaskQueue, S extends TaskS
    * @throws IOException
    */
   S read(File file) throws IOException;
-
-  /**
-   * Writes the schedule to a file.
-   *
-   * @param path path to store the file
-   * @param schedule schedule to store
-   * @throws IOException
-   */
-  void write(File path, S schedule) throws IOException;
 }

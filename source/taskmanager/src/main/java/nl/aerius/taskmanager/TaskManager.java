@@ -75,7 +75,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     }
     final TaskScheduleBucket taskScheduleBucket = buckets.get(workerQueueName);
 
-    taskScheduleBucket.updateQueues(schedule.getTaskQueues(), schedule.isDurable());
+    taskScheduleBucket.updateQueues(schedule.getQueues(), schedule.isDurable());
     return taskScheduleBucket.isRunning();
   }
 
