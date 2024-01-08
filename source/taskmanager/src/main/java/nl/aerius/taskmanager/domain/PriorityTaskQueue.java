@@ -37,7 +37,7 @@ public class PriorityTaskQueue extends TaskQueue {
    * @param priority The priority this task should have.
    * @param maxCapacityUse The maximum capacity this task can use of the total workers assigned. Should be a fraction.
    */
-  public PriorityTaskQueue(final String queueName,final int priority, final double maxCapacityUse) {
+  public PriorityTaskQueue(final String queueName, final int priority, final double maxCapacityUse) {
     super(queueName);
     this.priority = priority;
     this.maxCapacityUse = maxCapacityUse;

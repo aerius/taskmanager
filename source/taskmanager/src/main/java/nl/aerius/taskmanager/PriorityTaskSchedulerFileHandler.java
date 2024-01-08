@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
@@ -52,7 +51,7 @@ class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurationHand
     return objectMapper.readValue(file, PriorityTaskSchedule.class);
   }
 
-  private PriorityTaskSchedule readFromEnvironment(final String workerQueueName) throws JsonMappingException, JsonProcessingException {
+  private PriorityTaskSchedule readFromEnvironment(final String workerQueueName) throws JsonProcessingException {
     final String environmentKey = ENV_PREFIX + workerQueueName.toUpperCase(Locale.ROOT);
     final String environmentValue = System.getenv(environmentKey);
     if (environmentValue != null) {
