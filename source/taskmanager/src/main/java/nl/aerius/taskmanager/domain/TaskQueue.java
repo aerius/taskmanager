@@ -16,13 +16,15 @@
  */
 package nl.aerius.taskmanager.domain;
 
-import com.google.gson.annotations.Expose;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Base class for a single task queue configuration.
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
+@JsonSubTypes({ @JsonSubTypes.Type(PriorityTaskQueue.class) })
 public class TaskQueue {
-  @Expose
   private String queueName;
 
   protected TaskQueue() {

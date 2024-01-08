@@ -68,7 +68,7 @@ class TaskManagerTest {
   @Test
   void testModifyQueue() throws IOException, InterruptedException {
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
-    schedule.getTaskQueues().get(0).setPriority(30);
+    schedule.getQueues().get(0).setPriority(30);
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
@@ -76,7 +76,7 @@ class TaskManagerTest {
   @Test
   void testRemoveQueue() throws IOException, InterruptedException {
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
-    schedule.getTaskQueues().remove(0);
+    schedule.getQueues().remove(0);
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }

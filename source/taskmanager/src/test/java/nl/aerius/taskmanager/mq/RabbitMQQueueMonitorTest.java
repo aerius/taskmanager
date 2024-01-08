@@ -25,9 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
@@ -38,6 +37,7 @@ import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 class RabbitMQQueueMonitorTest {
 
   private static final String DUMMY = "dummy";
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
   void testGetWorkerQueueState() throws InterruptedException {
@@ -57,13 +57,10 @@ class RabbitMQQueueMonitorTest {
     };
     final RabbitMQQueueMonitor rpm = new RabbitMQQueueMonitor(configuration) {
       @Override
-      protected JsonElement getJsonResultFromApi(final String apiPath) {
+      protected JsonNode getJsonResultFromApi(final String apiPath) throws IOException {
         try (final InputStream fr = getClass().getResourceAsStream("queue_aerius.worker.ops.txt");
-            final InputStreamReader is = new InputStreamReader(fr);
-            final JsonReader jr = new JsonReader(is)) {
-          return JsonParser.parseReader(jr);
-        } catch (final IOException e) {
-          throw new RuntimeException(e);
+            final InputStreamReader is = new InputStreamReader(fr)) {
+          return objectMapper.readTree(is);
         }
       }
     };

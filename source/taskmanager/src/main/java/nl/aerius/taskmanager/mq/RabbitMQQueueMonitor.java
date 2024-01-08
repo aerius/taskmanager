@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
@@ -41,10 +42,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
@@ -59,6 +58,7 @@ public class RabbitMQQueueMonitor {
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQQueueMonitor.class);
   private static final int TIMEOUT = (int) TimeUnit.SECONDS.toMillis(3);
 
+  private final ObjectMapper objectMapper = new ObjectMapper();
   private final ConnectionConfiguration configuration;
   private final CloseableHttpClient httpClient;
   private final HttpHost targetHost;
@@ -110,11 +110,11 @@ public class RabbitMQQueueMonitor {
     final String apiPath = "/api/queues/" + virtualHost + "/" + queueName;
 
     try {
-      final JsonElement je = getJsonResultFromApi(apiPath);
-      if (je == null) {
+      final JsonNode jsonObject = getJsonResultFromApi(apiPath);
+
+      if (jsonObject == null) {
         LOG.error("Queue configuration from RabbitMQ admin json get call returned null.");
       } else {
-        final JsonObject jsonObject = je.getAsJsonObject();
         final int numberOfWorkers = getJsonIntPrimitive(jsonObject, "consumers");
         final int numberOfMessages = getJsonIntPrimitive(jsonObject, "messages");
 
@@ -126,31 +126,23 @@ public class RabbitMQQueueMonitor {
     }
   }
 
-  private static int getJsonIntPrimitive(final JsonObject jsonObject, final String key) {
-    final int value;
-    if (jsonObject == null || jsonObject.getAsJsonPrimitive(key) == null) {
-      value = 0;
-    } else {
-      value = jsonObject.getAsJsonPrimitive(key).getAsInt();
-    }
-    return value;
+  private static int getJsonIntPrimitive(final JsonNode jsonObject, final String key) {
+    return jsonObject == null || !jsonObject.has(key) ? 0 : jsonObject.get(key).intValue();
   }
 
-  protected JsonElement getJsonResultFromApi(final String apiPath) throws URISyntaxException, IOException {
-    JsonElement returnElement = null;
-    final URI uri = new URI("http://" + configuration.getBrokerHost() + ":" + configuration.getBrokerManagementPort() + apiPath);
+  protected JsonNode getJsonResultFromApi(final String apiPath) throws URISyntaxException, IOException {
+    final URI uri = new URL("http", configuration.getBrokerHost(), configuration.getBrokerManagementPort(), apiPath).toURI();
+
     try (final CloseableHttpResponse response = httpClient.execute(targetHost, new HttpGet(uri), context)) {
       if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-        try (final InputStreamReader is = new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            final JsonReader jr = new JsonReader(is)) {
-          returnElement = JsonParser.parseReader(jr);
+        try (final InputStreamReader is = new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8)) {
+          return objectMapper.readTree(is);
         }
       } else {
         throw new IOException(String.format("Status code wasn't 200 when retrieving json result. Status was: %d, %s",
             response.getStatusLine().getStatusCode(), response.getStatusLine()));
       }
     }
-    return returnElement;
   }
 
   private static RequestConfig getDefaultRequestConfig() {

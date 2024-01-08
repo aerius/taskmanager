@@ -19,21 +19,16 @@ package nl.aerius.taskmanager.domain;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.annotations.Expose;
-
 /**
  * Base class for a single schedule configuration.
  * @param <T> specific task queue configuration class
  */
 public class TaskSchedule<T extends TaskQueue> {
 
-  @Expose
   private String workerQueueName;
 
-  @Expose
   private Boolean durable;
 
-  @Expose
   private List<T> queues = new ArrayList<>();
 
   public String getWorkerQueueName() {
@@ -44,12 +39,12 @@ public class TaskSchedule<T extends TaskQueue> {
     this.workerQueueName = workerQueueName;
   }
 
-  public List<T> getTaskQueues() {
+  public List<T> getQueues() {
     return queues;
   }
 
-  public void setTaskConfigurations(final List<T> taskConfigurations) {
-    this.queues = taskConfigurations;
+  public void setQueues(final List<T> queues) {
+    this.queues = queues;
   }
 
   public void setDurable(final boolean durable) {

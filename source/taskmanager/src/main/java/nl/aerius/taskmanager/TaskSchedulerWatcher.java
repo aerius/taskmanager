@@ -120,7 +120,7 @@ class TaskSchedulerWatcher<T extends TaskQueue, S extends TaskSchedule<T>> imple
     final WorkerQueueType workerQueueType = new WorkerQueueType(schedule.getWorkerQueueName());
 
     schedule.setWorkerQueueName(workerQueueType.getWorkerQueueName());
-    schedule.getTaskQueues().forEach(s -> s.setQueueName(workerQueueType.getTaskQueueName(s.getQueueName())));
+    schedule.getQueues().forEach(s -> s.setQueueName(workerQueueType.getTaskQueueName(s.getQueueName())));
     return schedule;
   }
 

@@ -19,7 +19,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>nl.aerius</groupId>
+  <parent>
+    <groupId>nl.aerius</groupId>
+    <artifactId>aerius-root-pom</artifactId>
+    <version>1.0.0</version>
+    <relativePath /> <!-- lookup parent from repository -->
+  </parent>
+
   <artifactId>taskmanager-parent</artifactId>
   <version>1.10.0-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -45,24 +51,9 @@
     <tag>HEAD</tag>
   </scm>
 
-  <distributionManagement>
-    <repository>
-      <id>aerius-nexus</id>
-      <url>https://nexus.aerius.nl/repository/maven-releases/</url>
-    </repository>
-    <snapshotRepository>
-      <id>aerius-nexus</id>
-      <url>https://nexus.aerius.nl/repository/maven-snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
-
   <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
+    <java.version>11</java.version>
 
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <aerius-tools.version>1.2.0</aerius-tools.version>
     <spotless.version>2.28.0</spotless.version>
     <dropwizard.metrics.version>4.2.13</dropwizard.metrics.version>
     <slf4j.version>2.0.5</slf4j.version>
@@ -70,9 +61,6 @@
     <mockito.version>4.9.0</mockito.version>
 
     <sonar.projectKey>aerius_taskmanager</sonar.projectKey>
-    <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
-    <sonar.organization>aerius</sonar.organization>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
     <aggregate.report.dir>taskmanager-report/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
     <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
@@ -85,13 +73,6 @@
         <groupId>com.rabbitmq</groupId>
         <artifactId>amqp-client</artifactId>
         <version>5.16.0</version>
-      </dependency>
-
-      <!-- json -->
-      <dependency>
-        <groupId>com.google.code.gson</groupId>
-        <artifactId>gson</artifactId>
-        <version>2.10</version>
       </dependency>
 
       <!-- CLI -->
@@ -124,7 +105,7 @@
         <artifactId>jcl-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
-      
+
       <!-- OpenTelemetry -->
       <dependency>
         <groupId>io.opentelemetry</groupId>
@@ -365,26 +346,6 @@
         </dependencies>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <id>enforce-maven</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <requireMavenVersion>
-                  <version>[3.6.3,)</version>
-                </requireMavenVersion>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 
@@ -412,36 +373,6 @@
         <module>taskmanager</module>
         <module>taskmanager-report</module>
       </modules>
-    </profile>
-
-    <profile>
-      <id>dependency-check</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.owasp</groupId>
-            <artifactId>dependency-check-maven</artifactId>
-            <inherited>false</inherited>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>aggregate</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <!-- If we ever want to fail on high CVSS scores, this is an example how -->
-              <!-- <failBuildOnCVSS>8</failBuildOnCVSS> -->
-              <!-- Generate all report formats -->
-              <format>ALL</format>
-              <!-- Don't use Nexus Analyzer -->
-              <centralAnalyzerEnabled>false</centralAnalyzerEnabled>
-              <!-- Am I the latest version? -->
-              <versionCheckEnabled>true</versionCheckEnabled>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
 </project>

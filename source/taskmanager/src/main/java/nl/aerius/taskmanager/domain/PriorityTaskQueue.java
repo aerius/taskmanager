@@ -16,22 +16,13 @@
  */
 package nl.aerius.taskmanager.domain;
 
-import java.io.Serializable;
-
-import com.google.gson.annotations.Expose;
-
 /**
  * The configuration of a task, which is used by Task Consumer to retrieve the queue name
  * and used by the scheduler to determine if a message should be handled or not.
- *
  */
-public class PriorityTaskQueue extends TaskQueue implements Serializable {
+public class PriorityTaskQueue extends TaskQueue {
 
-  private static final long serialVersionUID = 7719329377305394882L;
-
-  @Expose
   private int priority;
-  @Expose
   private double maxCapacityUse;
 
   /**
@@ -43,11 +34,10 @@ public class PriorityTaskQueue extends TaskQueue implements Serializable {
 
   /**
    * @param queueName The name of the queue the task corresponds to.
-   * @param description The description of this task queue.
    * @param priority The priority this task should have.
    * @param maxCapacityUse The maximum capacity this task can use of the total workers assigned. Should be a fraction.
    */
-  public PriorityTaskQueue(final String queueName, final String description, final int priority, final double maxCapacityUse) {
+  public PriorityTaskQueue(final String queueName, final int priority, final double maxCapacityUse) {
     super(queueName);
     this.priority = priority;
     this.maxCapacityUse = maxCapacityUse;
