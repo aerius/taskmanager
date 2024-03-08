@@ -20,6 +20,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ROOT_POM_DIRECTORY: repo/source
+          JDK_VERSION: 17
 
       - uses: aerius/github-actions/extras/docker-build-action@v1.0.2
         with:
