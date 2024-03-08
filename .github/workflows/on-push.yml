@@ -22,6 +22,7 @@ jobs:
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
           ROOT_POM_DIRECTORY: repo/source
+          JDK_VERSION: 17
 
       - uses: aerius/github-actions/extras/docker-build-or-publish-based-on-maven-project-version-action@v1.0.2
         with:
@@ -31,3 +32,4 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
           DOCKER_WORK_DIRECTORY: repo/source
           ROOT_POM_DIRECTORY: repo/source
+          JDK_VERSION: 17
