@@ -18,6 +18,10 @@ package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,18 +50,39 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
   private final ConsumerCallback callback;
   private final boolean durable;
 
-  RabbitMQMessageConsumer(final Channel channel, final String queueName, final boolean durable, final ConsumerCallback callback) {
+  private final String ARG_QUEUE_TYPE = queueType;
+  private final Set<String> VALID_STREAM_TYPES = Set.of(streamTypes);
+  
+  private Map<String, Object> createQueueArguments(String streamType) {
+    if (!VALID_QUEUE_TYPES.contains(streamType)) {
+        throw new IllegalArgumentException("Invalid queue type: " + streamType);
+    }
+    Map<String, Object> arguments = new HashMap<>();
+    arguments.put(ARG_QUEUE_TYPE, streamType);
+    return arguments;
+  }
+
+  private final String streamType;
+  private final Map<String, Object> arguments;
+
+  RabbitMQMessageConsumer(final Channel channel, final String queueName, final boolean durable, final ConsumerCallback callback, final String streamType, final Map arguments ) {
+    // If the environment variable is not set, default to "quorum"
     super(channel);
+    if (streamType == null) {
+      streamType = "quorum";
+    }
+    this.streamType = streamType;
     this.queueName = queueName;
     this.durable = durable;
     this.callback = callback;
+    this.arguments = arguments != null ? arguments : createQueueArguments(streamType);
   }
 
   public void startConsuming() throws IOException {
     LOG.debug("Starting consumer {}.", queueName);
     final Channel taskChannel = getChannel();
     // ensure a durable channel exists
-    taskChannel.queueDeclare(queueName, durable, false, false, null);
+    taskChannel.queueDeclare(queueName, durable, false, false, arguments);
     //ensure only one message gets delivered at a time.
     taskChannel.basicQos(1);
 
