@@ -10,22 +10,21 @@ jobs:
 
     steps:
       - name: Check out github-actions repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: aerius/github-actions
           path: aerius-github-actions
-          ref: v1.0.2
+          ref: v1.1
 
-      - uses: aerius/github-actions/events/release-event-action@v1.0.2
+      - uses: aerius/github-actions/events/release-event-action@v1.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
           ROOT_POM_DIRECTORY: repo/source
-          JDK_VERSION: 17
 
-      - uses: aerius/github-actions/extras/docker-publish-action@v1.0.2
+      - uses: aerius/github-actions/extras/docker-publish-action@v1.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_REGISTRY_USERNAME: ${{ secrets.NEXUS_USERNAME }}
@@ -33,4 +32,3 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
           ROOT_POM_DIRECTORY: repo/source
           DOCKER_WORK_DIRECTORY: repo/source
-          JDK_VERSION: 17
