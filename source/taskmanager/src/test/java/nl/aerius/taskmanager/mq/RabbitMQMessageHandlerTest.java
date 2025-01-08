@@ -47,6 +47,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler.MessageReceivedHandler;
 import nl.aerius.taskmanager.domain.Message;
+import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * Test class for {@link RabbitMQMessageHandler}.
@@ -61,7 +62,7 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
   @Timeout(10000)
   void testMessageReceivedHandler() throws IOException, InterruptedException {
     final byte[] receivedBody = "4321".getBytes();
-    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(taskQueueName, false);
+    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(new QueueConfig(taskQueueName, false, null));
     final Semaphore lock = new Semaphore(0);
     final DataDock data = new DataDock();
     tmh.start();
@@ -107,7 +108,7 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
     final AtomicInteger shutdownCallsCounter = new AtomicInteger();
 
     final MessageReceivedHandler mockMessageReceivedHandler = mock(MessageReceivedHandler.class);
-    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(taskQueueName, false);
+    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(new QueueConfig(taskQueueName, false, null));
 
     ((RabbitMQMessageHandler) tmh).setRetryTimeMilliseconds(1L);
     doAnswer(invoke -> null).when(mockChannel).addShutdownListener(shutdownListenerCaptor.capture());

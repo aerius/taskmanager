@@ -24,6 +24,7 @@ import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
+import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * Mock implementation of {@link AdaptorFactory}.
@@ -44,7 +45,7 @@ public class MockAdaptorFactory implements AdaptorFactory {
   }
 
   @Override
-  public TaskMessageHandler createTaskMessageHandler(final String taskQueueName, final boolean durable) throws IOException {
+  public TaskMessageHandler createTaskMessageHandler(final QueueConfig queueConfig) throws IOException {
     return mockTaskMessageHandler;
   }
 

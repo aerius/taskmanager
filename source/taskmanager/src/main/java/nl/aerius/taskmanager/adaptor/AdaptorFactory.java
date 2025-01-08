@@ -18,6 +18,8 @@ package nl.aerius.taskmanager.adaptor;
 
 import java.io.IOException;
 
+import nl.aerius.taskmanager.domain.QueueConfig;
+
 /**
  * Interface between the task manager and implementing communication service.
  */
@@ -39,10 +41,9 @@ public interface AdaptorFactory {
 
   /**
    * Creates a new TaksMessageHandler for the given worker type and queue.
-   * @param taskQueueName queue name
-   * @param durable true if the queue created should be persistent during server restart
+   * @param queueConfig Configuration parameters for the queue
    * @return new TaksMessageHandler object
    * @throws IOException error in case or connection problems
    */
-  TaskMessageHandler createTaskMessageHandler(String taskQueueName, boolean durable) throws IOException;
+  TaskMessageHandler createTaskMessageHandler(QueueConfig queueConfig) throws IOException;
 }

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import nl.aerius.taskmanager.domain.MessageMetaData;
+import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 import nl.aerius.taskmanager.exception.TaskAlreadySentException;
 import nl.aerius.taskmanager.mq.RabbitMQMessageMetaData;
@@ -48,7 +49,7 @@ class WorkerPoolTest {
   private int numberOfWorkers;
 
   @BeforeEach
-  void setUp() throws IOException, InterruptedException {
+  void setUp() throws IOException {
     numberOfWorkers = 0;
     workerUpdateHandler = new MockTaskFinishedHandler() {
       @Override
@@ -57,7 +58,8 @@ class WorkerPoolTest {
       }
     };
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, new MockWorkerProducer(), workerUpdateHandler);
-    taskConsumer = new TaskConsumer(mock(ExecutorService.class), "testqueue", false, mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
+    taskConsumer = new TaskConsumer(mock(ExecutorService.class), new QueueConfig("testqueue", false, null), mock(ForwardTaskHandler.class),
+        new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData message) {
         WorkerPoolTest.this.message = (RabbitMQMessageMetaData) message;
@@ -66,7 +68,7 @@ class WorkerPoolTest {
   }
 
   @Test
-  void testWorkerPoolSizing() throws InterruptedException, IOException {
+  void testWorkerPoolSizing() throws IOException {
     assertSame(0, workerPool.getCurrentWorkerSize(), "Check if workerPool size is empty at start");
     workerPool.onNumberOfWorkersUpdate(10, 0);
     assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is changed after sizing");
@@ -81,12 +83,12 @@ class WorkerPoolTest {
   }
 
   @Test
-  void testNoFreeWorkers() throws IOException, InterruptedException {
+  void testNoFreeWorkers() {
     assertThrows(NoFreeWorkersException.class, () -> workerPool.sendTaskToWorker(createTask()));
   }
 
   @Test
-  void testWorkerPoolScaleDown() throws IOException, InterruptedException {
+  void testWorkerPoolScaleDown() throws IOException {
     workerPool.onNumberOfWorkersUpdate(5, 0);
     final Task task1 = createTask();
     workerPool.sendTaskToWorker(task1);
@@ -107,7 +109,7 @@ class WorkerPoolTest {
   }
 
   @Test
-  void testReleaseTaskTwice() throws IOException, InterruptedException {
+  void testReleaseTaskTwice() throws IOException {
     workerPool.onNumberOfWorkersUpdate(2, 0);
     final Task task1 = createTask();
     workerPool.sendTaskToWorker(task1);
@@ -122,7 +124,7 @@ class WorkerPoolTest {
 
   @Disabled("Exception is not thrown anymore, so test ignored for now")
   @Test
-  void testSendSameTaskTwice() throws IOException, InterruptedException {
+  void testSendSameTaskTwice() {
     assertThrows(TaskAlreadySentException.class, () -> {
       workerPool.onNumberOfWorkersUpdate(3, 0);
       final Task task1 = createTask();
@@ -132,7 +134,7 @@ class WorkerPoolTest {
   }
 
   @Test
-  void testMessageDeliverd() throws IOException, InterruptedException {
+  void testMessageDeliverd() throws IOException {
     workerPool.onNumberOfWorkersUpdate(1, 0);
     final Task task1 = createTask();
     workerPool.sendTaskToWorker(task1);

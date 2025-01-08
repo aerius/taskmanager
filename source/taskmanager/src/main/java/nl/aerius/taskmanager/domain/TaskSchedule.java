@@ -18,6 +18,7 @@ package nl.aerius.taskmanager.domain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Base class for a single schedule configuration.
@@ -28,6 +29,8 @@ public class TaskSchedule<T extends TaskQueue> {
   private String workerQueueName;
 
   private Boolean durable;
+
+  private RabbitMQQueueType queueType;
 
   private List<T> queues = new ArrayList<>();
 
@@ -53,5 +56,13 @@ public class TaskSchedule<T extends TaskQueue> {
 
   public boolean isDurable() {
     return !Boolean.FALSE.equals(durable);
+  }
+
+  public RabbitMQQueueType getQueueType() {
+    return queueType;
+  }
+
+  public void setQueueType(final String queueType) {
+    this.queueType = RabbitMQQueueType.valueOf(queueType.toUpperCase(Locale.ROOT));
   }
 }

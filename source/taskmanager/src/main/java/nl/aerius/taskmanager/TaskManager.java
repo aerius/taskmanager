@@ -35,6 +35,8 @@ import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
+import nl.aerius.taskmanager.domain.QueueConfig;
+import nl.aerius.taskmanager.domain.RabbitMQQueueType;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
 
@@ -63,10 +65,9 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
    * Add or Update a new task scheduler.
    *
    * @param schedule scheduler configuration
-   * @throws IOException
    * @throws InterruptedException
    */
-  public boolean updateTaskScheduler(final TaskSchedule<T> schedule) throws IOException, InterruptedException {
+  public boolean updateTaskScheduler(final TaskSchedule<T> schedule) throws InterruptedException {
     // Set up scheduler with worker pool
     final String workerQueueName = schedule.getWorkerQueueName();
     if (!buckets.containsKey(workerQueueName)) {
@@ -75,7 +76,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     }
     final TaskScheduleBucket taskScheduleBucket = buckets.get(workerQueueName);
 
-    taskScheduleBucket.updateQueues(schedule.getQueues(), schedule.isDurable());
+    taskScheduleBucket.updateQueues(schedule.getQueues(), schedule.isDurable(), schedule.getQueueType());
     return taskScheduleBucket.isRunning();
   }
 
@@ -109,7 +110,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     private final TaskScheduler<T> taskScheduler;
     private final String workerQueueName;
 
-    public TaskScheduleBucket(final String workerQueueName, final boolean durable) throws IOException, InterruptedException {
+    public TaskScheduleBucket(final String workerQueueName, final boolean durable) throws InterruptedException {
       this.workerQueueName = workerQueueName;
       taskScheduler = schedulerFactory.createScheduler(workerQueueName);
       LOG.info("Worker Queue Name:{} (durable:{})", workerQueueName, durable);
@@ -134,36 +135,33 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       return dispatcher.isRunning();
     }
 
-    private void updateQueues(final List<T> newTaskQueues, final boolean durable) {
+    private void updateQueues(final List<T> newTaskQueues, final boolean durable, final RabbitMQQueueType rabbitMQQueueType) {
       final Map<String, ? extends TaskQueue> newTaskQueuesMap = newTaskQueues.stream().filter(Objects::nonNull)
           .collect(Collectors.toMap(TaskQueue::getQueueName, Function.identity()));
       // Remove queues that are not in the new list
       final List<Entry<String, TaskConsumer>> removedQueues = taskConsumers.entrySet().stream().filter(e -> !newTaskQueuesMap.containsKey(e.getKey()))
-          .collect(Collectors.toList());
+          .toList();
       removedQueues.forEach(e -> removeTaskConsumer(e.getKey()));
       // Add and Update existing queues
-      newTaskQueues.stream().filter(Objects::nonNull).forEach(tc -> addOrUpdateTaskQueue(tc, durable));
+      newTaskQueues.stream().filter(Objects::nonNull).forEach(tc -> addOrUpdateTaskQueue(tc, durable, rabbitMQQueueType));
     }
 
-    private void addOrUpdateTaskQueue(final T taskQueueConfiguration, final boolean durable) {
-      final String taskQueueName = taskQueueConfiguration.getQueueName();
-      addTaskConsumerIfAbsent(taskQueueName, durable);
+    private void addOrUpdateTaskQueue(final T taskQueueConfiguration, final boolean durable, final RabbitMQQueueType rabbitMQQueueType) {
+      addTaskConsumerIfAbsent(new QueueConfig(taskQueueConfiguration.getQueueName(), durable, rabbitMQQueueType));
       taskScheduler.updateQueue(taskQueueConfiguration);
     }
 
     /**
      * Adds a task consumer.
      *
-     * @param taskQueueName queue name of the task consumer
-     * @param durable true if consumer queue should be created durable
-     * @throws IOException
+     * @param queueConfig Configuration parameters for the queue
      */
-    public void addTaskConsumerIfAbsent(final String taskQueueName, final boolean durable) {
-      taskConsumers.computeIfAbsent(taskQueueName, tqn -> {
+    public void addTaskConsumerIfAbsent(final QueueConfig queueConfig) {
+      taskConsumers.computeIfAbsent(queueConfig.queueName(), tqn -> {
         try {
-          final TaskConsumer taskConsumer = new TaskConsumer(executorService, taskQueueName, durable, dispatcher, factory);
+          final TaskConsumer taskConsumer = new TaskConsumer(executorService, queueConfig, dispatcher, factory);
           taskConsumer.start();
-          LOG.info("Started task queue {} (durable:{})", taskQueueName, durable);
+          LOG.info("Started task queue {} (durable:{}, queueType:{})", queueConfig.queueName(), queueConfig.durable(), queueConfig.queueType());
           return taskConsumer;
         } catch (final IOException e) {
           throw new UncheckedIOException(e);

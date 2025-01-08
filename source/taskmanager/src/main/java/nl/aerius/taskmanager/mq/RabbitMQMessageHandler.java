@@ -28,6 +28,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.WorkerResultSender;
+import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.mq.RabbitMQMessageConsumer.ConsumerCallback;
 
 /**
@@ -41,8 +42,8 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
   private static final int DEFAULT_RETRY_SECONDS = 10;
 
   private final BrokerConnectionFactory factory;
+  private final QueueConfig queueConfig;
   private final String taskQueueName;
-  private final boolean durable;
 
   private MessageReceivedHandler messageReceivedHandler;
   private RabbitMQMessageConsumer consumer;
@@ -65,14 +66,12 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
    * Constructor.
    *
    * @param factory the factory to get the a RabbitMQ connection from
-   * @param taskQueueName the name of the task queue
-   * @param durable if true the queue will be created persistent
-   * @throws IOException
+   * @param queueConfig the configuration parameters of the queue
    */
-  public RabbitMQMessageHandler(final BrokerConnectionFactory factory, final String taskQueueName, final boolean durable) throws IOException {
+  public RabbitMQMessageHandler(final BrokerConnectionFactory factory, final QueueConfig queueConfig) {
     this.factory = factory;
-    this.taskQueueName = taskQueueName;
-    this.durable = durable;
+    this.queueConfig = queueConfig;
+    this.taskQueueName = queueConfig.queueName();
   }
 
   @Override
@@ -155,8 +154,7 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
       }
       consumer = new RabbitMQMessageConsumer(
           factory.getConnection().createChannel(),
-          taskQueueName,
-          durable,
+          queueConfig,
           this);
       consumer.getChannel().addShutdownListener(this::handleShutdownSignal);
       consumer.startConsuming();

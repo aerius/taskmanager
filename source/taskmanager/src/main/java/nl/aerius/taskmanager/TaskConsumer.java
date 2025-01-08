@@ -29,6 +29,7 @@ import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler.MessageReceivedHandler;
 import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.MessageMetaData;
+import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * Task manager part of retrieving tasks from the client queues and send them to the dispatcher, which in case will send them to the scheduler.
@@ -48,12 +49,12 @@ class TaskConsumer implements MessageReceivedHandler {
   private Future<?> messageHandlerFuture;
 
   @SuppressWarnings("unchecked")
-  public TaskConsumer(final ExecutorService executorService, final String taskQueueName, final boolean durable,
-      final ForwardTaskHandler forwardTaskHandler, final AdaptorFactory factory) throws IOException {
+  public TaskConsumer(final ExecutorService executorService, final QueueConfig queueConfig, final ForwardTaskHandler forwardTaskHandler,
+      final AdaptorFactory factory) throws IOException {
     this.executorService = executorService;
-    this.taskQueueName = taskQueueName;
+    this.taskQueueName = queueConfig.queueName();
     this.forwardTaskHandler = forwardTaskHandler;
-    this.taskMessageHandler = factory.createTaskMessageHandler(taskQueueName, durable);
+    this.taskMessageHandler = factory.createTaskMessageHandler(queueConfig);
     taskMessageHandler.addMessageReceivedHandler(this);
   }
 

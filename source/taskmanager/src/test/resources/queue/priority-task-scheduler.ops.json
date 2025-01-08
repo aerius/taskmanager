@@ -1,5 +1,6 @@
 {
   "workerQueueName": "ops",
+  "queueType": "stream",
   "queues": [
     {
       "queueName": "calculation_ui",

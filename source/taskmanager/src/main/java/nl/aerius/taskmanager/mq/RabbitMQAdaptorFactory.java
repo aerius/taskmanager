@@ -24,6 +24,7 @@ import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
+import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * RabbitMQ implementation of the {@link AdaptorFactory}.
@@ -45,8 +46,8 @@ public class RabbitMQAdaptorFactory implements AdaptorFactory {
   }
 
   @Override
-  public TaskMessageHandler createTaskMessageHandler(final String taskQueueName, final boolean durable) throws IOException {
-    return new RabbitMQMessageHandler(factory, taskQueueName, durable);
+  public TaskMessageHandler createTaskMessageHandler(final QueueConfig queueConfig) throws IOException {
+    return new RabbitMQMessageHandler(factory, queueConfig);
   }
 
   @Override
