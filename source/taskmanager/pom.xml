@@ -30,10 +30,6 @@
   <name>Taskmanager :: Application</name>
   <description>AERIUS Taskmanager actual manager/scheduler (standalone)</description>
 
-  <properties>
-    <java.version>17</java.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>nl.aerius</groupId>

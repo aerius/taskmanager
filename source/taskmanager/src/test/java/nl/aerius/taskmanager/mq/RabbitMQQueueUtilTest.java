@@ -49,12 +49,13 @@ class RabbitMQQueueUtilTest {
   private static List<Arguments> combinations() {
     return List.of(
         Arguments.of(false, RabbitMQQueueType.CLASSIC, RabbitMQQueueType.CLASSIC),
-        Arguments.of(false, RabbitMQQueueType.QUORUM, RabbitMQQueueType.QUORUM),
-        Arguments.of(false, RabbitMQQueueType.STREAM, RabbitMQQueueType.STREAM),
+        // when durable is false always return classic because only queue type compatible with non-durable
+        Arguments.of(false, RabbitMQQueueType.QUORUM, RabbitMQQueueType.CLASSIC),
+        Arguments.of(false, RabbitMQQueueType.STREAM, RabbitMQQueueType.CLASSIC),
+
         Arguments.of(true, RabbitMQQueueType.CLASSIC, RabbitMQQueueType.CLASSIC),
-        // when durable is true always return classic because only queue type compatible with classic
-        Arguments.of(true, RabbitMQQueueType.QUORUM, RabbitMQQueueType.CLASSIC),
-        Arguments.of(true, RabbitMQQueueType.STREAM, RabbitMQQueueType.CLASSIC)
+        Arguments.of(true, RabbitMQQueueType.QUORUM, RabbitMQQueueType.QUORUM),
+        Arguments.of(true, RabbitMQQueueType.STREAM, RabbitMQQueueType.STREAM)
         );
   }
 }

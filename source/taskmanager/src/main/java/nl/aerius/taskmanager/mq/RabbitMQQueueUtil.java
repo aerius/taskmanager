@@ -47,7 +47,7 @@ final class RabbitMQQueueUtil {
     if (queueType == null) {
       return Map.of();
     }
-    final RabbitMQQueueType actualType =  durable && PERSISTENT_QUEUE_TYPES.contains(queueType) ? RabbitMQQueueType.CLASSIC : queueType;
+    final RabbitMQQueueType actualType =  !durable && PERSISTENT_QUEUE_TYPES.contains(queueType) ? RabbitMQQueueType.CLASSIC : queueType;
 
     return Map.of(ARG_QUEUE_TYPE, actualType.type());
   }
