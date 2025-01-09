@@ -36,6 +36,7 @@ import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.QueueConstants;
 import nl.aerius.taskmanager.domain.Message;
+import nl.aerius.taskmanager.domain.RabbitMQQueueType;
 
 /**
  * RabbitMQ implementation of a {@link WorkerProducer}.
@@ -156,8 +157,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   private void startReplyConsumer(final Connection connection) throws IOException {
     final Channel replyChannel = connection.createChannel();
-    // Create an exclusive reply queue with predefined name (so we can set
-    // a replyCC header).
+    // Create an exclusive reply queue with predefined name (so we can set a replyCC header).
     // Queue will be deleted once taskmanager is down.
     // reply queue is not durable because the system will 'reboot' after connection problems anyway.
     // Making it durable would only make sense if we'd keep track of tasks-in-progress during shutdown/startup.
@@ -165,7 +165,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     replyChannel.queueDeclare(workerReplyQueue, false, true, true, null);
     // ensure the worker queue is around as well (so we can retrieve number of customers later on).
     // Worker queue is durable and non-exclusive with autodelete off.
-    replyChannel.queueDeclare(workerQueueName, durable, false, false, null);
+    replyChannel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, RabbitMQQueueType.QUORUM));
     replyChannel.basicConsume(workerReplyQueue, true, workerReplyQueue, new DefaultConsumer(replyChannel) {
       @Override
       public void handleDelivery(final String consumerTag, final Envelope envelope, final BasicProperties properties, final byte[] body) {

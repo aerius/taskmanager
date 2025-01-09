@@ -88,6 +88,7 @@ The json format of the configuration files is as follows:
 {
   "workerQueueName": "<type of the queue>",
   "durable" : <true|false>
+  "queueType": <classic|quorum|stream>
   "queues": [
     {
       "queueName": "<client queue name>",
@@ -108,6 +109,13 @@ If a queue is made `durable` and the RabbitMQ server goes down, the queue and it
 Some queues can have derived messages on the queue, that are recreated by the parent task after a RabbitMQ shutdown.
 For these queues it would make sense to not make them durable.
 RabbitMQ will require less storage space/IOPS and be faster as it won't need to depend on disk I/O for these queues.
+
+The parameter `queueType` specifies the RabbitMQ type of the queues to be created.
+If set it will set the argument `x-queue-type` when declaring queues.
+If not set it will not set this arguments (used for backward compatibility, defaults to `classic`).
+If `durable` is true queues will be set to `classic` (or default if not set) because other queue types are durable by default.
+Changing the `queueType` configuration parameter if the queues are already created won't work.
+If `queueType` needs to be changed, the queues need to be deleted first.
 
 In `queues` there can be 1 or more queue configurations.
 Each queue configuration consists of 3 parameters:

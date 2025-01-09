@@ -16,6 +16,7 @@
  */
 package nl.aerius.taskmanager;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -32,6 +33,7 @@ import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.domain.RabbitMQQueueType;
 
 /**
  * Test class for {@link TaskManager}.
@@ -44,7 +46,7 @@ class TaskManagerTest {
   private TaskManager<PriorityTaskQueue, PriorityTaskSchedule> taskManager;
 
   @BeforeEach
-  void setUp() throws IOException, InterruptedException {
+  void setUp() throws IOException {
     executor = Executors.newCachedThreadPool();
     final AdaptorFactory factory = new MockAdaptorFactory();
     final TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> schedulerFactory = new FIFOTaskScheduler.FIFOSchedulerFactory();
@@ -62,6 +64,7 @@ class TaskManagerTest {
   @Test
   void testAddScheduler() throws IOException, InterruptedException {
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
+    assertEquals(RabbitMQQueueType.STREAM, schedule.getQueueType(), "Should have queueType STREAM");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 

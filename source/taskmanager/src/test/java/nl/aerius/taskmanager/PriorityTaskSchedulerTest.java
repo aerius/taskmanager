@@ -44,6 +44,7 @@ import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * Test class for {@link PriorityTaskScheduler}.
@@ -65,7 +66,7 @@ class PriorityTaskSchedulerTest {
   private PriorityTaskScheduler scheduler;
 
   @BeforeEach
-  void setUp() throws IOException, InterruptedException {
+  void setUp() throws IOException {
     taskConsumer1 = createMockTaskConsumer(QUEUE1);
     taskConsumer2 = createMockTaskConsumer(QUEUE2);
     final TaskConsumer taskConsumer3 = createMockTaskConsumer(QUEUE3);
@@ -273,7 +274,8 @@ class PriorityTaskSchedulerTest {
   }
 
   private TaskConsumer createMockTaskConsumer(final String taskQueueName) throws IOException {
-    return new TaskConsumer(mock(ExecutorService.class), taskQueueName, false, mock(ForwardTaskHandler.class), new MockAdaptorFactory()) {
+    return new TaskConsumer(mock(ExecutorService.class), new QueueConfig(taskQueueName, false, null), mock(ForwardTaskHandler.class),
+        new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData messageMetaData) {
         //no-op.

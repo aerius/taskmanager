@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.TaskDispatcher.State;
+import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * Test for {@link TaskDispatcher} class.
@@ -51,14 +52,14 @@ class TaskDispatcherTest {
   private MockAdaptorFactory factory;
 
   @BeforeEach
-  void setUp() throws IOException, InterruptedException {
+  void setUp() throws IOException {
     executor = Executors.newCachedThreadPool();
     final FIFOTaskScheduler scheduler = new FIFOTaskScheduler();
     workerProducer = new MockWorkerProducer();
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, workerProducer, scheduler);
     dispatcher = new TaskDispatcher(WORKER_QUEUE_NAME_TEST, scheduler, workerPool);
     factory = new MockAdaptorFactory();
-    taskConsumer = new TaskConsumer(executor, "testqueue", false, dispatcher, factory);
+    taskConsumer = new TaskConsumer(executor, new QueueConfig("testqueue", false, null), dispatcher, factory);
   }
 
   @AfterEach
