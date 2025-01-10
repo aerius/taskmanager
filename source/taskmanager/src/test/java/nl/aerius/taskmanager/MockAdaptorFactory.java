@@ -40,7 +40,7 @@ public class MockAdaptorFactory implements AdaptorFactory {
   }
 
   @Override
-  public WorkerProducer createWorkerProducer(final String workerQueueName, final boolean durable) {
+  public WorkerProducer createWorkerProducer(final QueueConfig queueConfig) {
     return mockWorkerProducer;
   }
 

@@ -32,6 +32,7 @@ import com.rabbitmq.client.Envelope;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
+import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * Test class for {@link RabbitMQWorkerProducer}.
@@ -47,7 +48,7 @@ class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
   void testForwardMessage() throws IOException, InterruptedException {
     final byte[] sendBody = "4321".getBytes();
 
-    final WorkerProducer wp = adapterFactory.createWorkerProducer(WORKER_QUEUE_NAME, false);
+    final WorkerProducer wp = adapterFactory.createWorkerProducer(new QueueConfig(WORKER_QUEUE_NAME, false, null));
     wp.start();
     final BasicProperties bp = new BasicProperties();
     wp.forwardMessage(new RabbitMQMessage(WORKER_QUEUE_NAME, null, 4321, bp, sendBody) {

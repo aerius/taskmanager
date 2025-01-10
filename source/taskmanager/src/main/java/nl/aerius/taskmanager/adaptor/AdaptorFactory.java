@@ -33,11 +33,10 @@ public interface AdaptorFactory {
 
   /**
    * Creates a new worker producer for the given worker type.
-   * @param workerQueueName name of queue of the worker
-   * @param durable true if the queue created should be persistent during server restart
+   * @param queueConfig Configuration parameters for the queue
    * @return new worker producer object
    */
-  WorkerProducer createWorkerProducer(String workerQueueName, boolean durable);
+  WorkerProducer createWorkerProducer(QueueConfig queueConfig);
 
   /**
    * Creates a new TaksMessageHandler for the given worker type and queue.
