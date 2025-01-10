@@ -192,7 +192,7 @@ public class RabbitMQWorkerMonitor {
    * @param param param to return the value for
    * @return value of param or null if not present
    */
-  private String getParam(final Map<String, Object> headers, final String param) {
+  private static String getParam(final Map<String, Object> headers, final String param) {
     final Object value = headers.get(param);
 
     return value == null ? null : value.toString();
@@ -206,7 +206,7 @@ public class RabbitMQWorkerMonitor {
    * @param other if param is not present this value is returned
    * @return int value of param or other if not present
    */
-  private int getParamInt(final Map<String, Object> headers, final String param, final int other) {
+  private static int getParamInt(final Map<String, Object> headers, final String param, final int other) {
     final String value = getParam(headers, param);
 
     try {

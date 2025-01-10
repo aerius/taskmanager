@@ -107,7 +107,7 @@ public class RabbitMQQueueMonitor {
     // Use RabbitMQ HTTP-API.
     // URL: [host]:[port]/api/queues/[virtualHost]/[QueueName]
     final String virtualHost = configuration.getBrokerVirtualHost().replace("/", "%2f");
-    final String apiPath = "/api/queues/" + virtualHost + "/" + queueName;
+    final String apiPath = String.format("/api/queues/%s/%s", virtualHost, queueName);
 
     try {
       final JsonNode jsonObject = getJsonResultFromApi(apiPath);

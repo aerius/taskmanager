@@ -40,7 +40,7 @@ class RabbitMQQueueMonitorTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  void testGetWorkerQueueState() throws InterruptedException {
+  void testGetWorkerQueueState() {
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost(DUMMY).brokerPort(0).brokerUsername(DUMMY).brokerPassword(DUMMY).build();
     final AtomicInteger workerSize = new AtomicInteger();

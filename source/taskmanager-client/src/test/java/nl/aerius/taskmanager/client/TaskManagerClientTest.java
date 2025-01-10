@@ -48,26 +48,26 @@ class TaskManagerClientTest {
   private static final WorkerQueueType WORKER_TYPE_TEST = new WorkerQueueType("TEST");
   private static final String NORMAL_TASK_ID = "SomeTaskId";
   private static final String TASK_QUEUE_NAME = "taskmanagerclienttest.task";
-  private static ExecutorService EXECUTOR;
+  private static ExecutorService executor;
   private WorkerQueueType workerType;
   private TaskManagerClientSender taskManagerClient;
   private MockTaskResultHandler mockTaskResultHandler;
 
   @BeforeAll
   static void setupClass() {
-    EXECUTOR = Executors.newSingleThreadExecutor();
+    executor = Executors.newSingleThreadExecutor();
   }
 
   @AfterAll
   static void afterClass() {
-    EXECUTOR.shutdown();
+    executor.shutdown();
   }
 
   @BeforeEach
-  void setUp() throws Exception {
+  void setUp() {
     mockTaskResultHandler = new MockTaskResultHandler();
     workerType = WORKER_TYPE_TEST;
-    taskManagerClient = new TaskManagerClientSender(new BrokerConnectionFactory(EXECUTOR) {
+    taskManagerClient = new TaskManagerClientSender(new BrokerConnectionFactory(executor) {
       @Override
       protected Connection createNewConnection() throws IOException {
         return new MockConnection();
@@ -76,7 +76,7 @@ class TaskManagerClientTest {
   }
 
   @AfterEach
-  void tearDown() throws Exception {
+  void tearDown() {
     taskManagerClient.shutdown();
   }
 
@@ -104,7 +104,7 @@ class TaskManagerClientTest {
   }
 
   @Test
-  void testSendTasksWithNullId() throws IOException, InterruptedException {
+  void testSendTasksWithNullId() throws IOException {
     taskManagerClient.sendTask(new MockTaskInput(), null, mockTaskResultHandler, workerType, TASK_QUEUE_NAME);
     assertTrue(taskManagerClient.isUsable(), "Taskmanagerclient should still be usable.");
   }
@@ -131,7 +131,7 @@ class TaskManagerClientTest {
    * @throws InterruptedException
    */
   @Test
-  void testSendUnserializableTask() throws IOException, InterruptedException {
+  void testSendUnserializableTask() {
     assertThrows(NotSerializableException.class, () -> {
       //anonymous inner type isn't serializable (even if the type is Serializable).
       final Serializable input = new Serializable() {
@@ -158,7 +158,7 @@ class TaskManagerClientTest {
    * @throws InterruptedException
    */
   @Test
-  void testSendTaskAfterExit() throws IOException, InterruptedException {
+  void testSendTaskAfterExit() {
     assertThrows(IllegalStateException.class, () -> {
       taskManagerClient.shutdown();
       testSendTask();
@@ -169,7 +169,7 @@ class TaskManagerClientTest {
    * Test method for {@link TaskManagerClientSender#sendTask(Object, String, String)}.
    */
   @Test
-  void testSendTaskToNullQueue() throws IOException {
+  void testSendTaskToNullQueue() {
     assertThrows(IllegalArgumentException.class,
         () -> taskManagerClient.sendTask(new MockTaskInput(), NORMAL_TASK_ID, mockTaskResultHandler, workerType, null));
   }
@@ -178,7 +178,7 @@ class TaskManagerClientTest {
    * Test method for {@link TaskManagerClientSender#sendTask(Object, String, String)}.
    */
   @Test
-  void testSendNullObjectAsTask() throws IOException {
+  void testSendNullObjectAsTask() {
     assertThrows(IllegalArgumentException.class, () -> taskManagerClient.sendTask(null, null, mockTaskResultHandler, workerType, TASK_QUEUE_NAME));
   }
 

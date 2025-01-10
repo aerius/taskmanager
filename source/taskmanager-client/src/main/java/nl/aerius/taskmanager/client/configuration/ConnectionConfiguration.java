@@ -227,7 +227,7 @@ public class ConnectionConfiguration {
       return connectionConfiguration;
     }
 
-    private void checkBlank(final String name, final String value) {
+    private static void checkBlank(final String name, final String value) {
       if (value == null || value.isEmpty()) {
         throw new IllegalArgumentException(name + " not allowed to be null or empty.");
       }
@@ -235,7 +235,7 @@ public class ConnectionConfiguration {
 
     public ConnectionConfiguration.Builder brokerHost(final String brokerHost) {
       if (brokerHost == null) {
-        throw new NullPointerException("Null brokerHost");
+        throw new IllegalArgumentException("brokerHost null");
       }
       this.brokerHost = brokerHost;
       return this;
@@ -248,7 +248,7 @@ public class ConnectionConfiguration {
 
     public ConnectionConfiguration.Builder brokerUsername(final String brokerUsername) {
       if (brokerUsername == null) {
-        throw new NullPointerException("Null brokerUsername");
+        throw new IllegalArgumentException("brokerUsername null");
       }
       this.brokerUsername = brokerUsername;
       return this;
@@ -256,7 +256,7 @@ public class ConnectionConfiguration {
 
     public ConnectionConfiguration.Builder brokerPassword(final String brokerPassword) {
       if (brokerPassword == null) {
-        throw new NullPointerException("Null brokerPassword");
+        throw new IllegalArgumentException("brokerPassword null");
       }
       this.brokerPassword = brokerPassword;
       return this;
@@ -264,7 +264,7 @@ public class ConnectionConfiguration {
 
     public ConnectionConfiguration.Builder brokerVirtualHost(final String brokerVirtualHost) {
       if (brokerVirtualHost == null) {
-        throw new NullPointerException("Null brokerVirtualHost");
+        throw new IllegalArgumentException("brokerVirtualHost null");
       }
       this.brokerVirtualHost = brokerVirtualHost;
       return this;

@@ -184,7 +184,7 @@ class PriorityTaskSchedulerTest {
     assertEquals(0, chkCounter.intValue(), "Counter should still be zero when 1 slot priorty available");
     assertFalse(receivedTask.isDone(), "Should not be done yet");
     scheduler.onTaskFinished(task1a.getMessage().getMetaData().getQueueName());
-    await().atMost(1, TimeUnit.SECONDS).until(() -> receivedTask.isDone());
+    await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
     assertNotNull(receivedTask.get(), "Received task");
     // task1a finished, now task1b may be executed.
     assertEquals(1, chkCounter.intValue(), "Counter should still be 1");

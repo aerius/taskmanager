@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 class QueueWatchDogTest {
 
   @Test
-  void testIsItDead() throws InterruptedException {
+  void testIsItDead() {
     final AtomicReference<LocalDateTime> now = new AtomicReference<>(LocalDateTime.now());
     final QueueWatchDog qwd = new QueueWatchDog() {
       @Override
