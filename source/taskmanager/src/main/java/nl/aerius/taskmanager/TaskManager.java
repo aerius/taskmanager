@@ -72,7 +72,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     final String workerQueueName = schedule.getWorkerQueueName();
     if (!buckets.containsKey(workerQueueName)) {
       LOG.info("Added scheduler for worker queue {}", workerQueueName);
-      buckets.put(workerQueueName, new TaskScheduleBucket(workerQueueName, schedule.isDurable()));
+      buckets.put(workerQueueName, new TaskScheduleBucket(new QueueConfig(workerQueueName, schedule.isDurable(), schedule.getQueueType())));
     }
     final TaskScheduleBucket taskScheduleBucket = buckets.get(workerQueueName);
 
@@ -110,11 +110,11 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     private final TaskScheduler<T> taskScheduler;
     private final String workerQueueName;
 
-    public TaskScheduleBucket(final String workerQueueName, final boolean durable) throws InterruptedException {
-      this.workerQueueName = workerQueueName;
+    public TaskScheduleBucket(final QueueConfig queueConfig) throws InterruptedException {
+      this.workerQueueName = queueConfig.queueName();
       taskScheduler = schedulerFactory.createScheduler(workerQueueName);
-      LOG.info("Worker Queue Name:{} (durable:{})", workerQueueName, durable);
-      workerProducer = factory.createWorkerProducer(workerQueueName, durable);
+      LOG.info("Worker Queue Name:{} (durable:{}, queueType:{})", workerQueueName, queueConfig.durable(), queueConfig.queueType());
+      workerProducer = factory.createWorkerProducer(queueConfig);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerProducer.start();

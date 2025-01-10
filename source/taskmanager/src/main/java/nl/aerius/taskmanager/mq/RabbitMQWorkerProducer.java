@@ -19,6 +19,7 @@ package nl.aerius.taskmanager.mq;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -36,6 +37,7 @@ import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.QueueConstants;
 import nl.aerius.taskmanager.domain.Message;
+import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.RabbitMQQueueType;
 
 /**
@@ -51,16 +53,17 @@ class RabbitMQWorkerProducer implements WorkerProducer {
 
   private final BrokerConnectionFactory factory;
   private final String workerQueueName;
+  private final boolean durable;
+  private final RabbitMQQueueType queueType;
 
   private WorkerFinishedHandler workerFinishedHandler;
   private boolean isShutdown;
-  private final boolean durable;
 
-  public RabbitMQWorkerProducer(final BrokerConnectionFactory factory, final String workerQueueName,
-      final boolean durable) {
+  public RabbitMQWorkerProducer(final BrokerConnectionFactory factory, final QueueConfig queueConfig) {
     this.factory = factory;
-    this.workerQueueName = workerQueueName;
-    this.durable = durable;
+    this.workerQueueName = queueConfig.queueName();
+    this.durable = queueConfig.durable();
+    this.queueType = queueConfig.queueType();
   }
 
   @Override
@@ -80,7 +83,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     // or do we expect worker to send instead of CC the message?
     final Channel channel = factory.getConnection().createChannel();
     try {
-      channel.queueDeclare(workerQueueName, durable, false, false, null);
+      channel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, queueType));
       final BasicProperties.Builder forwardBuilder = rabbitMQMessage.getProperties().builder();
       // new header map (even in case of existing headers, original can be a UnmodifiableMap)
       final Map<String, Object> headers = rabbitMQMessage.getProperties().getHeaders() == null ? new HashMap<>()
@@ -128,7 +131,8 @@ class RabbitMQWorkerProducer implements WorkerProducer {
           connection.removeShutdownListener(this::restartConnection);
         }
         if (warn) {
-          LOG.warn("(Re)starting reply consumer for queue {} failed, retrying in a while", workerQueueName);
+          LOG.warn("(Re)starting reply consumer for queue {} failed, retrying in a while: {}", workerQueueName,
+              Optional.ofNullable(e1.getMessage()).orElse(Optional.ofNullable(e1.getCause()).map(Throwable::getMessage).orElse("Unknown")));
           LOG.trace("(Re)starting failed with exception:", e1);
           warn = false;
         }
@@ -165,7 +169,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     replyChannel.queueDeclare(workerReplyQueue, false, true, true, null);
     // ensure the worker queue is around as well (so we can retrieve number of customers later on).
     // Worker queue is durable and non-exclusive with autodelete off.
-    replyChannel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, RabbitMQQueueType.QUORUM));
+    replyChannel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, queueType));
     replyChannel.basicConsume(workerReplyQueue, true, workerReplyQueue, new DefaultConsumer(replyChannel) {
       @Override
       public void handleDelivery(final String consumerTag, final Envelope envelope, final BasicProperties properties, final byte[] body) {
