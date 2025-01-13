@@ -35,7 +35,7 @@ import nl.aerius.taskmanager.domain.TaskManagerConfiguration;
  */
 final class ConfigurationManager {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TaskManagerConfiguration.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ConfigurationManager.class);
 
   private ConfigurationManager() {
   }

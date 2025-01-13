@@ -21,10 +21,8 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import nl.aerius.taskmanager.client.TaskResultCallback;
-
 /**
- *
+ * Util class to more easily mock a {@link TaskResultCallback}.
  */
 class MockTaskResultHandler implements TaskResultCallback {
 

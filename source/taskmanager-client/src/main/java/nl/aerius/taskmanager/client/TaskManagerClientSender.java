@@ -46,10 +46,6 @@ public class TaskManagerClientSender implements TaskWrapperSender {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskManagerClientSender.class);
 
-  private static final boolean QUEUE_DURABLE = true;
-  private static final boolean QUEUE_EXCLUSIVE = false;
-  private static final boolean QUEUE_AUTO_DELETE = false;
-
   private static final int DELIVERY_MODE_NON_PERSISTENT = 1;
   private static final int DELIVERY_MODE_PERSISTENT = 2;
 

@@ -62,14 +62,14 @@ class TaskManagerTest {
   }
 
   @Test
-  void testAddScheduler() throws IOException, InterruptedException {
+  void testAddScheduler() throws InterruptedException {
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
     assertEquals(RabbitMQQueueType.STREAM, schedule.getQueueType(), "Should have queueType STREAM");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
   @Test
-  void testModifyQueue() throws IOException, InterruptedException {
+  void testModifyQueue() throws InterruptedException {
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
     schedule.getQueues().get(0).setPriority(30);
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
@@ -77,7 +77,7 @@ class TaskManagerTest {
   }
 
   @Test
-  void testRemoveQueue() throws IOException, InterruptedException {
+  void testRemoveQueue() throws InterruptedException {
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
     schedule.getQueues().remove(0);
     assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");

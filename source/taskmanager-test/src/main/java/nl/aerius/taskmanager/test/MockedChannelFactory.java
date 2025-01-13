@@ -51,12 +51,16 @@ import com.rabbitmq.client.Envelope;
  *
  * This class keeps some state
  */
-public class MockedChannelFactory {
+public final class MockedChannelFactory {
 
   private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
   private static final Map<String, PriorityBlockingQueue<Body>> QUEUES = new ConcurrentHashMap<>();
   private static final Map<Long, Body> QUEUED = new ConcurrentHashMap<>();
   private static byte[] received;
+
+  private MockedChannelFactory() {
+    // Util class
+  }
 
   /**
    * Creates a new mocked channel.

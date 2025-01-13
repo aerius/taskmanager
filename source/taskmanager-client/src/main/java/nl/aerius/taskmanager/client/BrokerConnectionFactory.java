@@ -104,7 +104,7 @@ public class BrokerConnectionFactory {
         delayRetry(retryTime);
       }
     }
-    localConnection.addShutdownListener((cause) -> {
+    localConnection.addShutdownListener(cause -> {
       if (cause.isInitiatedByApplication()) {
         LOG.info("Connection was shut down (by application)");
       } else {
@@ -114,7 +114,7 @@ public class BrokerConnectionFactory {
     return localConnection;
   }
 
-  private void delayRetry(final int retryTime) {
+  private static void delayRetry(final int retryTime) {
     try {
       Thread.sleep(TimeUnit.SECONDS.toMillis(retryTime));
     } catch (final InterruptedException ex) {

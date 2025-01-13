@@ -26,7 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.BasicProperties;
 import com.rabbitmq.client.LongString;
 
 /**

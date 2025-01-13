@@ -42,7 +42,7 @@ class ConfigurationManagerTest {
 
   @Test
   @Timeout(2000)
-  void testLoadConfiguration() throws IOException {
+  void testLoadConfiguration() {
     final TaskManagerConfiguration tmc = ConfigurationManager.loadConfiguration(properties);
 
     assertNotNull(tmc.getBrokerConfiguration().getBrokerUsername(), "No username could be read from configuration file");

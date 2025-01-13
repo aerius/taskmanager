@@ -71,7 +71,7 @@ class TaskDispatcherTest {
 
   @Test
   @Timeout(3000)
-  void testNoFreeWorkers() throws InterruptedException {
+  void testNoFreeWorkers() {
     // Add Worker which will unlock
     workerPool.onNumberOfWorkersUpdate(1, 0);
     executor.execute(dispatcher);
@@ -89,21 +89,21 @@ class TaskDispatcherTest {
 
   @Test
   @Timeout(3000)
-  void testForwardTest() throws InterruptedException {
+  void testForwardTest() {
     final Task task = createTask();
     final Future<?> future = forwardTaskAsync(task, null);
     executor.execute(dispatcher);
     await().until(() -> dispatcher.isLocked(task));
     workerPool.onNumberOfWorkersUpdate(1, 0); //add worker which will unlock
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
-    await().until(() -> future.isDone());
+    await().until(future::isDone);
     assertFalse(future.isCancelled(), "Taskconsumer must be unlocked at this point without error");
   }
 
   @Disabled("TaskAlreadySendexception error willl not be thrown")
   @Test
   @Timeout(3000)
-  void testForwardDuplicateTask() throws InterruptedException {
+  void testForwardDuplicateTask() {
     final Task task = createTask();
     executor.execute(dispatcher);
     final Future<?> future = forwardTaskAsync(task, null);
@@ -124,7 +124,7 @@ class TaskDispatcherTest {
 
   @Test
   @Timeout(3000)
-  void testExceptionDuringForward() throws InterruptedException {
+  void testExceptionDuringForward() {
     workerProducer.setShutdownExceptionOnForward(true);
     final Task task = createTask();
     executor.execute(dispatcher);

@@ -27,7 +27,7 @@ import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
  */
 class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
 
-  private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<Task>();
+  private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<>();
 
   @Override
   public void addTask(final Task task) {
