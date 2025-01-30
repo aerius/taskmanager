@@ -55,7 +55,6 @@ class RabbitMQQueueUtilTest {
 
         Arguments.of(true, RabbitMQQueueType.CLASSIC, RabbitMQQueueType.CLASSIC),
         Arguments.of(true, RabbitMQQueueType.QUORUM, RabbitMQQueueType.QUORUM),
-        Arguments.of(true, RabbitMQQueueType.STREAM, RabbitMQQueueType.STREAM)
-        );
+        Arguments.of(true, RabbitMQQueueType.STREAM, RabbitMQQueueType.STREAM));
   }
 }

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * Base class for a single task queue configuration.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
-@JsonSubTypes({ @JsonSubTypes.Type(PriorityTaskQueue.class) })
+@JsonSubTypes({@JsonSubTypes.Type(PriorityTaskQueue.class)})
 public class TaskQueue {
   private String queueName;
 

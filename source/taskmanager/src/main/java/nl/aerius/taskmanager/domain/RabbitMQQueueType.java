@@ -19,9 +19,7 @@ package nl.aerius.taskmanager.domain;
 import java.util.Locale;
 
 public enum RabbitMQQueueType {
-  CLASSIC,
-  QUORUM,
-  STREAM;
+  CLASSIC, QUORUM, STREAM;
 
   public String type() {
     return name().toLowerCase(Locale.ROOT);
