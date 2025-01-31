@@ -183,5 +183,18 @@
         <module>taskmanager-report</module>
       </modules>
     </profile>
+
+    <profile>
+      <id>dependency-check</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <inherited>false</inherited>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
