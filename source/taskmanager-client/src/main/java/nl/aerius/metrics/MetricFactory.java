@@ -24,8 +24,7 @@ import java.util.Properties;
 @Deprecated(forRemoval = true)
 public final class MetricFactory {
 
-  private MetricFactory() {
-  }
+  private MetricFactory() {}
 
   public static void init(final Properties properties, final String application) {
     // Method kept for easier transition

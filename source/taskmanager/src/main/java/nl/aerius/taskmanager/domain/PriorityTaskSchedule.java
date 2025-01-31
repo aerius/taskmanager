@@ -19,5 +19,4 @@ package nl.aerius.taskmanager.domain;
 /**
  * The configuration of a TaskScheduler.
  */
-public class PriorityTaskSchedule extends TaskSchedule<PriorityTaskQueue> {
-}
+public class PriorityTaskSchedule extends TaskSchedule<PriorityTaskQueue> {}

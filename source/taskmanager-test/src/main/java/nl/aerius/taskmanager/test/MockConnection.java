@@ -118,8 +118,7 @@ public class MockConnection extends MockShutdownNotifier implements Connection {
   }
 
   @Override
-  public void addBlockedListener(final BlockedListener listener) {
-  }
+  public void addBlockedListener(final BlockedListener listener) {}
 
   @Override
   public boolean removeBlockedListener(final BlockedListener listener) {
@@ -127,8 +126,7 @@ public class MockConnection extends MockShutdownNotifier implements Connection {
   }
 
   @Override
-  public void clearBlockedListeners() {
-  }
+  public void clearBlockedListeners() {}
 
   @Override
   public ExceptionHandler getExceptionHandler() {

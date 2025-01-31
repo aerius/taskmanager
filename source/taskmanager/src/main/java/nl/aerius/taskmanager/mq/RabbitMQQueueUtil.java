@@ -31,8 +31,7 @@ final class RabbitMQQueueUtil {
 
   private static final String ARG_QUEUE_TYPE = "x-queue-type";
 
-  private RabbitMQQueueUtil() {
-  }
+  private RabbitMQQueueUtil() {}
 
   /**
    * Returns a map with queueDeclare arguments.
@@ -47,7 +46,7 @@ final class RabbitMQQueueUtil {
     if (queueType == null) {
       return Map.of();
     }
-    final RabbitMQQueueType actualType =  !durable && PERSISTENT_QUEUE_TYPES.contains(queueType) ? RabbitMQQueueType.CLASSIC : queueType;
+    final RabbitMQQueueType actualType = !durable && PERSISTENT_QUEUE_TYPES.contains(queueType) ? RabbitMQQueueType.CLASSIC : queueType;
 
     return Map.of(ARG_QUEUE_TYPE, actualType.type());
   }
