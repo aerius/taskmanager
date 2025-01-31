@@ -70,18 +70,10 @@ public final class Main {
       }
     });
     Thread.currentThread().setName("Main");
-    final ExecutorService executorService = Executors.newCachedThreadPool();
-    final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
 
-    try {
+    try (final ExecutorService executorService = Executors.newCachedThreadPool();
+        final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(THREAD_POOL_SIZE)) {
       startupFromConfiguration(executorService, scheduledExecutorService, cmdOptions.getConfigFile());
-    } finally {
-      if (!executorService.isTerminated()) {
-        executorService.shutdown();
-      }
-      if (!scheduledExecutorService.isTerminated()) {
-        scheduledExecutorService.shutdown();
-      }
     }
   }
 
