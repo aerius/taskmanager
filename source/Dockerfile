@@ -1,5 +1,5 @@
 # Builder part for maven packaging.
-FROM maven:3-openjdk-17 as builder
+FROM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN mv -v "$(ls taskmanager/target/taskmanager-*.jar | grep -v -e '-javadoc' -e 
     && mvn clean
 
 # Final image containing only the application
-FROM eclipse-temurin:17
+FROM eclipse-temurin:21
 
 # Set up a non root account to run containers as
 RUN groupadd -r taskmanager \
