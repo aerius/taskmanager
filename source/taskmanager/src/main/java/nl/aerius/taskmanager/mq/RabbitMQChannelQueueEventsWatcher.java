@@ -79,7 +79,10 @@ class RabbitMQChannelQueueEventsWatcher {
     }
   }
 
-  private void handleShutdownSignal(final ShutdownSignalException sig) {
+  private void handleShutdownSignal(final ShutdownSignalException sse) {
+    if (sse != null && sse.isInitiatedByApplication()) {
+      return;
+    }
     LOG.debug("Channel RabbitMQChannelQueueEventsWatcher was shut down.");
     // restart
     try {

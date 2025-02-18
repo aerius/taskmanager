@@ -16,8 +16,9 @@
  */
 package nl.aerius.taskmanager.mq;
 
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +64,8 @@ class AbstractRabbitMQTest {
         .brokerHost("localhost").brokerUsername("guest").brokerPassword("guest").build();
     mockChannel = MockedChannelFactory.create();
 
-    doReturn(mockChannel).when(mockConnection).createChannel();
+    lenient().doReturn(mockChannel).when(mockConnection).createChannel();
+    lenient().doReturn(Optional.of(mockChannel)).when(mockConnection).openChannel();
     factory = new BrokerConnectionFactory(executor, configuration) {
       @Override
       protected Connection createNewConnection() {
