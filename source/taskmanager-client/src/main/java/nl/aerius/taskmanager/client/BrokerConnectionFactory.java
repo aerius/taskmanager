@@ -63,6 +63,8 @@ public class BrokerConnectionFactory {
     factory.setUsername(connectionConfiguration.getBrokerUsername());
     factory.setPassword(connectionConfiguration.getBrokerPassword());
     factory.setVirtualHost(connectionConfiguration.getBrokerVirtualHost());
+    factory.setMaxInboundMessageBodySize(connectionConfiguration.getBrokerMaxInboundMessageBodySize());
+
     // Set automatic recovery to false - as of 4.0.0 this is true by default which will not mix well with our own connection retries.
     // In a future version we might want to use this rather than have our own implementation.
     // See https://www.rabbitmq.com/api-guide.html#recovery for more information.

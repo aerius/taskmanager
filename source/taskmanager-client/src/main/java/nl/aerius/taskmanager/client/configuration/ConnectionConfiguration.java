@@ -46,6 +46,11 @@ public class ConnectionConfiguration {
    */
   private static final int DEFAULT_RETRY_WAIT_TIME = 60; //seconds
 
+  /**
+   * Default maximum size of inbound messages set to 134_217_728 bytes.
+   */
+  private static final int DEFAULT_MAX_INBOUND_MESSAGE_BODY_SIZE = 1024 * 1024 * 128;
+
   private final String brokerHost;
 
   private final int brokerPort;
@@ -62,6 +67,8 @@ public class ConnectionConfiguration {
 
   private final int brokerRetryWaitTime;
 
+  private final int brokerMaxInboundMessageBodySize;
+
   private ConnectionConfiguration(
       final String brokerHost,
       final int brokerPort,
@@ -70,7 +77,8 @@ public class ConnectionConfiguration {
       final String brokerVirtualHost,
       final int brokerManagementPort,
       final int brokerManagementRefreshRate,
-      final int brokerRetryWaitTime) {
+      final int brokerRetryWaitTime,
+      final int brokerMaxInboundMessageBodySize) {
     this.brokerHost = brokerHost;
     this.brokerPort = brokerPort;
     this.brokerUsername = brokerUsername;
@@ -79,6 +87,7 @@ public class ConnectionConfiguration {
     this.brokerManagementPort = brokerManagementPort;
     this.brokerManagementRefreshRate = brokerManagementRefreshRate;
     this.brokerRetryWaitTime = brokerRetryWaitTime;
+    this.brokerMaxInboundMessageBodySize = brokerMaxInboundMessageBodySize;
   }
 
   public static Builder builder() {
@@ -87,7 +96,8 @@ public class ConnectionConfiguration {
         .brokerManagementPort(DEFAULT_BROKER_MANAGEMENT_PORT)
         .brokerVirtualHost(DEFAULT_BROKER_VIRTUAL_HOST)
         .brokerManagementRefreshRate(DEFAULT_MANAGEMENT_REFRESH_RATE)
-        .brokerRetryWaitTime(DEFAULT_RETRY_WAIT_TIME);
+        .brokerRetryWaitTime(DEFAULT_RETRY_WAIT_TIME)
+        .brokerMaxInboundMessageBodySize(DEFAULT_MAX_INBOUND_MESSAGE_BODY_SIZE);
   }
 
   /**
@@ -146,6 +156,13 @@ public class ConnectionConfiguration {
     return brokerRetryWaitTime;
   }
 
+  /**
+   * @return The maximum size of inbound messages.
+   */
+  public int getBrokerMaxInboundMessageBodySize() {
+    return brokerMaxInboundMessageBodySize;
+  }
+
   @Override
   public String toString() {
     return "ConnectionConfiguration{"
@@ -156,7 +173,8 @@ public class ConnectionConfiguration {
         + "brokerVirtualHost=" + brokerVirtualHost + ", "
         + "brokerManagementPort=" + brokerManagementPort + ", "
         + "brokerManagementRefreshRate=" + brokerManagementRefreshRate + ", "
-        + "brokerRetryWaitTime=" + brokerRetryWaitTime
+        + "brokerRetryWaitTime=" + brokerRetryWaitTime + ", "
+        + "brokerMaxInboundMessageBodySize=" + brokerMaxInboundMessageBodySize
         + "}";
   }
 
@@ -179,7 +197,8 @@ public class ConnectionConfiguration {
         && this.brokerVirtualHost.equals(that.getBrokerVirtualHost())
         && this.brokerManagementPort == that.getBrokerManagementPort()
         && this.brokerManagementRefreshRate == that.getBrokerManagementRefreshRate()
-        && this.brokerRetryWaitTime == that.getBrokerRetryWaitTime();
+        && this.brokerRetryWaitTime == that.getBrokerRetryWaitTime()
+        && this.brokerMaxInboundMessageBodySize == this.getBrokerMaxInboundMessageBodySize();
   }
 
   @Override
@@ -201,6 +220,8 @@ public class ConnectionConfiguration {
     h$ ^= brokerManagementRefreshRate;
     h$ *= 1000003;
     h$ ^= brokerRetryWaitTime;
+    h$ *= 1000003;
+    h$ ^= brokerMaxInboundMessageBodySize;
     return h$;
   }
 
@@ -213,6 +234,7 @@ public class ConnectionConfiguration {
     private Integer brokerManagementPort;
     private Integer brokerManagementRefreshRate;
     private Integer brokerRetryWaitTime;
+    private Integer brokerMaxInboundMessageBodySize;
 
     Builder() {}
 
@@ -284,6 +306,11 @@ public class ConnectionConfiguration {
       return this;
     }
 
+    public Builder brokerMaxInboundMessageBodySize(final int brokerMaxInboundMessageBodySize) {
+      this.brokerMaxInboundMessageBodySize = brokerMaxInboundMessageBodySize;
+      return this;
+    }
+
     ConnectionConfiguration autoBuild() {
       String missing = "";
       if (this.brokerHost == null) {
@@ -310,6 +337,9 @@ public class ConnectionConfiguration {
       if (this.brokerRetryWaitTime == null) {
         missing += " brokerRetryWaitTime";
       }
+      if (this.brokerMaxInboundMessageBodySize == null) {
+        missing += " brokerMaxInboundMessageBodySize";
+      }
       if (!missing.isEmpty()) {
         throw new IllegalStateException("Missing required properties:" + missing);
       }
@@ -321,7 +351,8 @@ public class ConnectionConfiguration {
           this.brokerVirtualHost,
           this.brokerManagementPort,
           this.brokerManagementRefreshRate,
-          this.brokerRetryWaitTime);
+          this.brokerRetryWaitTime,
+          this.brokerMaxInboundMessageBodySize);
     }
   }
 }
