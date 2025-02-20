@@ -122,14 +122,11 @@ class RabbitMQWorkerProducer implements WorkerProducer {
       Connection connection = null;
       try {
         connection = factory.getConnection();
-        connection.addShutdownListener(this::restartConnection);
-        startReplyConsumer(connection);
-        LOG.info("Successfully (re)started reply consumer for queue {}", workerQueueName);
-        break;
-      } catch (final ShutdownSignalException | IOException e1) {
-        if (connection != null) {
-          connection.removeShutdownListener(this::restartConnection);
+        if (startReplyConsumer(connection)) {
+          LOG.info("Successfully (re)started reply consumer for queue {}", workerQueueName);
+          return;
         }
+      } catch (final ShutdownSignalException | IOException e1) {
         if (warn) {
           LOG.warn("(Re)starting reply consumer for queue {} failed, retrying in a while: {}", workerQueueName,
               Optional.ofNullable(e1.getMessage()).orElse(Optional.ofNullable(e1.getCause()).map(Throwable::getMessage).orElse("Unknown")));
@@ -143,13 +140,6 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     }
   }
 
-  private void restartConnection(final ShutdownSignalException cause) {
-    if (workerFinishedHandler != null) {
-      workerFinishedHandler.reset();
-    }
-    tryStartReplyConsumer();
-  }
-
   private static void delayRetry(final int retryTime) {
     try {
       Thread.sleep(TimeUnit.SECONDS.toMillis(retryTime));
@@ -159,8 +149,13 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     }
   }
 
-  private void startReplyConsumer(final Connection connection) throws IOException {
-    final Channel replyChannel = connection.createChannel();
+  private boolean startReplyConsumer(final Connection connection) throws IOException {
+    final Optional<Channel> replyChannelOptional = connection.openChannel();
+
+    if (replyChannelOptional.isEmpty()) {
+      return false;
+    }
+    final Channel replyChannel = replyChannelOptional.get();
     // Create an exclusive reply queue with predefined name (so we can set a replyCC header).
     // Queue will be deleted once taskmanager is down.
     // reply queue is not durable because the system will 'reboot' after connection problems anyway.
@@ -176,5 +171,6 @@ class RabbitMQWorkerProducer implements WorkerProducer {
         workerFinishedHandler.onWorkerFinished(properties.getMessageId());
       }
     });
+    return true;
   }
 }

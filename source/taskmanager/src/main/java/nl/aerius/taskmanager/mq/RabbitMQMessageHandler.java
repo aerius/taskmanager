@@ -17,12 +17,14 @@
 package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
@@ -84,20 +86,21 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
     tryStartingConsuming.set(true);
     while (!isShutdown) {
       try {
-        stopAndStartConsumer();
-        LOG.info("Successfully (re)started consumer for {}", taskQueueName);
-        if (consumer.getChannel().isOpen()) {
-          tryStartingConsuming.set(false);
-          break;
+        if (stopAndStartConsumer()) {
+          LOG.info("Successfully (re)started consumer for {}", taskQueueName);
+          if (consumer.getChannel().isOpen()) {
+            tryStartingConsuming.set(false);
+            return;
+          }
         }
       } catch (final ShutdownSignalException | IOException e1) {
         if (!warned) {
           LOG.warn("(Re)starting consumer for {} failed, retrying in a while", taskQueueName, e1);
           warned = true;
         }
-        if (!isShutdown) {
-          delayRetry();
-        }
+      }
+      if (!isShutdown) {
+        delayRetry();
       }
     }
   }
@@ -147,24 +150,28 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
     }
   }
 
-  private void stopAndStartConsumer() throws IOException {
+  private boolean stopAndStartConsumer() throws IOException {
     synchronized (this) {
       if (consumer != null) {
         consumer.stopConsuming();
       }
-      consumer = new RabbitMQMessageConsumer(
-          factory.getConnection().createChannel(),
-          queueConfig,
-          this);
-      consumer.getChannel().addShutdownListener(this::handleShutdownSignal);
-      consumer.startConsuming();
-      tryConnecting.set(false);
-      warned = false;
+      final Optional<Channel> channel = factory.getConnection().openChannel();
+
+      if (channel.isPresent()) {
+        consumer = new RabbitMQMessageConsumer(channel.get(), queueConfig, this);
+        consumer.getChannel().addShutdownListener(this::handleShutdownSignal);
+        consumer.startConsuming();
+        tryConnecting.set(false);
+        warned = false;
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 
-  private void handleShutdownSignal(final ShutdownSignalException ssg) {
-    if (ssg != null && ssg.isInitiatedByApplication()) {
+  private void handleShutdownSignal(final ShutdownSignalException sse) {
+    if (sse != null && sse.isInitiatedByApplication()) {
       return;
     }
     if (!tryStartingConsuming.get() && tryConnecting.compareAndSet(false, true) && messageReceivedHandler != null) {
