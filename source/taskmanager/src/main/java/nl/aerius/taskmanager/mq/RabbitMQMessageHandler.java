@@ -98,9 +98,9 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
           LOG.warn("(Re)starting consumer for {} failed, retrying in a while", taskQueueName, e1);
           warned = true;
         }
-        if (!isShutdown) {
-          delayRetry();
-        }
+      }
+      if (!isShutdown) {
+        delayRetry();
       }
     }
   }
