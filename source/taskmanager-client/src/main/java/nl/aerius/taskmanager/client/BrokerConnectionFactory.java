@@ -150,7 +150,7 @@ public class BrokerConnectionFactory implements AutoCloseable {
    * @deprecated Use {@link #close()}
    */
   @Deprecated
-  public void shutdown() throws Exception {
+  public void shutdown() {
     close();
   }
 
