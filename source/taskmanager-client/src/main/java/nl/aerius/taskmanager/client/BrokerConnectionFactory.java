@@ -36,7 +36,7 @@ import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 /**
  * Factory to manager connection communication, RabbitMQ.
  */
-public class BrokerConnectionFactory {
+public class BrokerConnectionFactory implements AutoCloseable {
 
   private static final Logger LOG = LoggerFactory.getLogger(BrokerConnectionFactory.class);
   private static final int WAIT_BEFORE_RETRY_SECONDS = 5;
@@ -147,9 +147,18 @@ public class BrokerConnectionFactory {
   }
 
   /**
+   * @deprecated Use {@link #close()}
+   */
+  @Deprecated
+  public void shutdown() throws Exception {
+    close();
+  }
+
+  /**
    * Shuts down the broker connection. Call when application finishes.
    */
-  public void shutdown() {
+  @Override
+  public void close() {
     shutdownTaskManagerClients();
     if (connection != null && connection.isOpen()) {
       try {
