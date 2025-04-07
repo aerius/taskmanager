@@ -30,26 +30,19 @@ public class WorkerQueueType {
   private static final char DOT = '.';
 
   private final String name;
-  private final boolean persistent;
-
-  public WorkerQueueType(final String name) {
-    this(name, true);
-  }
 
   /**
    * Constructor
    *
    * @param name name of the queue type
-   * @param persistent true if the queue messages should be persistent
    */
-  public WorkerQueueType(final String name, final boolean persistent) {
-    this.name = name.toLowerCase(Locale.ENGLISH);
-    this.persistent = persistent;
+  public WorkerQueueType(final String name) {
+    this.name = name.toLowerCase(Locale.ROOT);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, persistent);
+    return Objects.hash(name);
   }
 
   @Override
@@ -60,7 +53,7 @@ public class WorkerQueueType {
     if (obj == null || getClass() != obj.getClass()) {
       return false;
     }
-    return name.equals(((WorkerQueueType) obj).name) && persistent == ((WorkerQueueType) obj).persistent;
+    return name.equals(((WorkerQueueType) obj).name);
   }
 
   /**
@@ -73,13 +66,6 @@ public class WorkerQueueType {
 
   public String getWorkerQueueName() {
     return NAMING_PREFIX + "worker." + propertyName();
-  }
-
-  /**
-   * @return True if the messages on this queue should be persisted.
-   */
-  public boolean isPersistent() {
-    return persistent;
   }
 
   public String propertyName() {

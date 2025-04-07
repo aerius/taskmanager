@@ -149,14 +149,6 @@ public class BrokerConnectionFactory implements AutoCloseable {
   }
 
   /**
-   * @deprecated Use {@link #close()}
-   */
-  @Deprecated
-  public void shutdown() {
-    close();
-  }
-
-  /**
    * Shuts down the broker connection. Call when application finishes.
    */
   @Override
@@ -176,7 +168,7 @@ public class BrokerConnectionFactory implements AutoCloseable {
    */
   private void shutdownTaskManagerClients() {
     for (int i = taskManagerClients.size() - 1; i >= 0; i--) {
-      taskManagerClients.get(i).shutdown();
+      taskManagerClients.get(i).close();
     }
   }
 
