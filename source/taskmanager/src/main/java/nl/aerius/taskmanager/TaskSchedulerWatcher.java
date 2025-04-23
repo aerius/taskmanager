@@ -34,10 +34,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.client.WorkerQueueType;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
+import nl.aerius.taskmanager.scheduler.TaskScheduler.TaskSchedulerFactory;
 
 /**
  * Class that watches the file system for queue configuration changes and passed any changes to the {@link TaskManager} class.

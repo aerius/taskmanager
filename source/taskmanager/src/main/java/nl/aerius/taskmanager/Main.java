@@ -26,7 +26,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.aerius.taskmanager.PriorityTaskScheduler.PriorityTaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
@@ -34,6 +33,7 @@ import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 import nl.aerius.taskmanager.domain.TaskManagerConfiguration;
 import nl.aerius.taskmanager.mq.RabbitMQAdaptorFactory;
+import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFactory;
 
 /**
  * The main class, used to start the task manager.

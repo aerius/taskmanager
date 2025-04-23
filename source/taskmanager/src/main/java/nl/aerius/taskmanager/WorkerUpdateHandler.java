@@ -19,7 +19,7 @@ package nl.aerius.taskmanager;
 /**
  * Handler to be informed when changed related to handling or tasks by workers and worker pool changes.
  */
-interface WorkerUpdateHandler {
+public interface WorkerUpdateHandler {
 
   /**
    * Task has be processed by the worker pool and finished with results.

@@ -14,18 +14,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.scheduler.fifo;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.scheduler.TaskScheduler;
+import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFileHandler;
 
 /**
  * FIFO implementation of the task scheduler.
  */
-class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
+public class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
 
   private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<>();
 

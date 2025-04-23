@@ -29,11 +29,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 import nl.aerius.taskmanager.domain.RabbitMQQueueType;
+import nl.aerius.taskmanager.scheduler.TaskScheduler.TaskSchedulerFactory;
+import nl.aerius.taskmanager.scheduler.fifo.FIFOTaskScheduler;
+import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFileHandler;
 
 /**
  * Test class for {@link TaskManager}.

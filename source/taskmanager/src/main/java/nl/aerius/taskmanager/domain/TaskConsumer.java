@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.domain;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -24,18 +24,17 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.opentelemetry.context.Context;
+
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler.MessageReceivedHandler;
-import nl.aerius.taskmanager.domain.Message;
-import nl.aerius.taskmanager.domain.MessageMetaData;
-import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**
  * Task manager part of retrieving tasks from the client queues and send them to the dispatcher, which in case will send them to the scheduler.
  * It also listens to if the message was successfully send to the worker.
  */
-class TaskConsumer implements MessageReceivedHandler {
+public class TaskConsumer implements MessageReceivedHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskConsumer.class);
 
@@ -73,7 +72,9 @@ class TaskConsumer implements MessageReceivedHandler {
   public void onMessageReceived(final Message<?> message) {
     if (running) {
       final Task task = new Task(this);
+
       task.setData(message);
+      task.setContext(Context.current());
       LOG.trace("Task received from {} for worker send to scheduler ({}).", taskQueueName, task.getId());
       forwardTaskHandler.forwardTask(task);
     }

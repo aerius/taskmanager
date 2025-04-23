@@ -19,6 +19,8 @@ package nl.aerius.taskmanager;
 import java.util.UUID;
 
 import nl.aerius.taskmanager.domain.Message;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.mq.RabbitMQMessageMetaData;
 
 /**

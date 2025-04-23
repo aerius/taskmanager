@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.domain;
 
 /**
  * Interface for class implementing forwarding to the scheduler.
  */
-interface ForwardTaskHandler {
+public interface ForwardTaskHandler {
 
   /**
    * Forwards the task to the scheduler, which adds the task to the pool of tasks to be handled. This method

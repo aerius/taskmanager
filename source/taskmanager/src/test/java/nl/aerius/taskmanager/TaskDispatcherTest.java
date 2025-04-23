@@ -36,6 +36,9 @@ import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.TaskDispatcher.State;
 import nl.aerius.taskmanager.domain.QueueConfig;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.domain.TaskConsumer;
+import nl.aerius.taskmanager.scheduler.fifo.FIFOTaskScheduler;
 
 /**
  * Test for {@link TaskDispatcher} class.

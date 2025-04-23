@@ -14,18 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.domain;
 
 import io.opentelemetry.context.Context;
-
-import nl.aerius.taskmanager.domain.Message;
-import nl.aerius.taskmanager.domain.MessageMetaData;
 
 /**
  * Task manager internal data object to track messages. A Message is a generic interface which is used with a interface specific (e.g. RabbitMQ)
  * instances. This data object keeps track of the taskconsumer that send the message.
  */
-class Task {
+public class Task {
   private Message<?> data;
   private final TaskConsumer taskConsumer;
   private boolean alive = true;
