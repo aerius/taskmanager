@@ -85,14 +85,17 @@ public class TaskManagerClientSender implements AutoCloseable {
     while (running && !done) {
       try {
         // Create a channel to send the message over.
-        checkChannel(channel);
+        ensureChannel(channel);
         final BasicProperties.Builder propertiesBuilder = new BasicProperties.Builder();
         prepareBeforeSend(propertiesBuilder);
         propertiesBuilder.correlationId(correlationId);
         propertiesBuilder.messageId(messageId);
         propertiesBuilder.deliveryMode(DELIVERY_MODE_PERSISTENT);
 
-        channel.get().basicPublish("", queueName, propertiesBuilder.build(), QueueHelper.objectToBytes(data));
+        final Channel chn = channel.get();
+        if (chn != null) {
+          chn.basicPublish("", queueName, propertiesBuilder.build(), QueueHelper.objectToBytes(data));
+        }
         // task has been send successfully, return.
         done = true;
       } catch (final ConnectException e) {
@@ -121,13 +124,22 @@ public class TaskManagerClientSender implements AutoCloseable {
     // Default implementation does nothing.
   }
 
-  protected boolean checkChannel(final AtomicReference<Channel> channelReference) throws IOException {
-    final Channel channel = channelReference.get();
-    if (channel == null || !channel.isOpen()) {
-      channelReference.set(getConnection().createChannel());
-      return true;
+  /**
+   * Ensures there is an open channel in the reference object (if running), and returns if the channel was opened.
+   *
+   * @param channelReference channel to check
+   * @return true if the channel was opened
+   * @throws IOException
+   */
+  protected boolean ensureChannel(final AtomicReference<Channel> channelReference) throws IOException {
+    synchronized (this) {
+      final Channel channel = channelReference.get();
+      if (running && (channel == null || !channel.isOpen())) {
+        channelReference.set(getConnection().createChannel());
+        return true;
+      }
+      return false;
     }
-    return false;
   }
 
   private Connection getConnection() {

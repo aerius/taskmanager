@@ -28,9 +28,8 @@ import com.rabbitmq.client.Channel;
 public class TaskManagerClientSenderWithCallback extends TaskManagerClientSender {
 
   private final TaskResultCallback callback;
-
-  private final AtomicReference<Channel> replyChannel = new AtomicReference<>();
   private final String replyQueueName;
+  private final AtomicReference<Channel> replyChannel = new AtomicReference<>();
 
   /**
    * Constructor.
@@ -47,7 +46,7 @@ public class TaskManagerClientSenderWithCallback extends TaskManagerClientSender
 
   @Override
   protected void prepareBeforeSend(final Builder builder) throws IOException {
-    if (super.checkChannel(replyChannel)) {
+    if (super.ensureChannel(replyChannel)) {
       createReplyConsumer();
     }
     builder.replyTo(replyQueueName);
@@ -67,7 +66,9 @@ public class TaskManagerClientSenderWithCallback extends TaskManagerClientSender
 
   @Override
   public void close() {
-    closeChannel(replyChannel.get());
-    super.close();
+    synchronized (this) {
+      super.close();
+      closeChannel(replyChannel.get());
+    }
   }
 }
