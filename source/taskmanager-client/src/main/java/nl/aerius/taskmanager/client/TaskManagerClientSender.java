@@ -19,44 +19,36 @@ package nl.aerius.taskmanager.client;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.ConnectException;
-import java.util.Optional;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.AMQP.BasicProperties.Builder;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
-import nl.aerius.taskmanager.client.TaskWrapper.TaskWrapperSender;
 import nl.aerius.taskmanager.client.util.QueueHelper;
 
 /**
- * Client to be used to communicate with the taskmanager (more importantly, send tasks to taskmanager). Usage example:
- *
- * <pre>
- * TaskManagerClientSender client = new TaskManagerClientSender(brokerConnectionFactory);
- * TaskResultCallback resultHandler = new SomeTaskResultCallbackImpl();
- * TaskInput task = new SomeTaskInput();
- * client.sendTask(task, resultHandler, task.getExchangeName(), task.getDefaultQueueName());
- * </pre>
+ * Client to be used to communicate with the taskmanager (more importantly, send tasks to taskmanager):
  */
-public class TaskManagerClientSender implements TaskWrapperSender {
+public class TaskManagerClientSender implements AutoCloseable {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskManagerClientSender.class);
 
-  private static final int DELIVERY_MODE_NON_PERSISTENT = 1;
   private static final int DELIVERY_MODE_PERSISTENT = 2;
 
   private static final int CLIENT_START_RETRY_PERIOD = 5000;
 
   private final BrokerConnectionFactory factory;
   private boolean running = true;
+  private final AtomicReference<Channel> channel = new AtomicReference<>();
 
   /**
-   * Create a client that can be used to send 1 or more tasks to the taskmanager and in turn to the workers. All results from tasks send through this
-   * client will be send to the resultHandler.
+   * Creates a {@link TaskManagerClientSender}.
    *
    * @param factory Broker connection factory
    */
@@ -69,110 +61,84 @@ public class TaskManagerClientSender implements TaskWrapperSender {
   }
 
   /**
-   * Convenience method of {@link #sendTask(Serializable, String, String, TaskResultCallback, WorkerQueueType, String)}. Should be used when the
-   * callback wants to correspond a result based on a unique ID.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param uniqueId The unique ID to use for this task. Will be used when a result is received to tell the TaskResultCallback which task was the
-   *          cause.
-   * @param resultCallback The resultCallback which will receive results. Can be null, in which case the messages are only send and no results can be
-   *          retrieved.
-   * @param workerQueueType name of the worker queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public void sendTask(final Serializable input, final String uniqueId, final TaskResultCallback resultCallback,
-      final WorkerQueueType workerQueueType,
-      final String taskQueueName) throws IOException {
-    sendTask(input, uniqueId, uniqueId, resultCallback, workerQueueType, taskQueueName);
-  }
-
-  /**
-   * Send a task to the client queue belonging to a client queue for the worker in workerTypeQueue.
-   *
-   * @param input The input object which the worker needs to do the work.
-   * @param correlationId The correlation ID to use for this task. Will be used when a result is received to
-   *          tell the TaskResultCallback which task was the cause. Can be used to correlate a task in the callback.
-   * @param messageId The message ID to use for this task. Will be used when a result is received to
-   *          tell the TaskResultCallback which task was the cause. Should be unique.
-   * @param resultCallback The resultCallback which will receive results.
-   *          Can be null, in which case the messages are only send and no results can be retrieved.
-   * @param workerQueueType name of the worker queue
-   * @param taskQueueName The name of the queue on which this task should be placed (should be known in taskmanager).
-   * @throws IOException In case of errors communicating with queue.
-   */
-  public void sendTask(final Serializable input, final String correlationId, final String messageId, final TaskResultCallback resultCallback,
-      final WorkerQueueType workerQueueType, final String taskQueueName) throws IOException {
-    sendTask(new TaskWrapper(Optional.ofNullable(resultCallback), input, correlationId, messageId, workerQueueType.getTaskQueueName(taskQueueName),
-        workerQueueType));
-  }
-
-  /**
    * Sends the task directly to the worker queue bypassing the taskmanager.
    *
-   * @param input The input object which the worker needs to do the work.
+   * @param data The input object which the worker needs to do the work.
    * @param correlationId The correlation ID to use for this task. Will be used when a result is received to
    *          tell the TaskResultCallback which task was the cause. Can be used to correlate a task in the callback.
    * @param messageId The message ID to use for this task. Will be used when a result is received to
    *          tell the TaskResultCallback which task was the cause. Should be unique.
-   * @param resultCallback The resultCallback which will receive results.
-   *          Can be null, in which case the messages are only send and no results can be retrieved.
-   * @param workerQueueType name of the worker queue
+   * @param queueName The name of the queue on which this task should be placed.
    * @throws IOException In case of errors communicating with queue.
    */
-  public void sendTask(final Serializable input, final String correlationId, final String messageId, final TaskResultCallback resultCallback,
-      final WorkerQueueType workerQueueType) throws IOException {
-    sendTask(
-        new TaskWrapper(Optional.ofNullable(resultCallback), input, correlationId, messageId, workerQueueType.getWorkerQueueName(), workerQueueType));
-  }
-
-  @Override
-  public void sendTask(final TaskWrapper wrapper) throws IOException {
-    if (wrapper.getTask() == null) {
-      throw new IllegalArgumentException("input value of null not allowed.");
-    }
-    if (wrapper.getQueueName() == null || wrapper.getQueueName().isEmpty()) {
-      throw new IllegalArgumentException("Blank taskQueueName not allowed.");
-    }
+  public void sendTask(final Serializable data, final String correlationId, final String messageId, final String queueName) throws IOException {
     if (!running) {
       throw new IllegalStateException("Attempt to use closed connection");
     }
+    if (queueName == null || queueName.isEmpty()) {
+      throw new IllegalArgumentException("Blank taskQueueName not allowed.");
+    }
+    if (data == null) {
+      throw new IllegalArgumentException("input value of null not allowed.");
+    }
     boolean done = false;
     while (running && !done) {
-      try (final Channel channel = getConnection().createChannel()) {
+      try {
         // Create a channel to send the message over.
-        final String queueName = wrapper.getQueueName();
-        final Serializable task = wrapper.getTask();
-        // set a unique message ID.
-        final String messageId = wrapper.getTaskId();
-        // Ensure correlation ID is set, even if no taskId was supplied.
-        final String correlationId = wrapper.getCorrelationId();
-        // Set the right properties for the message (endurable, replyTo, etc).
-        final BasicProperties.Builder builder = new BasicProperties.Builder().correlationId(correlationId).messageId(messageId)
-            .deliveryMode(wrapper.getNaming().isPersistent() ? DELIVERY_MODE_PERSISTENT : DELIVERY_MODE_NON_PERSISTENT);
+        ensureChannel(channel);
+        final BasicProperties.Builder propertiesBuilder = new BasicProperties.Builder();
+        prepareBeforeSend(propertiesBuilder);
+        propertiesBuilder.correlationId(correlationId);
+        propertiesBuilder.messageId(messageId);
+        propertiesBuilder.deliveryMode(DELIVERY_MODE_PERSISTENT);
 
-        if (wrapper.getResultCallback().isPresent()) {
-          final String replyQueueName = startConsumer(wrapper);
-          builder.replyTo(replyQueueName);
+        final Channel chn = channel.get();
+        if (chn != null) {
+          chn.basicPublish("", queueName, propertiesBuilder.build(), QueueHelper.objectToBytes(data));
         }
-        final BasicProperties props = builder.build();
-        // Send the message to the taskmanager.
-        channel.basicPublish("", queueName, props, QueueHelper.objectToBytes(task));
         // task has been send successfully, return.
         done = true;
-      } catch (final ConnectException | TimeoutException e) {
+      } catch (final ConnectException e) {
         // don't catch all IOExceptions, just ConnectExceptions.
         // exceptions like wrong host-name should cause a bigger disturbance.
         // those indicate that connection has temporarily been lost with RabbitMQ, though could be not that temporarily...
-        LOG.error("Sending task (id: {}) failed, retrying in a bit.", wrapper.getTaskId(), e);
+        LOG.error("Sending task (id: {}) failed, retrying in a bit.", correlationId, e);
         try {
           Thread.sleep(CLIENT_START_RETRY_PERIOD);
         } catch (final InterruptedException e1) {
           // no need to log.
           Thread.currentThread().interrupt();
         }
-        LOG.info("Retrying to send task (id: {})", wrapper.getTaskId());
+        LOG.info("Retrying to send task (id: {})", correlationId);
       }
+    }
+  }
+
+  /**
+   * Method to enrich the builder with additional data before sending the task.
+   *
+   * @param builder builder to enrich
+   * @throws IOException
+   */
+  protected void prepareBeforeSend(final Builder builder) throws IOException {
+    // Default implementation does nothing.
+  }
+
+  /**
+   * Ensures there is an open channel in the reference object (if running), and returns if the channel was opened.
+   *
+   * @param channelReference channel to check
+   * @return true if the channel was opened
+   * @throws IOException
+   */
+  protected boolean ensureChannel(final AtomicReference<Channel> channelReference) throws IOException {
+    synchronized (this) {
+      final Channel channel = channelReference.get();
+      if (running && (channel == null || !channel.isOpen())) {
+        channelReference.set(getConnection().createChannel());
+        return true;
+      }
+      return false;
     }
   }
 
@@ -181,28 +147,26 @@ public class TaskManagerClientSender implements TaskWrapperSender {
   }
 
   /**
-   * Starts a consumer, but only if a callback is specified.
-   * @param taskWrapper task data
-   * @return name of the reply queue
-   * @throws IOException
-   */
-  private String startConsumer(final TaskWrapper taskWrapper) throws IOException {
-    final Channel channel = getConnection().createChannel();
-    final String replyQueueName = channel.queueDeclare().getQueue();
-    final TaskResultConsumer resultConsumer = new TaskResultConsumer(channel, taskWrapper, this);
-    channel.basicConsume(replyQueueName, true, resultConsumer);
-    return replyQueueName;
-  }
-
-  /**
    * Exit this client, making it impossible to send new tasks or retrieve any more results.
    * Should be used by a TaskResultCallback when all the results are in (to free up resources).
    */
-  public void shutdown() {
+  @Override
+  public void close() {
     synchronized (this) {
       running = false;
       if (factory != null) {
         factory.deRegisterClient(this);
+      }
+      closeChannel(channel.get());
+    }
+  }
+
+  protected void closeChannel(final Channel channelToClose) {
+    if (channelToClose != null && channelToClose.isOpen()) {
+      try {
+        channelToClose.close();
+      } catch (IOException | TimeoutException e) {
+        LOG.debug("Could not close channel", e);
       }
     }
   }

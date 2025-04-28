@@ -17,14 +17,12 @@
 package nl.aerius.taskmanager.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +32,6 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
 
-import nl.aerius.taskmanager.client.TaskWrapper.TaskWrapperSender;
 import nl.aerius.taskmanager.client.util.QueueHelper;
 import nl.aerius.taskmanager.test.MockedChannelFactory;
 
@@ -43,23 +40,20 @@ import nl.aerius.taskmanager.test.MockedChannelFactory;
  */
 class TaskResultConsumerTest {
 
-  private static final WorkerQueueType WORKER_TYPE_TEST = new WorkerQueueType("TEST");
   private static final String CONSUMER_TAG = "Unimportant";
   private static final String FINAL_RESULT = "FINALLY! FREEDOM!";
 
-  private MockTaskSender sender;
   private Channel channel;
 
   @BeforeEach
   void setUp() throws Exception {
-    sender = new MockTaskSender();
     channel = MockedChannelFactory.create();
   }
 
   @Test
   void testHandleDeliveryNormalTask() throws IOException {
     final SingleResultCallback resultCallback = new SingleResultCallback();
-    final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
+    final TaskResultConsumer consumer = new TaskResultConsumer(channel, resultCallback);
 
     final String propsCorrelationId = UUID.randomUUID().toString();
     final BasicProperties props = new BasicProperties.Builder().correlationId(propsCorrelationId).build();
@@ -67,11 +61,7 @@ class TaskResultConsumerTest {
 
     assertTrue(channel.isOpen(), "Before handling the channel should still be open");
     consumer.handleDelivery(CONSUMER_TAG, null, props, QueueHelper.objectToBytes(resultObject));
-    //because it's a mockchannel, we can actually use the consumer to handle another delivery...
-    //that's what the test on channel.isOpen is for.
-    assertFalse(channel.isOpen(), "After handling the channel should be closed");
 
-    assertNull(sender.wrapperSendAgain, "Shouldn't resend");
     assertNull(resultCallback.receivedException, "Received exception should be null");
     assertEquals(resultObject, resultCallback.successObject, "Received result object");
     assertEquals(propsCorrelationId, resultCallback.correlationId, "Received task ID");
@@ -80,7 +70,7 @@ class TaskResultConsumerTest {
   @Test
   void testHandleDeliveryException() throws IOException {
     final SingleResultCallback resultCallback = new SingleResultCallback();
-    final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
+    final TaskResultConsumer consumer = new TaskResultConsumer(channel, resultCallback);
 
     final String propsCorrelationId = UUID.randomUUID().toString();
     final BasicProperties props = new BasicProperties.Builder().correlationId(propsCorrelationId).build();
@@ -88,11 +78,7 @@ class TaskResultConsumerTest {
 
     assertTrue(channel.isOpen(), "Before handling the channel should still be open");
     consumer.handleDelivery(CONSUMER_TAG, null, props, QueueHelper.objectToBytes(resultObject));
-    //because it's a mockchannel, we can actually use the consumer to handle another delivery...
-    //that's what the test on channel.isOpen is for.
-    assertFalse(channel.isOpen(), "After handling the channel should be closed");
 
-    assertNull(sender.wrapperSendAgain, "Shouldn't resend");
     assertNull(resultCallback.successObject, "Received result object should be null");
     //after serializing/deserializing by default objects aren't exactly equal (unless they override equals in some way).
     assertTrue(resultCallback.receivedException instanceof RuntimeException, "Received exception");
@@ -101,8 +87,8 @@ class TaskResultConsumerTest {
 
   @Test
   void testHandleDeliveryMultipleResultsTask() throws IOException {
-    final MultipleResultCallback resultCallback = new MultipleResultCallback();
-    final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
+    final MockResultCallback resultCallback = new MockResultCallback();
+    final TaskResultConsumer consumer = new TaskResultConsumer(channel, resultCallback);
 
     final String propsCorrelationId = UUID.randomUUID().toString();
     final BasicProperties props = new BasicProperties.Builder().correlationId(propsCorrelationId).build();
@@ -112,19 +98,15 @@ class TaskResultConsumerTest {
     consumer.handleDelivery(CONSUMER_TAG, null, props, QueueHelper.objectToBytes(resultObject));
     assertTrue(channel.isOpen(), "After handling the channel should still be open");
 
-    assertNull(sender.wrapperSendAgain, "Shouldn't resend");
     assertNull(resultCallback.receivedException, "Received exception should be null");
     assertEquals(resultObject, resultCallback.successObject, "Received result object");
     assertEquals(propsCorrelationId, resultCallback.correlationId, "Received task ID");
-    assertEquals(consumer, resultCallback.cancelListener, "Cancel listener");
 
     consumer.handleDelivery(CONSUMER_TAG, null, props, QueueHelper.objectToBytes(resultObject));
     assertTrue(channel.isOpen(), "After handling the channel still be open");
 
     consumer.handleDelivery(CONSUMER_TAG, null, props, QueueHelper.objectToBytes(FINAL_RESULT));
-    assertFalse(channel.isOpen(), "After handling the final object, the channel should be closed");
 
-    assertNull(sender.wrapperSendAgain, "Shouldn't resend");
     assertNull(resultCallback.receivedException, "Received exception should be null");
     assertEquals(FINAL_RESULT, resultCallback.successObject, "Received result object");
     assertEquals(propsCorrelationId, resultCallback.correlationId, "Received task ID");
@@ -132,8 +114,8 @@ class TaskResultConsumerTest {
 
   @Test
   void testHandleDeliveryMultipleResultsTaskException() throws IOException {
-    final MultipleResultCallback resultCallback = new MultipleResultCallback();
-    final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
+    final MockResultCallback resultCallback = new MockResultCallback();
+    final TaskResultConsumer consumer = new TaskResultConsumer(channel, resultCallback);
 
     final String propsCorrelationId = UUID.randomUUID().toString();
     final BasicProperties props = new BasicProperties.Builder().correlationId(propsCorrelationId).build();
@@ -143,45 +125,20 @@ class TaskResultConsumerTest {
     consumer.handleDelivery(CONSUMER_TAG, null, props, QueueHelper.objectToBytes(resultObject));
     assertTrue(channel.isOpen(), "After handling the channel should still be open");
 
-    assertNull(sender.wrapperSendAgain, "Shouldn't resend");
     assertNull(resultCallback.receivedException, "Received exception should be null");
     assertEquals(resultObject, resultCallback.successObject, "Received result object");
     assertEquals(propsCorrelationId, resultCallback.correlationId, "Received task ID");
 
     consumer.handleDelivery(CONSUMER_TAG, null, props, QueueHelper.objectToBytes(new RuntimeException()));
-    assertFalse(channel.isOpen(), "After handling an exception the channel should close");
     assertTrue(resultCallback.receivedException instanceof RuntimeException, "Received exception");
-
-    //at this point we can retry handling another delivery, but since we're mocking the channel and such...
-    //when the channel is closed, you can assume no more messages will be delivered.
-  }
-
-  @Test
-  void testCancelMultipleResultsTask() throws IOException {
-    final MultipleResultCallback resultCallback = new MultipleResultCallback();
-    assertNull(resultCallback.cancelListener, "Cancel listener");
-    final TaskResultConsumer consumer = new TaskResultConsumer(channel, getExampleTaskWrapper(resultCallback), sender);
-    assertEquals(consumer, resultCallback.cancelListener, "Cancel listener after using it for a consumer");
-
-    assertTrue(channel.isOpen(), "Before canceling, the channel should be open");
-    resultCallback.cancelListener.cancelCurrentTask();
-    assertFalse(channel.isOpen(), "After canceling, the channel should be closed");
-  }
-
-  private TaskWrapper getExampleTaskWrapper(final TaskResultCallback resultCallback) {
-    //this ID actually doesn't matter (the consumer doesn't use it, it uses what it gets on retrieval).
-    final String originalTaskId = UUID.randomUUID().toString();
-    return new TaskWrapper(Optional.of(resultCallback), new TestTaskInput(), originalTaskId, originalTaskId, "Shouldn't Matter", WORKER_TYPE_TEST);
   }
 
   @Test
   void testHandleShutdownSignalNotSelfInitiated() {
     final SingleResultCallback resultCallback = new SingleResultCallback();
-    final TaskWrapper taskWrapper = getExampleTaskWrapper(resultCallback);
-    final TaskResultConsumer consumer = new TaskResultConsumer(channel, taskWrapper, sender);
+    final TaskResultConsumer consumer = new TaskResultConsumer(channel, resultCallback);
     consumer.handleShutdownSignal(CONSUMER_TAG, new ShutdownSignalException(true, false, null, ""));
-    assertEquals(taskWrapper, sender.wrapperSendAgain, "A retry on sending the task again should occur");
-    assertNull(resultCallback.receivedException, "Received exception should be null");
+    assertSame(ShutdownSignalException.class, resultCallback.receivedException.getClass(), "Received exception should be null");
     assertNull(resultCallback.successObject, "Received result should be null");
     assertNull(resultCallback.correlationId, "Received task ID should be null");
   }
@@ -189,10 +146,8 @@ class TaskResultConsumerTest {
   @Test
   void testHandleShutdownSignalSelfInitiated() {
     final SingleResultCallback resultCallback = new SingleResultCallback();
-    final TaskWrapper taskWrapper = getExampleTaskWrapper(resultCallback);
-    final TaskResultConsumer consumer = new TaskResultConsumer(channel, taskWrapper, sender);
+    final TaskResultConsumer consumer = new TaskResultConsumer(channel, resultCallback);
     consumer.handleShutdownSignal(CONSUMER_TAG, new ShutdownSignalException(true, true, null, ""));
-    assertNull(sender.wrapperSendAgain, "No retry, we shut ourselves down");
     assertNull(resultCallback.receivedException, "Received exception should be null");
     assertNull(resultCallback.successObject, "Received result should be null");
     assertNull(resultCallback.correlationId, "Received task ID should be null");
@@ -200,10 +155,7 @@ class TaskResultConsumerTest {
 
   @Test
   void testWrapperWithoutCallback() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final TaskWrapper taskWrapper = new TaskWrapper(Optional.empty(), new TestTaskInput(), "Other", "One", "Shouldn't Matter", WORKER_TYPE_TEST);
-      new TaskResultConsumer(channel, taskWrapper, sender);
-    });
+    assertThrows(IllegalArgumentException.class, () -> new TaskResultConsumer(channel, null));
   }
 
   private static class SingleResultCallback implements TaskResultCallback {
@@ -226,12 +178,10 @@ class TaskResultConsumerTest {
 
   }
 
-  private static class MultipleResultCallback implements TaskMultipleResultCallback {
-
+  private static class MockResultCallback implements TaskResultCallback {
     Object successObject;
     Exception receivedException;
     String correlationId;
-    TaskCancelListener cancelListener;
 
     @Override
     public void onSuccess(final Object value, final String correlationId, final String messageId) {
@@ -245,33 +195,5 @@ class TaskResultConsumerTest {
       this.correlationId = correlationId;
     }
 
-    @Override
-    public boolean isFinalResult(final Object value) {
-      return value instanceof String && FINAL_RESULT.equals(value);
-    }
-
-    @Override
-    public void setTaskCancelListener(final TaskCancelListener listener) {
-      this.cancelListener = listener;
-    }
-
   }
-
-  private static class MockTaskSender implements TaskWrapperSender {
-
-    TaskWrapper wrapperSendAgain;
-
-    @Override
-    public void sendTask(final TaskWrapper wrapper) throws IOException {
-      this.wrapperSendAgain = wrapper;
-    }
-
-  }
-
-  class TestTaskInput implements Serializable {
-
-    private static final long serialVersionUID = -3219757676475152784L;
-
-  }
-
 }
