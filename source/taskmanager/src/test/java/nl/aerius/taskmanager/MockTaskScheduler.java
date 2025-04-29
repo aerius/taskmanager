@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.scheduler.fifo;
+package nl.aerius.taskmanager;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -26,9 +26,9 @@ import nl.aerius.taskmanager.scheduler.TaskScheduler;
 import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFileHandler;
 
 /**
- * FIFO implementation of the task scheduler.
+ * Mock scheduler, implementing a FIFO algorithm.
  */
-public class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
+public class MockTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
 
   private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<>();
 
@@ -67,12 +67,12 @@ public class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
     // Not used
   }
 
-  public static class FIFOSchedulerFactory implements TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> {
+  public static class MockSchedulerFactory implements TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> {
     private final PriorityTaskSchedulerFileHandler handler = new PriorityTaskSchedulerFileHandler();
 
     @Override
-    public FIFOTaskScheduler createScheduler(final String workerQueueName) {
-      return new FIFOTaskScheduler();
+    public MockTaskScheduler createScheduler(final String workerQueueName) {
+      return new MockTaskScheduler();
     }
 
     @Override
@@ -80,4 +80,5 @@ public class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
       return handler;
     }
   }
+
 }

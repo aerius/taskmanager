@@ -14,22 +14,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
-
-import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
+package nl.aerius.taskmanager.domain;
 
 /**
- * Mock implementation of {@link WorkerUpdateHandler}.
+ * Class implementing this handler will get the messages received by the TaskMessageHandler.
  */
-public class MockTaskFinishedHandler implements WorkerUpdateHandler {
+public interface MessageReceivedHandler {
 
-  @Override
-  public void onTaskFinished(final String queueName) {
-    //no-op
-  }
+  /**
+   * Message received from queue.
+   *
+   * @param message the message
+   */
+  void onMessageReceived(Message<?> message);
 
-  @Override
-  public void onWorkerPoolSizeChange(final int numberOfWorkers) {
-    //no-op
-  }
+  /**
+   * Called when the Consumer was shutdown.
+   */
+  void handleShutdownSignal();
 }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.MessageMetaData;
+import nl.aerius.taskmanager.domain.MessageReceivedHandler;
 
 /**
  * Mock implementation of {@link TaskMessageHandler}.

@@ -45,8 +45,8 @@ import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
-import nl.aerius.taskmanager.adaptor.TaskMessageHandler.MessageReceivedHandler;
 import nl.aerius.taskmanager.domain.Message;
+import nl.aerius.taskmanager.domain.MessageReceivedHandler;
 import nl.aerius.taskmanager.domain.QueueConfig;
 
 /**

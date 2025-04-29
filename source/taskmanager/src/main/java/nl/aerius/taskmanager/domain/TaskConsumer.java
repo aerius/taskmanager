@@ -17,74 +17,18 @@
 package nl.aerius.taskmanager.domain;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.opentelemetry.context.Context;
-
-import nl.aerius.taskmanager.adaptor.AdaptorFactory;
-import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
-import nl.aerius.taskmanager.adaptor.TaskMessageHandler.MessageReceivedHandler;
 
 /**
- * Task manager part of retrieving tasks from the client queues and send them to the dispatcher, which in case will send them to the scheduler.
- * It also listens to if the message was successfully send to the worker.
+ * Interface for Consumer that listens to queue for new tasks, and passes the task to the scheduler.
  */
-public class TaskConsumer implements MessageReceivedHandler {
+public interface TaskConsumer extends MessageReceivedHandler {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TaskConsumer.class);
-
-  private final ExecutorService executorService;
-  private final String taskQueueName;
-  private final ForwardTaskHandler forwardTaskHandler;
-  private final TaskMessageHandler<MessageMetaData, Message<MessageMetaData>> taskMessageHandler;
-
-  private boolean running = true;
-
-  private Future<?> messageHandlerFuture;
-
-  @SuppressWarnings("unchecked")
-  public TaskConsumer(final ExecutorService executorService, final QueueConfig queueConfig, final ForwardTaskHandler forwardTaskHandler,
-      final AdaptorFactory factory) throws IOException {
-    this.executorService = executorService;
-    this.taskQueueName = queueConfig.queueName();
-    this.forwardTaskHandler = forwardTaskHandler;
-    this.taskMessageHandler = factory.createTaskMessageHandler(queueConfig);
-    taskMessageHandler.addMessageReceivedHandler(this);
-  }
-
-  public String getQueueName() {
-    return taskQueueName;
-  }
+  String getQueueName();
 
   /**
    * @return true if is running
    */
-  public boolean isRunning() {
-    return running;
-  }
-
-  @Override
-  public void onMessageReceived(final Message<?> message) {
-    if (running) {
-      final Task task = new Task(this);
-
-      task.setData(message);
-      task.setContext(Context.current());
-      LOG.trace("Task received from {} for worker send to scheduler ({}).", taskQueueName, task.getId());
-      forwardTaskHandler.forwardTask(task);
-    }
-  }
-
-  @Override
-  public void handleShutdownSignal() {
-    forwardTaskHandler.killTasks();
-    start();
-  }
+  boolean isRunning();
 
   /**
    * Inform the consumer the message delivery was successful.
@@ -92,9 +36,7 @@ public class TaskConsumer implements MessageReceivedHandler {
    * @param messageMetaData Meta data of the message that that was successful
    * @throws IOException
    */
-  public void messageDelivered(final MessageMetaData messageMetaData) throws IOException {
-    taskMessageHandler.messageDeliveredToWorker(messageMetaData);
-  }
+  void messageDelivered(final MessageMetaData messageMetaData) throws IOException;
 
   /**
    * Inform the consumer the message delivery failed.
@@ -102,9 +44,7 @@ public class TaskConsumer implements MessageReceivedHandler {
    * @param messageMetaData Meta data of the message that failed
    * @throws IOException
    */
-  public void messageDeliveryFailed(final MessageMetaData messageMetaData) throws IOException {
-    taskMessageHandler.messageDeliveryToWorkerFailed(messageMetaData);
-  }
+  void messageDeliveryFailed(MessageMetaData messageMetaData) throws IOException;
 
   /**
    * Inform the consumer the message delivery failed.
@@ -112,44 +52,15 @@ public class TaskConsumer implements MessageReceivedHandler {
    * @param exception the exception with which the message failed
    * @throws IOException
    */
-  public void messageDeliveryAborted(final Message<MessageMetaData> message, final RuntimeException exception) throws IOException {
-    taskMessageHandler.messageDeliveryAborted(message, exception);
-  }
+  void messageDeliveryAborted(Message<MessageMetaData> message, RuntimeException exception) throws IOException;
 
-  public synchronized void start() {
-    if (messageHandlerFuture != null && !messageHandlerFuture.isDone()) {
-      try {
-        messageHandlerFuture.get();
-      } catch (final InterruptedException e) {
-        Thread.currentThread().interrupt();
-      } catch (final ExecutionException e) {
-        LOG.info("TaskConsumer shutdown {} got exception.", taskQueueName, e);
-      }
-    }
-    messageHandlerFuture = executorService.submit(() -> {
-      try {
-        taskMessageHandler.start();
-      } catch (final IOException e) {
-        LOG.error("TaskConsumer for {} got IO problems.", taskQueueName, e);
-      }
-    });
-  }
+  /**
+   * Start the consumer.
+   */
+  void start();
 
   /**
    * Shutdown the task consumer.
    */
-  public void shutdown() {
-    running = false;
-    try {
-      taskMessageHandler.shutDown();
-    } catch (final IOException e) {
-      // eat error on shutdown
-      LOG.trace("Exception while shutting down", e);
-    }
-  }
-
-  @Override
-  public String toString() {
-    return "TaskConsumer [taskQueueName=" + taskQueueName + ", running=" + running + "]";
-  }
+  void shutdown();
 }

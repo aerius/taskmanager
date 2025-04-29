@@ -161,7 +161,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     public void addTaskConsumerIfAbsent(final QueueConfig queueConfig) {
       taskConsumers.computeIfAbsent(queueConfig.queueName(), tqn -> {
         try {
-          final TaskConsumer taskConsumer = new TaskConsumer(executorService, queueConfig, dispatcher, factory);
+          final TaskConsumer taskConsumer = new TaskConsumerImpl(executorService, queueConfig, dispatcher, factory);
           taskConsumer.start();
           LOG.info("Started task queue {} (durable:{}, queueType:{})", queueConfig.queueName(), queueConfig.durable(), queueConfig.queueType());
           return taskConsumer;

@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.MockAdaptorFactory;
+import nl.aerius.taskmanager.TaskConsumerImpl;
 import nl.aerius.taskmanager.domain.ForwardTaskHandler;
 import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.MessageMetaData;
@@ -277,7 +278,7 @@ class PriorityTaskSchedulerTest {
   }
 
   private TaskConsumer createMockTaskConsumer(final String taskQueueName) throws IOException {
-    return new TaskConsumer(mock(ExecutorService.class), new QueueConfig(taskQueueName, false, null), mock(ForwardTaskHandler.class),
+    return new TaskConsumerImpl(mock(ExecutorService.class), new QueueConfig(taskQueueName, false, null), mock(ForwardTaskHandler.class),
         new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData messageMetaData) {
