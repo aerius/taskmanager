@@ -29,8 +29,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import nl.aerius.taskmanager.domain.ForwardTaskHandler;
 import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.domain.QueueConfig;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.domain.TaskConsumer;
+import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 import nl.aerius.taskmanager.exception.TaskAlreadySentException;
 import nl.aerius.taskmanager.mq.RabbitMQMessageMetaData;
@@ -58,7 +62,7 @@ class WorkerPoolTest {
       }
     };
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, new MockWorkerProducer(), workerUpdateHandler);
-    taskConsumer = new TaskConsumer(mock(ExecutorService.class), new QueueConfig("testqueue", false, null), mock(ForwardTaskHandler.class),
+    taskConsumer = new TaskConsumerImpl(mock(ExecutorService.class), new QueueConfig("testqueue", false, null), mock(ForwardTaskHandler.class),
         new MockAdaptorFactory()) {
       @Override
       public void messageDelivered(final MessageMetaData message) {

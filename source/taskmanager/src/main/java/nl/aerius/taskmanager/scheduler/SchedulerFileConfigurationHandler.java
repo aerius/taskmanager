@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.scheduler;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import nl.aerius.taskmanager.domain.TaskSchedule;
  * @param <T>
  * @param <S>
  */
-interface SchedulerFileConfigurationHandler<T extends TaskQueue, S extends TaskSchedule<T>> {
+public interface SchedulerFileConfigurationHandler<T extends TaskQueue, S extends TaskSchedule<T>> {
 
   /**
    * Reads a scheduler configuration file and returns the parsed data object

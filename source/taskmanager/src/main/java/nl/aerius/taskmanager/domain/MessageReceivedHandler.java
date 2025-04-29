@@ -14,22 +14,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.domain;
 
 /**
- * Handler to be informed when changed related to handling or tasks by workers and worker pool changes.
+ * Class implementing this handler will get the messages received by the TaskMessageHandler.
  */
-interface WorkerUpdateHandler {
+public interface MessageReceivedHandler {
 
   /**
-   * Task has be processed by the worker pool and finished with results.
-   * @param queueName name of the queue the task that was finished on
+   * Message received from queue.
+   *
+   * @param message the message
    */
-  void onTaskFinished(String queueName);
+  void onMessageReceived(Message<?> message);
 
   /**
-   * Called when the number of workers has been changed. The value passed is the new value.
-   * @param numberOfWorkers number of available workers.
+   * Called when the Consumer was shutdown.
    */
-  void onWorkerPoolSizeChange(int numberOfWorkers);
+  void handleShutdownSignal();
 }

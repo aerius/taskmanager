@@ -24,20 +24,24 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.opentelemetry.context.Context;
+
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
-import nl.aerius.taskmanager.adaptor.TaskMessageHandler.MessageReceivedHandler;
+import nl.aerius.taskmanager.domain.ForwardTaskHandler;
 import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.domain.QueueConfig;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.domain.TaskConsumer;
 
 /**
  * Task manager part of retrieving tasks from the client queues and send them to the dispatcher, which in case will send them to the scheduler.
  * It also listens to if the message was successfully send to the worker.
  */
-class TaskConsumer implements MessageReceivedHandler {
+public class TaskConsumerImpl implements TaskConsumer {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TaskConsumer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TaskConsumerImpl.class);
 
   private final ExecutorService executorService;
   private final String taskQueueName;
@@ -49,7 +53,7 @@ class TaskConsumer implements MessageReceivedHandler {
   private Future<?> messageHandlerFuture;
 
   @SuppressWarnings("unchecked")
-  public TaskConsumer(final ExecutorService executorService, final QueueConfig queueConfig, final ForwardTaskHandler forwardTaskHandler,
+  public TaskConsumerImpl(final ExecutorService executorService, final QueueConfig queueConfig, final ForwardTaskHandler forwardTaskHandler,
       final AdaptorFactory factory) throws IOException {
     this.executorService = executorService;
     this.taskQueueName = queueConfig.queueName();
@@ -58,6 +62,7 @@ class TaskConsumer implements MessageReceivedHandler {
     taskMessageHandler.addMessageReceivedHandler(this);
   }
 
+  @Override
   public String getQueueName() {
     return taskQueueName;
   }
@@ -65,6 +70,7 @@ class TaskConsumer implements MessageReceivedHandler {
   /**
    * @return true if is running
    */
+  @Override
   public boolean isRunning() {
     return running;
   }
@@ -73,7 +79,9 @@ class TaskConsumer implements MessageReceivedHandler {
   public void onMessageReceived(final Message<?> message) {
     if (running) {
       final Task task = new Task(this);
+
       task.setData(message);
+      task.setContext(Context.current());
       LOG.trace("Task received from {} for worker send to scheduler ({}).", taskQueueName, task.getId());
       forwardTaskHandler.forwardTask(task);
     }
@@ -85,12 +93,7 @@ class TaskConsumer implements MessageReceivedHandler {
     start();
   }
 
-  /**
-   * Inform the consumer the message delivery was successful.
-   *
-   * @param messageMetaData Meta data of the message that that was successful
-   * @throws IOException
-   */
+  @Override
   public void messageDelivered(final MessageMetaData messageMetaData) throws IOException {
     taskMessageHandler.messageDeliveredToWorker(messageMetaData);
   }
@@ -101,6 +104,7 @@ class TaskConsumer implements MessageReceivedHandler {
    * @param messageMetaData Meta data of the message that failed
    * @throws IOException
    */
+  @Override
   public void messageDeliveryFailed(final MessageMetaData messageMetaData) throws IOException {
     taskMessageHandler.messageDeliveryToWorkerFailed(messageMetaData);
   }
@@ -111,10 +115,12 @@ class TaskConsumer implements MessageReceivedHandler {
    * @param exception the exception with which the message failed
    * @throws IOException
    */
+  @Override
   public void messageDeliveryAborted(final Message<MessageMetaData> message, final RuntimeException exception) throws IOException {
     taskMessageHandler.messageDeliveryAborted(message, exception);
   }
 
+  @Override
   public synchronized void start() {
     if (messageHandlerFuture != null && !messageHandlerFuture.isDone()) {
       try {
@@ -137,6 +143,7 @@ class TaskConsumer implements MessageReceivedHandler {
   /**
    * Shutdown the task consumer.
    */
+  @Override
   public void shutdown() {
     running = false;
     try {

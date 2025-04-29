@@ -30,6 +30,7 @@ import com.rabbitmq.client.ShutdownSignalException;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 import nl.aerius.taskmanager.client.WorkerResultSender;
+import nl.aerius.taskmanager.domain.MessageReceivedHandler;
 import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.mq.RabbitMQMessageConsumer.ConsumerCallback;
 

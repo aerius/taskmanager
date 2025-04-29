@@ -21,11 +21,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.scheduler.TaskScheduler;
+import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFileHandler;
 
 /**
- * FIFO implementation of the task scheduler.
+ * Mock scheduler, implementing a FIFO algorithm.
  */
-class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
+public class MockTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
 
   private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<>();
 
@@ -64,12 +67,12 @@ class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
     // Not used
   }
 
-  public static class FIFOSchedulerFactory implements TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> {
+  public static class MockSchedulerFactory implements TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> {
     private final PriorityTaskSchedulerFileHandler handler = new PriorityTaskSchedulerFileHandler();
 
     @Override
-    public FIFOTaskScheduler createScheduler(final String workerQueueName) {
-      return new FIFOTaskScheduler();
+    public MockTaskScheduler createScheduler(final String workerQueueName) {
+      return new MockTaskScheduler();
     }
 
     @Override
@@ -77,4 +80,5 @@ class FIFOTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
       return handler;
     }
   }
+
 }

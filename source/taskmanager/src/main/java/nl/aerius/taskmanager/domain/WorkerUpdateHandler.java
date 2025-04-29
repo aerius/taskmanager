@@ -14,26 +14,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.domain;
 
 /**
- * Interface for class implementing forwarding to the scheduler.
+ * Handler to be informed when changed related to handling or tasks by workers and worker pool changes.
  */
-interface ForwardTaskHandler {
+public interface WorkerUpdateHandler {
 
   /**
-   * Forwards the task to the scheduler, which adds the task to the pool of tasks to be handled. This method
-   * returns directly so the sender can start processing the next task to be handled. However, the scheduling
-   * only allows one task per task consumer to be handled. To support this a lock is set for  a task consumer
-   * when a task is forwarded. As soon as the task is dispatched to the worker this lock is removed and the
-   * next task added to the scheduler.
-   *
-   * @param task task to schedule
+   * Task has be processed by the worker pool and finished with results.
+   * @param queueName name of the queue the task that was finished on
    */
-  void forwardTask(Task task);
+  void onTaskFinished(String queueName);
 
   /**
-   * Call to kill all tasks still waiting to be processed.
+   * Called when the number of workers has been changed. The value passed is the new value.
+   * @param numberOfWorkers number of available workers.
    */
-  void killTasks();
+  void onWorkerPoolSizeChange(int numberOfWorkers);
 }

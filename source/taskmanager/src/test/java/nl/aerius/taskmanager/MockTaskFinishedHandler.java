@@ -16,6 +16,8 @@
  */
 package nl.aerius.taskmanager;
 
+import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
+
 /**
  * Mock implementation of {@link WorkerUpdateHandler}.
  */

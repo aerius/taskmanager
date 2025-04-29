@@ -31,14 +31,16 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.RabbitMQQueueType;
+import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
+import nl.aerius.taskmanager.scheduler.TaskScheduler;
+import nl.aerius.taskmanager.scheduler.TaskScheduler.TaskSchedulerFactory;
 
 /**
  * Main task manager class, manages all schedulers.
@@ -159,7 +161,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     public void addTaskConsumerIfAbsent(final QueueConfig queueConfig) {
       taskConsumers.computeIfAbsent(queueConfig.queueName(), tqn -> {
         try {
-          final TaskConsumer taskConsumer = new TaskConsumer(executorService, queueConfig, dispatcher, factory);
+          final TaskConsumer taskConsumer = new TaskConsumerImpl(executorService, queueConfig, dispatcher, factory);
           taskConsumer.start();
           LOG.info("Started task queue {} (durable:{}, queueType:{})", queueConfig.queueName(), queueConfig.durable(), queueConfig.queueType());
           return taskConsumer;

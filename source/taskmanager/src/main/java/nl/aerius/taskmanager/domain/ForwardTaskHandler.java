@@ -16,14 +16,24 @@
  */
 package nl.aerius.taskmanager.domain;
 
-import java.util.Locale;
+/**
+ * Interface for class implementing forwarding to the scheduler.
+ */
+public interface ForwardTaskHandler {
 
-public enum RabbitMQQueueType {
-  CLASSIC,
-  QUORUM,
-  STREAM;
+  /**
+   * Forwards the task to the scheduler, which adds the task to the pool of tasks to be handled. This method
+   * returns directly so the sender can start processing the next task to be handled. However, the scheduling
+   * only allows one task per task consumer to be handled. To support this a lock is set for  a task consumer
+   * when a task is forwarded. As soon as the task is dispatched to the worker this lock is removed and the
+   * next task added to the scheduler.
+   *
+   * @param task task to schedule
+   */
+  void forwardTask(Task task);
 
-  public String type() {
-    return name().toLowerCase(Locale.ROOT);
-  }
+  /**
+   * Call to kill all tasks still waiting to be processed.
+   */
+  void killTasks();
 }

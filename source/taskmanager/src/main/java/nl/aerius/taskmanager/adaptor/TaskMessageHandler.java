@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.MessageMetaData;
+import nl.aerius.taskmanager.domain.MessageReceivedHandler;
 
 /**
  * Interface for service receiving messages from a queue and pass them to the {@link MessageReceivedHandler}.
@@ -67,23 +68,5 @@ public interface TaskMessageHandler<E extends MessageMetaData, M extends Message
    * @throws IOException connection errors
    */
   void messageDeliveryAborted(M message, RuntimeException exception) throws IOException;
-
-  /**
-   * Class implementing this handler will get the messages received by the {@link TaskMessageHandler}.
-   */
-  interface MessageReceivedHandler {
-
-    /**
-     * Message received from queue.
-     *
-     * @param message the message
-     */
-    void onMessageReceived(Message<?> message);
-
-    /**
-     * Called when the Consumer was shutdown.
-     */
-    void handleShutdownSignal();
-  }
 
 }

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.scheduler.priorityqueue;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +28,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.scheduler.SchedulerFileConfigurationHandler;
 
 /**
  * Handler to read and write Priority Task Scheduler configuration files.
  */
-class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurationHandler<PriorityTaskQueue, PriorityTaskSchedule> {
+public class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurationHandler<PriorityTaskQueue, PriorityTaskSchedule> {
 
   private static final Logger LOG = LoggerFactory.getLogger(PriorityTaskSchedulerFileHandler.class);
 

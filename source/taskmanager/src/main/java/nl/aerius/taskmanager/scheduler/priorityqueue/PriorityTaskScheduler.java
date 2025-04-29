@@ -14,15 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.scheduler.priorityqueue;
 
 import java.util.Comparator;
-import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -30,10 +27,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.opentelemetry.context.Context;
-
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
-import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.scheduler.TaskScheduler;
 
 /**
  * Scheduler based on priorities. Tasks are scheduled based on priorities. Tasks with higher priority will be scheduled first. If 2 tasks have the
@@ -45,14 +41,12 @@ import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Comparator<Task> {
 
   private static final Logger LOG = LoggerFactory.getLogger(PriorityTaskScheduler.class);
-  private static final AtomicInteger EMPTY_QUEUE = new AtomicInteger();
   private static final int INITIAL_SIZE = 20;
   private static final int NEXT_TASK_MAX_WAIT_TIME_SECONDS = 120;
 
   private final PriorityTaskSchedulerMetrics metrics = new PriorityTaskSchedulerMetrics();
   private final Queue<Task> queue;
-  private final Map<String, PriorityTaskQueue> taskQueueConfigurations = new ConcurrentHashMap<>();
-  private final Map<String, AtomicInteger> tasksOnWorkersPerQueue = new ConcurrentHashMap<>();
+  private final PriorityQueueMap priorityQueueMap;
   private final Lock lock = new ReentrantLock();
   private final Condition nextTaskCondition = lock.newCondition();
   private final String workerQueueName;
@@ -64,7 +58,8 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
    *
    * @param configuration scheduler configuration
    */
-  PriorityTaskScheduler(final String workerQueueName) {
+  PriorityTaskScheduler(final PriorityQueueMap priorityQueueKeyMap, final String workerQueueName) {
+    this.priorityQueueMap = priorityQueueKeyMap;
     this.workerQueueName = workerQueueName;
     queue = new PriorityQueue<>(INITIAL_SIZE, this);
   }
@@ -73,7 +68,6 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   public void addTask(final Task task) {
     lock.lock();
     try {
-      task.setContext(Context.current());
       queue.add(task);
       signalNextTask();
     } finally {
@@ -125,7 +119,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   private Task obtainTask(final String queueName) {
     tasksOnWorkers++;
-    tasksOnWorkersPerQueue.get(queueName).incrementAndGet();
+    priorityQueueMap.incrementOnWorker(queueName);
     final Task task = queue.poll();
     if (task.getContext() != null) {
       task.getContext().makeCurrent();
@@ -147,12 +141,12 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
    */
   private boolean isTaskNext(final String queueName) {
     final boolean taskNext = (numberOfWorkers == 1) || ((getFreeWorkers() > 1) && hasCapacityRemaining(queueName))
-        || (tasksOnWorkersPerQueue.get(queueName).intValue() == 0);
+        || (priorityQueueMap.onWorker(queueName) == 0);
 
     if (!taskNext) {
       LOG.trace("Task for queue '{}.{}' not scheduled: queueConfiguration:{}, numberOfWorkers:{}, tasksOnWorkers:{}, tasksForQueue:{}",
-          workerQueueName, queueName, taskQueueConfigurations.get(queueName), numberOfWorkers, tasksOnWorkers,
-          tasksOnWorkersPerQueue.get(queueName).intValue());
+          workerQueueName, queueName, priorityQueueMap.get(queueName), numberOfWorkers, tasksOnWorkers,
+          priorityQueueMap.onWorker(queueName));
     }
     return taskNext;
   }
@@ -163,19 +157,18 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   private boolean hasCapacityRemaining(final String queueName) {
     return (numberOfWorkers > 0)
-        && ((tasksOnWorkersPerQueue.get(queueName).doubleValue() / numberOfWorkers) < taskQueueConfigurations.get(queueName).getMaxCapacityUse());
+        && ((((double) priorityQueueMap.onWorker(queueName)) / numberOfWorkers) < priorityQueueMap.get(queueName).getMaxCapacityUse());
   }
 
   @Override
   public void onTaskFinished(final String queueName) {
     lock.lock();
     try {
-      tasksOnWorkersPerQueue.get(queueName).decrementAndGet();
+      priorityQueueMap.decrementOnWorker(queueName);
       tasksOnWorkers--;
       signalNextTask();
       // clean up queue if it has been removed.
-      if (!taskQueueConfigurations.containsKey(queueName)) {
-        tasksOnWorkersPerQueue.remove(queueName);
+      if (!priorityQueueMap.containsKey(queueName)) {
         metrics.removeMetric(queueName);
       }
     } finally {
@@ -203,16 +196,14 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
     lock.lock();
     try {
       final String queueName = queue.getQueueName();
-
-      final PriorityTaskQueue old = taskQueueConfigurations.put(queueName, queue);
+      if (!priorityQueueMap.containsKey(queueName)) {
+        metrics.addMetric(() -> priorityQueueMap.onWorker(queueName), workerQueueName, queueName);
+      }
+      final PriorityTaskQueue old = priorityQueueMap.put(queueName, queue);
 
       if (old != null && !old.equals(queue)) {
         LOG.info("Queue {} was updated with new values: {}", queueName, queue);
       }
-      if (!tasksOnWorkersPerQueue.containsKey(queueName)) {
-        metrics.addMetric(() -> tasksOnWorkersPerQueue.getOrDefault(queueName, EMPTY_QUEUE).get(), workerQueueName, queueName);
-      }
-      tasksOnWorkersPerQueue.computeIfAbsent(queueName, qn -> new AtomicInteger());
     } finally {
       lock.unlock();
     }
@@ -222,7 +213,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   public void removeQueue(final String queueName) {
     lock.lock();
     try {
-      taskQueueConfigurations.remove(queueName);
+      priorityQueueMap.remove(queueName);
     } finally {
       lock.unlock();
     }
@@ -263,11 +254,11 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   }
 
   private int compareTaskOnQueue(final String queueName1, final String queueName2) {
-    return Integer.compare(tasksOnWorkersPerQueue.get(queueName1).intValue(), tasksOnWorkersPerQueue.get(queueName2).intValue());
+    return Integer.compare(priorityQueueMap.onWorker(queueName1), priorityQueueMap.onWorker(queueName2));
   }
 
   private int comparePriority(final String queueName1, final String queueName2) {
-    return Integer.compare(taskQueueConfigurations.get(queueName2).getPriority(), taskQueueConfigurations.get(queueName1).getPriority());
+    return Integer.compare(priorityQueueMap.get(queueName2).getPriority(), priorityQueueMap.get(queueName1).getPriority());
   }
 
   private int compareCapacityRemaining(final String queueName1, final String queueName2) {
@@ -280,9 +271,9 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
     int cmp = comparePriority(queueName1, queueName2);
 
     if (cmp < 0) {
-      cmp = (tasksOnWorkersPerQueue.get(queueName2).intValue() == 0) && (tasksOnWorkersPerQueue.get(queueName1).intValue() > 0) ? 1 : -1;
+      cmp = (priorityQueueMap.onWorker(queueName2) == 0) && (priorityQueueMap.onWorker(queueName1) > 0) ? 1 : -1;
     } else if (cmp > 0) {
-      cmp = (tasksOnWorkersPerQueue.get(queueName1).intValue() == 0) && (tasksOnWorkersPerQueue.get(queueName2).intValue() > 0) ? -1 : 1;
+      cmp = (priorityQueueMap.onWorker(queueName1) == 0) && (priorityQueueMap.onWorker(queueName2) > 0) ? -1 : 1;
     }
     return cmp;
   }
@@ -292,22 +283,5 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
    */
   private void signalNextTask() {
     nextTaskCondition.signalAll();
-  }
-
-  /**
-   * Factory to create a scheduler.
-   */
-  public static class PriorityTaskSchedulerFactory implements TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> {
-    private final PriorityTaskSchedulerFileHandler handler = new PriorityTaskSchedulerFileHandler();
-
-    @Override
-    public TaskScheduler<PriorityTaskQueue> createScheduler(final String workerQueueName) {
-      return new PriorityTaskScheduler(workerQueueName);
-    }
-
-    @Override
-    public PriorityTaskSchedulerFileHandler getHandler() {
-      return handler;
-    }
   }
 }

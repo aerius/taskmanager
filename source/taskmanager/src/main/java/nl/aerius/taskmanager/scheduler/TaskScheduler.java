@@ -14,18 +14,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
+package nl.aerius.taskmanager.scheduler;
 
+import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
+import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
 
 /**
- * Interface for the scheduling algorithm. The implementation should maintain an internal list of all tasks added and
- * return the task to be processed in {@link #getNextTask()} based on whatever priority algorithm the scheduler
- * implements. When a task is finished the scheduler receives {@link #onTaskFinished(Task)} event with the task
- * finished.
+ * Interface for the scheduling algorithm. The implementation should maintain an internal list of all tasks added and return the task to be processed
+ * in {@link #getNextTask()} based on whatever priority algorithm the scheduler implements.
  */
-interface TaskScheduler<T extends TaskQueue> extends WorkerUpdateHandler {
+public interface TaskScheduler<T extends TaskQueue> extends WorkerUpdateHandler {
 
   /**
    * Adds a Task to the scheduler to being processed. The scheduler will return this task in {@link #getNextTask()}
@@ -70,7 +70,8 @@ interface TaskScheduler<T extends TaskQueue> extends WorkerUpdateHandler {
 
     /**
      * Create a new scheduler.
-     * @param configurationFile scheduler configuration
+     *
+     * @param workerQueueName the worker queue the scheduler is creatd for
      * @return new task scheduler
      */
     TaskScheduler<T> createScheduler(String workerQueueName);

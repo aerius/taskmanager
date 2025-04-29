@@ -29,11 +29,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import nl.aerius.taskmanager.TaskScheduler.TaskSchedulerFactory;
+import nl.aerius.taskmanager.MockTaskScheduler.MockSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 import nl.aerius.taskmanager.domain.RabbitMQQueueType;
+import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFileHandler;
 
 /**
  * Test class for {@link TaskManager}.
@@ -49,7 +50,7 @@ class TaskManagerTest {
   void setUp() throws IOException {
     executor = Executors.newCachedThreadPool();
     final AdaptorFactory factory = new MockAdaptorFactory();
-    final TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> schedulerFactory = new FIFOTaskScheduler.FIFOSchedulerFactory();
+    final MockSchedulerFactory schedulerFactory = new MockTaskScheduler.MockSchedulerFactory();
     taskManager = new TaskManager<>(executor, factory, schedulerFactory, factory.createWorkerSizeProvider());
     schedule = handler.read(new File(getClass().getClassLoader().getResource("queue/priority-task-scheduler.ops.json").getFile()));
   }

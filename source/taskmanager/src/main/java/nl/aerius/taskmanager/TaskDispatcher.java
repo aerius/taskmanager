@@ -26,8 +26,12 @@ import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.ShutdownSignalException;
 
+import nl.aerius.taskmanager.domain.ForwardTaskHandler;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 import nl.aerius.taskmanager.exception.TaskAlreadySentException;
+import nl.aerius.taskmanager.scheduler.TaskScheduler;
 
 /**
  * Control center for processing tasks.
