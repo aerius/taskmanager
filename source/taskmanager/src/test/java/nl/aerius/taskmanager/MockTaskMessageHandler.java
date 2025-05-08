@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.domain.Message;
-import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.domain.MessageReceivedHandler;
 
 /**
@@ -28,8 +27,8 @@ import nl.aerius.taskmanager.domain.MessageReceivedHandler;
  */
 public class MockTaskMessageHandler implements TaskMessageHandler {
 
-  private MessageMetaData failedMessage;
-  private MessageMetaData message;
+  private Message failedMessage;
+  private Message message;
   private Message abortedMessage;
 
   @Override
@@ -48,16 +47,16 @@ public class MockTaskMessageHandler implements TaskMessageHandler {
   }
 
   @Override
-  public void messageDeliveredToWorker(final MessageMetaData message) throws IOException {
+  public void messageDeliveredToWorker(final Message message) throws IOException {
     this.message = message;
   }
 
-  public MessageMetaData getMessage() {
+  public Message getMessage() {
     return message;
   }
 
   @Override
-  public void messageDeliveryToWorkerFailed(final MessageMetaData message) throws IOException {
+  public void messageDeliveryToWorkerFailed(final Message message) throws IOException {
     failedMessage = message;
   }
 
@@ -70,7 +69,7 @@ public class MockTaskMessageHandler implements TaskMessageHandler {
     return abortedMessage;
   }
 
-  public MessageMetaData getFailedMessage() {
+  public Message getFailedMessage() {
     return failedMessage;
   }
 

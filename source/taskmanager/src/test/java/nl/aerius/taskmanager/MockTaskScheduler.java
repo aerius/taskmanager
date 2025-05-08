@@ -21,7 +21,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.domain.TaskRecord;
 import nl.aerius.taskmanager.scheduler.TaskScheduler;
 import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFileHandler;
 
@@ -58,7 +60,7 @@ public class MockTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
   }
 
   @Override
-  public void onTaskFinished(final String queueName) {
+  public void onTaskFinished(final TaskRecord taskRecord) {
     // Not used
   }
 
@@ -71,7 +73,7 @@ public class MockTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
     private final PriorityTaskSchedulerFileHandler handler = new PriorityTaskSchedulerFileHandler();
 
     @Override
-    public MockTaskScheduler createScheduler(final String workerQueueName) {
+    public MockTaskScheduler createScheduler(final QueueConfig queueConfig) {
       return new MockTaskScheduler();
     }
 

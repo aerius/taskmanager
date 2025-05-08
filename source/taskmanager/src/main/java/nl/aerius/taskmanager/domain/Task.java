@@ -23,10 +23,11 @@ import io.opentelemetry.context.Context;
  * instances. This data object keeps track of the taskconsumer that send the message.
  */
 public class Task {
-  private Message<?> data;
+  private Message data;
   private final TaskConsumer taskConsumer;
   private boolean alive = true;
   private Context context;
+  private TaskRecord taskRecord;
 
   public Task(final TaskConsumer taskConsumer) {
     this.taskConsumer = taskConsumer;
@@ -37,16 +38,21 @@ public class Task {
   }
 
   @SuppressWarnings("unchecked")
-  public <E extends MessageMetaData> Message<E> getMessage() {
-    return (Message<E>) data;
+  public Message getMessage() {
+    return data;
   }
 
   public TaskConsumer getTaskConsumer() {
     return taskConsumer;
   }
 
-  public void setData(final Message<?> data) {
+  public TaskRecord getTaskRecord() {
+    return taskRecord;
+  }
+
+  public void setData(final Message data) {
     this.data = data;
+    this.taskRecord = new TaskRecord(taskConsumer.getQueueName(), data.getCorrelationId(), data.getMessageId());
   }
 
   public void killTask() {

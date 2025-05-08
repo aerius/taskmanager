@@ -61,8 +61,8 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
     // ensure a durable channel exists
     taskChannel.queueDeclare(queueName, queueConfig.durable(), false, false,
         RabbitMQQueueUtil.queueDeclareArguments(queueConfig.durable(), queueConfig.queueType()));
-    //ensure only one message gets delivered at a time.
-    taskChannel.basicQos(1);
+    // When no eager fetching ensure only one message gets delivered at a time.
+    taskChannel.basicQos(queueConfig.eagerFetch() ? 0 : 1);
 
     taskChannel.basicConsume(queueName, false, queueName, this);
     LOG.debug("Consumer {} was started.", queueName);
@@ -94,16 +94,17 @@ class RabbitMQMessageConsumer extends DefaultConsumer {
       callback.onMessageReceived(message);
     } catch (final RuntimeException e) {
       LOG.trace("Exception while handling message", e);
-      nack(message.getMetaData());
+      nack(message);
     }
   }
 
-  public void ack(final RabbitMQMessageMetaData message) throws IOException {
+  public void ack(final RabbitMQMessage message) throws IOException {
     getChannel().basicAck(message.getDeliveryTag(), false);
   }
 
-  public void nack(final RabbitMQMessageMetaData message) throws IOException {
+  public void nack(final RabbitMQMessage message) throws IOException {
     final Channel channel = getChannel();
+
     if (channel.isOpen()) {
       channel.basicNack(message.getDeliveryTag(), false, true);
     }

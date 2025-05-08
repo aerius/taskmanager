@@ -19,13 +19,12 @@ package nl.aerius.taskmanager.adaptor;
 import java.io.IOException;
 
 import nl.aerius.taskmanager.domain.Message;
-import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.domain.MessageReceivedHandler;
 
 /**
  * Interface for service receiving messages from a queue and pass them to the {@link MessageReceivedHandler}.
  */
-public interface TaskMessageHandler<E extends MessageMetaData, M extends Message<E>> {
+public interface TaskMessageHandler<M extends Message> {
 
   /**
    * Add handler to process message received handler.
@@ -51,14 +50,14 @@ public interface TaskMessageHandler<E extends MessageMetaData, M extends Message
    * @param message message delivered to the worker
    * @throws IOException connection errors
    */
-  void messageDeliveredToWorker(E message) throws IOException;
+  void messageDeliveredToWorker(M message) throws IOException;
 
   /**
    * Called when a message couldn't be delivered to a worker because the worker was not available.
    * @param message message not delivered
    * @throws IOException connection errors
    */
-  void messageDeliveryToWorkerFailed(E message) throws IOException;
+  void messageDeliveryToWorkerFailed(M message) throws IOException;
 
   /**
    * Called when something is wrong with the message and this should be reported to the sender. The message will not be

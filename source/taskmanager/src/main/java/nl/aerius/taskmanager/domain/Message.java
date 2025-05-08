@@ -19,16 +19,12 @@ package nl.aerius.taskmanager.domain;
 /**
  * Abstract data class containing the message send from clients to workers.
  */
-public abstract class Message<E extends MessageMetaData> {
-  private final E metaData;
+public abstract class Message {
 
-  protected Message(final E metaData) {
-    this.metaData = metaData;
-  }
-
-  public E getMetaData() {
-    return metaData;
-  }
+  /**
+   * @return The ID indicating messages that are correlated.
+   */
+  public abstract String getCorrelationId();
 
   /**
    * @return The unique ID for this message.

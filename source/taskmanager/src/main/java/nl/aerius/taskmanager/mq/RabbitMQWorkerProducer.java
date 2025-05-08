@@ -77,7 +77,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void forwardMessage(final Message<?> message) throws IOException {
+  public void forwardMessage(final Message message) throws IOException {
     final RabbitMQMessage rabbitMQMessage = (RabbitMQMessage) message;
     // Do we set the replyTo to something fake?
     // or do we expect worker to send instead of CC the message?

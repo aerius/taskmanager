@@ -14,16 +14,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.domain;
+package nl.aerius.taskmanager.scheduler.priorityqueue;
 
-public class MessageMetaData {
-  private final String queueName;
+import nl.aerius.taskmanager.domain.TaskRecord;
 
-  protected MessageMetaData(final String queueName) {
-    this.queueName = queueName;
+/**
+ * Maps a task record to a key that groups all tasks with the same correlationId.
+ */
+class EagerFetchPriorityQueueMapKeyMapper extends PriorityQueueMapKeyMapper {
+
+  private static final String KEY_SPLITTER = "#";
+
+  @Override
+  public String key(final TaskRecord taskRecord) {
+    return taskRecord.queueName() + KEY_SPLITTER + taskRecord.correlationId();
   }
 
-  public String getQueueName() {
-    return queueName;
+  @Override
+  public String queueName(final String key) {
+    return key.split(KEY_SPLITTER)[0];
   }
 }
