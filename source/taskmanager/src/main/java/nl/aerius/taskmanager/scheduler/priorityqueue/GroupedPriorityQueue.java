@@ -34,7 +34,7 @@ import nl.aerius.taskmanager.domain.Task;
  * When the first task added is polled from the queue, it will take the next task from the internal queue and puts it on the main queue.
  *
  * The idea behind this queue is to make it possible to have a priority system where tasks on the same queue but with different correlationId can
- * be priorities depending on how many of tasks for a specific correlationId are already being processed on a worker.
+ * be prioritised depending on how many of tasks for a specific correlationId are already being processed on a worker.
  */
 class GroupedPriorityQueue implements Queue<Task> {
 
@@ -82,7 +82,7 @@ class GroupedPriorityQueue implements Queue<Task> {
     return queue.stream();
   }
 
-  // Only methods actually used in our code are implemented. All other methods will throw an exception if used as a remainder if the code would start
+  // Only methods actually used in our code are implemented. All other methods will throw an exception if used as a reminder if the code would start
   // using these methods they need to be implemented.
 
   @Override
