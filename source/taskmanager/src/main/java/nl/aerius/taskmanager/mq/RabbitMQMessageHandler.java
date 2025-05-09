@@ -38,7 +38,7 @@ import nl.aerius.taskmanager.mq.RabbitMQMessageConsumer.ConsumerCallback;
  * RabbitMQ implementation of a {@link TaskMessageHandler}. RabbitMQ will starts listening to the queue and when messages are received they are send
  * to the {@link MessageReceivedHandler}.
  */
-class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaData, RabbitMQMessage>, ConsumerCallback {
+class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessage>, ConsumerCallback {
 
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQMessageHandler.class);
 
@@ -115,12 +115,12 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
   }
 
   @Override
-  public void messageDeliveredToWorker(final RabbitMQMessageMetaData message) throws IOException {
+  public void messageDeliveredToWorker(final RabbitMQMessage message) throws IOException {
     consumer.ack(message);
   }
 
   @Override
-  public void messageDeliveryToWorkerFailed(final RabbitMQMessageMetaData message) throws IOException {
+  public void messageDeliveryToWorkerFailed(final RabbitMQMessage message) throws IOException {
     consumer.nack(message);
   }
 
@@ -128,7 +128,7 @@ class RabbitMQMessageHandler implements TaskMessageHandler<RabbitMQMessageMetaDa
   public void messageDeliveryAborted(final RabbitMQMessage message, final RuntimeException exception) throws IOException {
     final WorkerResultSender sender = new WorkerResultSender(factory.getConnection().createChannel(), message.getProperties());
     sender.sendIntermediateResult(exception);
-    messageDeliveredToWorker(message.getMetaData());
+    messageDeliveredToWorker(message);
   }
 
   @Override

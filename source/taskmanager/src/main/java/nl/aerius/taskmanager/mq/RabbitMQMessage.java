@@ -24,10 +24,11 @@ import nl.aerius.taskmanager.domain.Message;
 /**
  * RabbitMQ Message object.
  */
-public class RabbitMQMessage extends Message<RabbitMQMessageMetaData> {
+public class RabbitMQMessage extends Message {
   private final Channel channel;
   private final BasicProperties properties;
   private final byte[] body;
+  private final long deliveryTag;
 
   /**
    * Constructor
@@ -39,11 +40,19 @@ public class RabbitMQMessage extends Message<RabbitMQMessageMetaData> {
    * @param body The body of the original message.
    */
   public RabbitMQMessage(final String queueName, final Channel channel, final long deliveryTag, final BasicProperties properties, final byte[] body) {
-    super(new RabbitMQMessageMetaData(queueName, deliveryTag));
-
+    this.deliveryTag = deliveryTag;
     this.channel = channel;
     this.properties = properties;
     this.body = body == null ? new byte[0] : body.clone();
+  }
+
+  public long getDeliveryTag() {
+    return deliveryTag;
+  }
+
+  @Override
+  public String getCorrelationId() {
+    return properties.getCorrelationId();
   }
 
   @Override

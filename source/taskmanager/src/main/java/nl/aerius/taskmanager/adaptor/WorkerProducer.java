@@ -41,7 +41,7 @@ public interface WorkerProducer {
    * @param message message to forward
    * @throws IOException connection errors
    */
-  void forwardMessage(final Message<?> message) throws IOException;
+  void forwardMessage(final Message message) throws IOException;
 
   /**
    * Shuts down this worker producer.

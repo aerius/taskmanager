@@ -17,9 +17,6 @@
 package nl.aerius.taskmanager;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +25,6 @@ import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.domain.ForwardTaskHandler;
 import nl.aerius.taskmanager.domain.Task;
-import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 import nl.aerius.taskmanager.exception.TaskAlreadySentException;
 import nl.aerius.taskmanager.scheduler.TaskScheduler;
@@ -47,7 +43,6 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     WAIT_FOR_WORKER, WAIT_FOR_TASK, DISPATCH_TASK;
   }
 
-  private final Map<TaskConsumer, Semaphore> taskConsumerLocks = new ConcurrentHashMap<>();
   private final WorkerPool workerPool;
   private final TaskScheduler<?> scheduler;
 
@@ -68,11 +63,8 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
    */
   @Override
   public void forwardTask(final Task task) {
-    final TaskConsumer taskConsumer = task.getTaskConsumer();
-    ensureClientHasLockable(taskConsumer);
     scheduler.addTask(task);
     LOG.debug("Task for {} added to scheduler {}", workerQueueName, task.getId());
-    lockClient(taskConsumer);
   }
 
   @Override
@@ -80,7 +72,6 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     // Tell the scheduler to mark all tasks it tracks to be dead.
     scheduler.killTasks();
     // Remove all locks to let RabbitMQ message handlers continue and close shutdown.
-    taskConsumerLocks.forEach((t, s) -> s.release());
     LOG.debug("Tasks removed from scheduler {}", workerQueueName);
   }
 
@@ -137,7 +128,6 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
   private void dispatch(final Task task) {
     try {
       workerPool.sendTaskToWorker(task);
-      unLockClient(task);
       TaskDispatcherMetrics.dispatched(workerQueueName);
     } catch (final NoFreeWorkersException e) {
       LOG.info("[NoFreeWorkersException] Workers for queue {} decreased while waiting for task. Rescheduling task.", e.getWorkerQueueName());
@@ -149,7 +139,6 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     } catch (final IOException | ShutdownSignalException e) {
       LOG.error("Sending task to worker failed", e);
       taskDeliveryFailed(task);
-      unLockClient(task);
     }
   }
 
@@ -162,8 +151,8 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   private void taskDeliveryFailed(final Task task) {
     try {
-      workerPool.releaseWorker(task.getId(), task.getMessage().getMetaData().getQueueName());
-      task.getTaskConsumer().messageDeliveryFailed(task.getMessage().getMetaData());
+      workerPool.releaseWorker(task.getId(), task.getTaskRecord());
+      task.getTaskConsumer().messageDeliveryFailed(task.getMessage());
     } catch (final IOException | ShutdownSignalException e) {
       LOG.error("taskDeliveryFailed method failed", e);
     }
@@ -175,34 +164,6 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
           new RuntimeException("Duplicate messageId found for task" + task.getMessage().getMessageId()));
     } catch (final IOException | ShutdownSignalException e) {
       LOG.error("taskDeliveryFailed method failed", e);
-    } finally {
-      unLockClient(task);
     }
-  }
-
-  private void ensureClientHasLockable(final TaskConsumer taskConsumer) {
-    taskConsumerLocks.computeIfAbsent(taskConsumer, tc -> new Semaphore(0));
-  }
-
-  private void lockClient(final TaskConsumer taskConsumer) {
-    try {
-      taskConsumerLocks.get(taskConsumer).acquire();
-    } catch (final InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-  }
-
-  /**
-   * Returns true if the task consumer related to the given task is locked.
-   * @param task to get task consumer from.
-   * @return true if task is locked.
-   */
-  public boolean isLocked(final Task task) {
-    return taskConsumerLocks.get(task.getTaskConsumer()).availablePermits() == 0;
-  }
-
-  private void unLockClient(final Task task) {
-    taskConsumerLocks.get(task.getTaskConsumer()).release();
-    LOG.trace("Taskconsumer {} released task {}", workerQueueName, task.getId());
   }
 }

@@ -14,28 +14,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.mq;
+package nl.aerius.taskmanager.scheduler.priorityqueue;
 
-import nl.aerius.taskmanager.domain.MessageMetaData;
+import nl.aerius.taskmanager.domain.TaskRecord;
 
 /**
- * Metadata data of a RabbitMQ message.
+ * Key mapper to group tasks per queue. Used for scheduling tasks by fetching 1 message from the queue at a time.
  */
-public class RabbitMQMessageMetaData extends MessageMetaData {
-  private final long deliveryTag;
+public class PriorityQueueMapKeyMapper {
 
-  /**
-   * Constructor
-   *
-   * @param queueName Name of the queue this meta data related to
-   * @param deliveryTag RabbitMQ tag used to ack or nack a message to the RabbitMQ queue
-   */
-  public RabbitMQMessageMetaData(final String queueName, final long deliveryTag) {
-    super(queueName);
-    this.deliveryTag = deliveryTag;
+  public String key(final TaskRecord taskRecord) {
+    return taskRecord.queueName();
   }
 
-  public long getDeliveryTag() {
-    return deliveryTag;
+  public String queueName(final String key) {
+    return key;
   }
 }

@@ -14,22 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager;
-
-import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
+package nl.aerius.taskmanager.domain;
 
 /**
- * Mock implementation of {@link WorkerUpdateHandler}.
+ * Object to keep key information of a task.
+ * @param queueName the queue the task came from
+ * @param correlationId id of the set of tasks
+ * @param id the unique id of the task
  */
-public class MockTaskFinishedHandler implements WorkerUpdateHandler {
-
-  @Override
-  public void onTaskFinished(final String queueName) {
-    //no-op
-  }
-
-  @Override
-  public void onWorkerPoolSizeChange(final int numberOfWorkers) {
-    //no-op
-  }
+public record TaskRecord(String queueName, String correlationId, String id) {
 }

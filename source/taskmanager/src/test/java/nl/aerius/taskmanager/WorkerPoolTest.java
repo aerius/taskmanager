@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -28,45 +30,48 @@ import java.util.concurrent.ExecutorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import nl.aerius.taskmanager.domain.ForwardTaskHandler;
-import nl.aerius.taskmanager.domain.MessageMetaData;
+import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 import nl.aerius.taskmanager.exception.TaskAlreadySentException;
-import nl.aerius.taskmanager.mq.RabbitMQMessageMetaData;
+import nl.aerius.taskmanager.mq.RabbitMQMessage;
 
 /**
  * Test class for {@link WorkerPool}.
  */
+@ExtendWith(MockitoExtension.class)
 class WorkerPoolTest {
 
   private static final String WORKER_QUEUE_NAME_TEST = "TEST";
 
   private WorkerPool workerPool;
   private TaskConsumer taskConsumer;
-  private RabbitMQMessageMetaData message;
-  private WorkerUpdateHandler workerUpdateHandler;
+  private RabbitMQMessage message;
+  private @Mock WorkerUpdateHandler workerUpdateHandler;
   private int numberOfWorkers;
+
 
   @BeforeEach
   void setUp() throws IOException {
     numberOfWorkers = 0;
-    workerUpdateHandler = new MockTaskFinishedHandler() {
-      @Override
-      public void onWorkerPoolSizeChange(final int numberOfWorkers) {
-        WorkerPoolTest.this.numberOfWorkers = numberOfWorkers;
-      }
-    };
+    lenient().doAnswer(inv -> {
+      WorkerPoolTest.this.numberOfWorkers = inv.getArgument(0);
+      return null;
+    }).when(workerUpdateHandler).onWorkerPoolSizeChange(anyInt());
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, new MockWorkerProducer(), workerUpdateHandler);
-    taskConsumer = new TaskConsumerImpl(mock(ExecutorService.class), new QueueConfig("testqueue", false, null), mock(ForwardTaskHandler.class),
+    taskConsumer = new TaskConsumerImpl(mock(ExecutorService.class), new QueueConfig("testqueue", false, false, null), mock(ForwardTaskHandler.class),
         new MockAdaptorFactory()) {
       @Override
-      public void messageDelivered(final MessageMetaData message) {
-        WorkerPoolTest.this.message = (RabbitMQMessageMetaData) message;
+      public void messageDelivered(final Message message) {
+        WorkerPoolTest.this.message = (RabbitMQMessage) message;
       }
     };
   }
@@ -146,6 +151,6 @@ class WorkerPoolTest {
   }
 
   private Task createTask() {
-    return new MockTask(taskConsumer, "calculator");
+    return new MockTask(taskConsumer);
   }
 }

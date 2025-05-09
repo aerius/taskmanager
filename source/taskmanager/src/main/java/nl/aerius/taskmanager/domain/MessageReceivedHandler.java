@@ -26,7 +26,7 @@ public interface MessageReceivedHandler {
    *
    * @param message the message
    */
-  void onMessageReceived(Message<?> message);
+  void onMessageReceived(Message message);
 
   /**
    * Called when the Consumer was shutdown.

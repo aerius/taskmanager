@@ -30,6 +30,8 @@ public class TaskSchedule<T extends TaskQueue> {
 
   private Boolean durable;
 
+  private Boolean eagerFetch;
+
   private RabbitMQQueueType queueType;
 
   private List<T> queues = new ArrayList<>();
@@ -56,6 +58,14 @@ public class TaskSchedule<T extends TaskQueue> {
 
   public boolean isDurable() {
     return !Boolean.FALSE.equals(durable);
+  }
+
+  public void setEagerFetch(final Boolean eagerFetch) {
+    this.eagerFetch = eagerFetch;
+  }
+
+  public boolean isEagerFetch() {
+    return Boolean.TRUE.equals(eagerFetch);
   }
 
   public RabbitMQQueueType getQueueType() {

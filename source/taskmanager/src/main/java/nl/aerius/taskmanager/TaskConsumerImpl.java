@@ -30,7 +30,6 @@ import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.TaskMessageHandler;
 import nl.aerius.taskmanager.domain.ForwardTaskHandler;
 import nl.aerius.taskmanager.domain.Message;
-import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskConsumer;
@@ -46,7 +45,7 @@ public class TaskConsumerImpl implements TaskConsumer {
   private final ExecutorService executorService;
   private final String taskQueueName;
   private final ForwardTaskHandler forwardTaskHandler;
-  private final TaskMessageHandler<MessageMetaData, Message<MessageMetaData>> taskMessageHandler;
+  private final TaskMessageHandler<Message> taskMessageHandler;
 
   private boolean running = true;
 
@@ -76,7 +75,7 @@ public class TaskConsumerImpl implements TaskConsumer {
   }
 
   @Override
-  public void onMessageReceived(final Message<?> message) {
+  public void onMessageReceived(final Message message) {
     if (running) {
       final Task task = new Task(this);
 
@@ -94,19 +93,19 @@ public class TaskConsumerImpl implements TaskConsumer {
   }
 
   @Override
-  public void messageDelivered(final MessageMetaData messageMetaData) throws IOException {
+  public void messageDelivered(final Message messageMetaData) throws IOException {
     taskMessageHandler.messageDeliveredToWorker(messageMetaData);
   }
 
   /**
    * Inform the consumer the message delivery failed.
    *
-   * @param messageMetaData Meta data of the message that failed
+   * @param message the message that failed
    * @throws IOException
    */
   @Override
-  public void messageDeliveryFailed(final MessageMetaData messageMetaData) throws IOException {
-    taskMessageHandler.messageDeliveryToWorkerFailed(messageMetaData);
+  public void messageDeliveryFailed(final Message message) throws IOException {
+    taskMessageHandler.messageDeliveryToWorkerFailed(message);
   }
 
   /**
@@ -116,7 +115,7 @@ public class TaskConsumerImpl implements TaskConsumer {
    * @throws IOException
    */
   @Override
-  public void messageDeliveryAborted(final Message<MessageMetaData> message, final RuntimeException exception) throws IOException {
+  public void messageDeliveryAborted(final Message message, final RuntimeException exception) throws IOException {
     taskMessageHandler.messageDeliveryAborted(message, exception);
   }
 

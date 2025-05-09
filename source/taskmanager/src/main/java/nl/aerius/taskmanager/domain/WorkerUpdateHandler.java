@@ -23,9 +23,9 @@ public interface WorkerUpdateHandler {
 
   /**
    * Task has be processed by the worker pool and finished with results.
-   * @param queueName name of the queue the task that was finished on
+   * @param taskRecord record of the task that was finished
    */
-  void onTaskFinished(String queueName);
+  void onTaskFinished(TaskRecord taskRecord);
 
   /**
    * Called when the number of workers has been changed. The value passed is the new value.

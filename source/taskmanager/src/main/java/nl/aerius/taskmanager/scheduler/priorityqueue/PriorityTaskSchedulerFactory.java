@@ -15,8 +15,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 package nl.aerius.taskmanager.scheduler.priorityqueue;
+import java.util.Comparator;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.function.Function;
+
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.domain.QueueConfig;
+import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.scheduler.TaskScheduler;
 import nl.aerius.taskmanager.scheduler.TaskScheduler.TaskSchedulerFactory;
 
@@ -24,11 +31,24 @@ import nl.aerius.taskmanager.scheduler.TaskScheduler.TaskSchedulerFactory;
  * Factory to create a scheduler.
  */
 public class PriorityTaskSchedulerFactory implements TaskSchedulerFactory<PriorityTaskQueue, PriorityTaskSchedule> {
+  private static final int INITIAL_SIZE = 20;
+
   private final PriorityTaskSchedulerFileHandler handler = new PriorityTaskSchedulerFileHandler();
 
   @Override
-  public TaskScheduler<PriorityTaskQueue> createScheduler(final String workerQueueName) {
-    return new PriorityTaskScheduler(new PriorityQueueMap(), workerQueueName);
+  public TaskScheduler<PriorityTaskQueue> createScheduler(final QueueConfig queueConfig) {
+    final Function<Comparator<Task>, Queue<Task>> queueCreator = c -> createQueue(queueConfig.eagerFetch(), c);
+    final PriorityQueueMap<?> priorityQueueMap = createPriorityQueueMap(queueConfig.eagerFetch());
+
+    return new PriorityTaskScheduler(priorityQueueMap, queueCreator, queueConfig.queueName());
+  }
+
+  private static Queue<Task> createQueue(final boolean eagerFetch, final Comparator<Task> c) {
+    return  eagerFetch ? new GroupedPriorityQueue(INITIAL_SIZE, c) : new PriorityQueue<>(INITIAL_SIZE, c);
+  }
+
+  private static PriorityQueueMap<?> createPriorityQueueMap(final boolean eagerFetch) {
+    return eagerFetch ? new PriorityQueueMap<>(new EagerFetchPriorityQueueMapKeyMapper()) : new PriorityQueueMap<>();
   }
 
   @Override

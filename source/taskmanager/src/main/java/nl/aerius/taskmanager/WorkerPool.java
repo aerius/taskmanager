@@ -28,9 +28,10 @@ import org.slf4j.LoggerFactory;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerFinishedHandler;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
-import nl.aerius.taskmanager.domain.Task;
-import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
+import nl.aerius.taskmanager.domain.Task;
+import nl.aerius.taskmanager.domain.TaskRecord;
+import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
 
 /**
@@ -44,7 +45,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   private static final Logger LOG = LoggerFactory.getLogger(WorkerPool.class);
 
   private final Semaphore freeWorkers = new Semaphore(0);
-  private final Map<String, String> runningWorkers = new ConcurrentHashMap<>();
+  private final Map<String, TaskRecord> runningWorkers = new ConcurrentHashMap<>();
   private final QueueWatchDog watchDog = new QueueWatchDog();
   private int totalConfiguredWorkers;
   private final String workerQueueName;
@@ -66,17 +67,17 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
    */
   public void sendTaskToWorker(final Task task) throws IOException {
     if (runningWorkers.containsKey(task.getId())) {
-      LOG.error("Duplicate task detected for worker queue: {}, from task queue: {}", workerQueueName, task.getTaskConsumer().getQueueName());
+      LOG.error("Duplicate task detected for worker queue: {}, from task queue: {}", workerQueueName, task.getTaskRecord().queueName());
     } else {
       synchronized (this) {
         if (!freeWorkers.tryAcquire()) {
           throw new NoFreeWorkersException(workerQueueName);
         }
-        runningWorkers.put(task.getId(), task.getMessage().getMetaData().getQueueName());
+        runningWorkers.put(task.getId(), task.getTaskRecord());
       }
     }
     wp.forwardMessage(task.getMessage());
-    task.getTaskConsumer().messageDelivered(task.getMessage().getMetaData());
+    task.getTaskConsumer().messageDelivered(task.getMessage());
     LOG.trace("[{}][taskId:{}] Task sent", workerQueueName, task.getId());
   }
 
@@ -108,7 +109,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   @Override
   public void reset() {
     synchronized (this) {
-      for (final Entry<String, String> taskEntry : runningWorkers.entrySet()) {
+      for (final Entry<String, TaskRecord> taskEntry : runningWorkers.entrySet()) {
         releaseWorker(taskEntry.getKey(), taskEntry.getValue());
       }
       updateNumberOfWorkers(0);
@@ -128,10 +129,10 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
    * Adds the worker to the pool of available workers and calls onWorkerReady.
    *
    * @param taskId Id of the task that was reported done and can be released
-   * @param queueName queue the task is expected to be on.
+   * @param taskRecord the task is expected to be on.
    */
-  public void releaseWorker(final String taskId, final String queueName) {
-    if (queueName != null) {
+  public void releaseWorker(final String taskId, final TaskRecord taskRecord) {
+    if (taskRecord != null) {
       synchronized (this) {
         if (runningWorkers.containsKey(taskId)) {
           // if currentSize is smaller than the worker size it means the worker
@@ -141,10 +142,10 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
           }
           runningWorkers.remove(taskId);
         } else {
-          LOG.info("[{}][taskId:{}] Task for queue '{}' not found, maybe it was already released).", workerQueueName, taskId, queueName);
+          LOG.info("[{}][taskId:{}] Task for queue '{}' not found, maybe it was already released).", workerQueueName, taskId, taskRecord.queueName());
         }
       }
-      workerUpdateHandler.onTaskFinished(queueName);
+      workerUpdateHandler.onTaskFinished(taskRecord);
       LOG.debug("[{}][taskId:{}] Task released).", workerQueueName, taskId);
     }
   }

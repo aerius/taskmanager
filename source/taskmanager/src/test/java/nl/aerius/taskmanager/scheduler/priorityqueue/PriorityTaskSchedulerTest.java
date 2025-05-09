@@ -40,10 +40,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.MockAdaptorFactory;
+import nl.aerius.taskmanager.MockTask;
 import nl.aerius.taskmanager.TaskConsumerImpl;
 import nl.aerius.taskmanager.domain.ForwardTaskHandler;
 import nl.aerius.taskmanager.domain.Message;
-import nl.aerius.taskmanager.domain.MessageMetaData;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 import nl.aerius.taskmanager.domain.QueueConfig;
@@ -82,7 +82,7 @@ class PriorityTaskSchedulerTest {
     configuration.getQueues().add(tc1);
     configuration.getQueues().add(tc2);
     configuration.getQueues().add(tc3);
-    scheduler = (PriorityTaskScheduler) factory.createScheduler(configuration.getWorkerQueueName());
+    scheduler = (PriorityTaskScheduler) factory.createScheduler(new QueueConfig(QUEUE1, false, false, null));
     configuration.getQueues().forEach(scheduler::updateQueue);
     task1 = createTask(taskConsumer1, "1", QUEUE1);
     task2a = createTask(taskConsumer2, "2a", QUEUE2);
@@ -182,12 +182,12 @@ class PriorityTaskSchedulerTest {
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     assertEquals(0, chkCounter.intValue(), "Counter should still be zero");
     assertFalse(receivedTask.isDone(), "Should not be done yet");
-    scheduler.onTaskFinished(task2a.getMessage().getMetaData().getQueueName());
+    scheduler.onTaskFinished(task2a.getTaskRecord());
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     // task2a finished, but task1b may still not be executed, because only 1 slot available.
     assertEquals(0, chkCounter.intValue(), "Counter should still be zero when 1 slot priorty available");
     assertFalse(receivedTask.isDone(), "Should not be done yet");
-    scheduler.onTaskFinished(task1a.getMessage().getMetaData().getQueueName());
+    scheduler.onTaskFinished(task1a.getTaskRecord());
     await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
     assertNotNull(receivedTask.get(), "Received task");
     // task1a finished, now task1b may be executed.
@@ -224,13 +224,13 @@ class PriorityTaskSchedulerTest {
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     assertEquals(0, chkCounter.intValue(), "Counter should still be zero");
     assertFalse(receivedTask.isDone(), "Should not be done yet");
-    scheduler.onTaskFinished(task1.getMessage().getMetaData().getQueueName());
-    scheduler.onTaskFinished(task1b.getMessage().getMetaData().getQueueName());
+    scheduler.onTaskFinished(task1.getTaskRecord());
+    scheduler.onTaskFinished(task1b.getTaskRecord());
     await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
     // task1's are finished, but tasks on 2 may still not be executed, because not enough slots available.
     assertEquals(0, chkCounter.intValue(), "Counter should still be zero when capacity not reached");
     assertFalse(receivedTask.isDone(), "Should not be done yet");
-    scheduler.onTaskFinished(sendTasks.get(0).getMessage().getMetaData().getQueueName());
+    scheduler.onTaskFinished(sendTasks.get(0).getTaskRecord());
     await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
     assertNotNull(receivedTask.get(), "Received task");
     // One of the task2's is now finished, another task2 may be executed.
@@ -278,23 +278,16 @@ class PriorityTaskSchedulerTest {
   }
 
   private TaskConsumer createMockTaskConsumer(final String taskQueueName) throws IOException {
-    return new TaskConsumerImpl(mock(ExecutorService.class), new QueueConfig(taskQueueName, false, null), mock(ForwardTaskHandler.class),
+    return new TaskConsumerImpl(mock(ExecutorService.class), new QueueConfig(taskQueueName, false, false, null), mock(ForwardTaskHandler.class),
         new MockAdaptorFactory()) {
       @Override
-      public void messageDelivered(final MessageMetaData messageMetaData) {
+      public void messageDelivered(final Message message) {
         //no-op.
       }
     };
   }
 
-  private Task createTask(final TaskConsumer tc, final String message, final String queue) {
-    final Task task = new Task(tc);
-    task.setData(new Message<>(new MessageMetaData(queue) {}) {
-      @Override
-      public String getMessageId() {
-        return message;
-      }
-    });
-    return task;
+  private Task createTask(final TaskConsumer tc, final String messageId, final String queue) {
+    return new MockTask(tc, messageId);
   }
 }

@@ -16,6 +16,7 @@
  */
 package nl.aerius.taskmanager.scheduler;
 
+import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
@@ -71,10 +72,10 @@ public interface TaskScheduler<T extends TaskQueue> extends WorkerUpdateHandler 
     /**
      * Create a new scheduler.
      *
-     * @param workerQueueName the worker queue the scheduler is creatd for
+     * @param queueConfig the queue configuration the scheduler is created for
      * @return new task scheduler
      */
-    TaskScheduler<T> createScheduler(String workerQueueName);
+    TaskScheduler<T> createScheduler(QueueConfig queueConfig);
 
     /**
      * Returns the handler that persists the scheduler configurations.

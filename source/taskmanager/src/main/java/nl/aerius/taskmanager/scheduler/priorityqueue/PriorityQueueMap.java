@@ -20,14 +20,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
+import nl.aerius.taskmanager.domain.TaskRecord;
 
 /**
  * Map to keep track of queue configurations and number of tasks running on workers.
  */
-class PriorityQueueMap {
+class PriorityQueueMap<K extends PriorityQueueMapKeyMapper> {
   /**
    * Map to keep track of queue configuration per queue.
    */
@@ -36,51 +36,53 @@ class PriorityQueueMap {
    * Map to keep track of the number of tasks running on workers per queue.
    */
   private final Map<String, AtomicInteger> tasksOnWorkersPerQueue = new ConcurrentHashMap<>();
-  private final Function<String, String> keyMapper;
+  private final K keyMapper;
 
   public PriorityQueueMap() {
-    this(Function.identity());
+    this((K) new PriorityQueueMapKeyMapper());
   }
 
-  public PriorityQueueMap(final Function<String, String> keyMapper) {
+  public PriorityQueueMap(final K keyMapper) {
     this.keyMapper = keyMapper;
   }
 
-  public PriorityTaskQueue get(final String queueName) {
-    return taskQueueConfigurations.get(key(queueName));
+  public PriorityTaskQueue get(final TaskRecord taskRecord) {
+    return taskQueueConfigurations.get(taskRecord.queueName());
   }
 
   public boolean containsKey(final String queueName) {
-    return taskQueueConfigurations.containsKey(key(queueName));
+    return taskQueueConfigurations.containsKey(queueName);
   }
 
   public PriorityTaskQueue put(final String queueName, final PriorityTaskQueue queue) {
-    final String keyQueueName = key(queueName);
-
-    tasksOnWorkersPerQueue.computeIfAbsent(keyQueueName, k -> new AtomicInteger());
-    return taskQueueConfigurations.put(keyQueueName, queue);
+    return taskQueueConfigurations.put(queueName, queue);
   }
 
-  public void decrementOnWorker(final String queueName) {
-    tasksOnWorkersPerQueue.get(key(queueName)).decrementAndGet();
+  public void decrementOnWorker(final TaskRecord taskRecord) {
+    final String trKey = key(taskRecord);
+
+    if (tasksOnWorkersPerQueue.get(trKey).decrementAndGet() == 0) {
+      tasksOnWorkersPerQueue.remove(trKey);
+    }
   }
 
-  public void incrementOnWorker(final String queueName) {
-    tasksOnWorkersPerQueue.get(key(queueName)).incrementAndGet();
+  public void incrementOnWorker(final TaskRecord taskRecord) {
+    tasksOnWorkersPerQueue.computeIfAbsent(key(taskRecord), k -> new AtomicInteger()).incrementAndGet();
   }
 
-  public int onWorker(final String queueName) {
-    return Optional.ofNullable(tasksOnWorkersPerQueue.get(key(queueName))).map(AtomicInteger::intValue).orElse(0);
+  public int onWorkerTotal(final String queueName) {
+    return tasksOnWorkersPerQueue.entrySet().stream().filter(e -> keyMapper.queueName(e.getKey()).equals(queueName)).mapToInt(e -> e.getValue().get()).sum();
+  }
+
+  public int onWorker(final TaskRecord taskRecord) {
+    return Optional.ofNullable(tasksOnWorkersPerQueue.get(key(taskRecord))).map(AtomicInteger::intValue).orElse(0);
   }
 
   public void remove(final String queueName) {
-    final String keyQueueName = key(queueName);
-
-    taskQueueConfigurations.remove(keyQueueName);
-    tasksOnWorkersPerQueue.remove(keyQueueName);
+    taskQueueConfigurations.remove(queueName);
   }
 
-  private String key(final String queueName) {
-    return keyMapper.apply(queueName);
+  private String key(final TaskRecord taskRecord) {
+    return keyMapper.key(taskRecord);
   }
 }

@@ -61,7 +61,7 @@ class TaskDispatcherTest {
     workerPool = new WorkerPool(WORKER_QUEUE_NAME_TEST, workerProducer, scheduler);
     dispatcher = new TaskDispatcher(WORKER_QUEUE_NAME_TEST, scheduler, workerPool);
     factory = new MockAdaptorFactory();
-    taskConsumer = new TaskConsumerImpl(executor, new QueueConfig("testqueue", false, null), dispatcher, factory);
+    taskConsumer = new TaskConsumerImpl(executor, new QueueConfig("testqueue", false, false, null), dispatcher, factory);
   }
 
   @AfterEach
@@ -95,7 +95,6 @@ class TaskDispatcherTest {
     final Task task = createTask();
     final Future<?> future = forwardTaskAsync(task, null);
     executor.execute(dispatcher);
-    await().until(() -> dispatcher.isLocked(task));
     workerPool.onNumberOfWorkersUpdate(1, 0); //add worker which will unlock
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     await().until(future::isDone);
@@ -109,16 +108,13 @@ class TaskDispatcherTest {
     final Task task = createTask();
     executor.execute(dispatcher);
     final Future<?> future = forwardTaskAsync(task, null);
-    await().until(() -> dispatcher.isLocked(task));
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     workerPool.onNumberOfWorkersUpdate(2, 0); //add worker which will unlock
-    await().until(() -> !dispatcher.isLocked(task));
     // Now force the issue.
     assertSame(TaskDispatcher.State.WAIT_FOR_TASK, dispatcher.getState(), "Taskdispatcher must be waiting for task");
     // Forwarding same Task object, so same id.
     forwardTaskAsync(task, future);
     await().until(() -> factory.getMockTaskMessageHandler().getAbortedMessage() == null);
-    await().until(() -> !dispatcher.isLocked(task));
     // Now test with a non-duplicate Task.
     forwardTaskAsync(createTask(), future);
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
@@ -131,7 +127,6 @@ class TaskDispatcherTest {
     final Task task = createTask();
     executor.execute(dispatcher);
     final Future<?> future = forwardTaskAsync(task, null);
-    await().until(() -> dispatcher.isLocked(task));
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
     // Now open up a worker
     workerPool.onNumberOfWorkersUpdate(1, 0);
@@ -171,6 +166,6 @@ class TaskDispatcherTest {
   }
 
   private Task createTask() {
-    return new MockTask(taskConsumer, "ops");
+    return new MockTask(taskConsumer);
   }
 }

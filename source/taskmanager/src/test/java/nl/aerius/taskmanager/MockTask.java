@@ -16,31 +16,29 @@
  */
 package nl.aerius.taskmanager;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 import java.util.UUID;
 
-import nl.aerius.taskmanager.domain.Message;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskConsumer;
-import nl.aerius.taskmanager.mq.RabbitMQMessageMetaData;
+import nl.aerius.taskmanager.mq.RabbitMQMessage;
 
 /**
  * Mock implementation of {@link Task}.
  */
 public class MockTask extends Task {
-  private final String id = UUID.randomUUID().toString();
 
-  public MockTask(final TaskConsumer taskConsumer, final String queueName) {
+  public MockTask(final TaskConsumer taskConsumer) {
+    this(taskConsumer, UUID.randomUUID().toString());
+  }
+
+  public MockTask(final TaskConsumer taskConsumer, final String id) {
     super(taskConsumer);
-    setData(new Message<RabbitMQMessageMetaData>(new RabbitMQMessageMetaData(queueName, 2)) {
-      @Override
-      public RabbitMQMessageMetaData getMetaData() {
-        return super.getMetaData();
-      }
+    final RabbitMQMessage message = mock(RabbitMQMessage.class);
 
-      @Override
-      public String getMessageId() {
-        return id;
-      }
-    });
+    doReturn(id).when(message).getMessageId();
+    setData(message);
   }
 }
