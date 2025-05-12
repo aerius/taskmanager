@@ -11,12 +11,12 @@ Each type of work has it's own scheduler in the task manager and work independen
 
 ## Concepts
 
-* Task manager: The central application to set the priority of tasks.
-* Client: A process that creates tasks to be run.
-* Worker: A process that can run one or more tasks concurrently.
-* Task Queue: The queue on which clients place their tasks.
-Tasks Queues are grouped by the worker that can perform the task.
-* Worker Queue: A single queue per worker type on which all workers listen for tasks.
+- Task manager: The central application to set the priority of tasks.
+- Client: A process that creates tasks to be run.
+- Worker: A process that can run one or more tasks concurrently.
+- Task Queue: The queue on which clients place their tasks.
+  Tasks Queues are grouped by the worker that can perform the task.
+- Worker Queue: A single queue per worker type on which all workers listen for tasks.
 
 ## An Agile Approach
 
@@ -31,25 +31,25 @@ It guaranties that no matter how many tasks of a certain type are in the queue t
 ## Task Flow
 
 In the figure below an overview is given of how the clients, workers, queues and scheduler are connected.
-![Taskmanager scheduler](doc/taskmanager_scheduler.svg) 
-
+![Taskmanager scheduler](doc/taskmanager_scheduler.svg)
 
 The flow of a tasks is as follows:
+
 1. A client puts a task on the task type queue within the work group.
-The queue to put the job on depends on the type of task.
-For example a web interface calculation for Calculator is put on the queue `aerius.calculator.calculator_ui`.
-2. The taskmanagers listens to all client queues and takes a message from each queue if one is present.
+   The queue to put the job on depends on the type of task.
+   For example a web interface calculation for Calculator is put on the queue `aerius.calculator.calculator_ui`.
+2. The taskmanager listens to all client queues and takes a message from each queue if one is present.
 3. When a worker starts listing to the worker queue it opens a RabbbitMQ channel for each process in the worker that can handle tasks.
-For example a queue is named `aerius.worker.calculator`. Where `.worker` indicates that it's a worker queue.
+   For example a queue is named `aerius.worker.calculator`. Where `.worker` indicates that it's a worker queue.
 4. The taskmanager counts the number of worker channels and to determine the available capacity.
-This check is done with a fixed interval and the capacity is updated accordingly.
+   This check is done with a fixed interval and the capacity is updated accordingly.
 5. When a worker is available the taskmanager scheduler determines which task should be forwarded to a worker.
-This is based on priority and maximum load for a given worker type.
+   This is based on priority and maximum load for a given worker type.
 6. The task is then send to the worker and the taskmanager keeps track of this task.
 7. The taskmanager continues from step 2.
 8. Once the task is finished the worker sends a reply via the work reply queue, e.g. `aerius.worker.calculator.reply`.
 9. The taskmanager marks the tasks as finished and marks the worker as free.
-A new task can now be scheduled.
+   A new task can now be scheduled.
 
 ## Configuration
 
@@ -88,6 +88,7 @@ The json format of the configuration files is as follows:
 {
   "workerQueueName": "<type of the queue>",
   "durable" : <true|false>
+  "eagerFetch" : <true|false>
   "queueType": <classic|quorum|stream>
   "queues": [
     {
@@ -110,6 +111,12 @@ Some queues can have derived messages on the queue, that are recreated by the pa
 For these queues it would make sense to not make them durable.
 RabbitMQ will require less storage space/IOPS and be faster as it won't need to depend on disk I/O for these queues.
 
+The parameter `eagerFetch` indicates that all tasks on the queue will be prefetched.
+If not set or set to false it will only fetch a single task from the queue.
+By fetching all tasks from the queue as they arrive it can give different priorities to all tasks put on the same queue.
+Effectively it will give tasks on the same queue that have fewer tasks running on a worker a higher priority over tasks with more tasks running on a worker.
+This way of working will behave as if tasks with the same correlationId would have their own queue.
+
 The parameter `queueType` specifies the RabbitMQ type of the queues to be created.
 If set it will set the argument `x-queue-type` when declaring queues.
 If not set it will not set this arguments (used for backward compatibility, defaults to `classic`).
@@ -119,15 +126,17 @@ If `queueType` needs to be changed, the queues need to be deleted first.
 
 In `queues` there can be 1 or more queue configurations.
 Each queue configuration consists of 3 parameters:
-* `queueName`: The postfix of the client queue of which the task manager constructs the full queue name using the worker queue name.
-So `calculator_ui` becomes `aerius.ops.calculator_ui`, when the `workerQueueName` is `ops`.
-* `priority`: A positive int value determining the priority of the tasks.
-A higher number means a higher priority.
-* `maxCapacityUse`: A number between 0 and 1 that limits the amount of tasks that are concurrently run for the queue based on the available number of workers.
-For example if the value is `0.6` and there are `10` workers.
-This would mean a maximum of `6` workers will be given a tasks from this queue.
+
+- `queueName`: The postfix of the client queue of which the task manager constructs the full queue name using the worker queue name.
+  So `calculator_ui` becomes `aerius.ops.calculator_ui`, when the `workerQueueName` is `ops`.
+- `priority`: A positive int value determining the priority of the tasks.
+  A higher number means a higher priority.
+- `maxCapacityUse`: A number between 0 and 1 that limits the amount of tasks that are concurrently run for the queue based on the available number of workers.
+  For example if the value is `0.6` and there are `10` workers.
+  This would mean a maximum of `6` workers will be given a tasks from this queue.
 
 ### Overriding queue configuration
+
 Queue configuration for a specific worker can be overridden by creating an environment variable.
 When an environment variable exists with a matching worker queue name, that configuration is used instead of the file.
 

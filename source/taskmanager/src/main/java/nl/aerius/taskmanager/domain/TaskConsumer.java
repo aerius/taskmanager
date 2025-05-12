@@ -33,18 +33,18 @@ public interface TaskConsumer extends MessageReceivedHandler {
   /**
    * Inform the consumer the message delivery was successful.
    *
-   * @param messageMetaData Meta data of the message that that was successful
+   * @param message the message that was successful
    * @throws IOException
    */
-  void messageDelivered(final MessageMetaData messageMetaData) throws IOException;
+  void messageDelivered(final Message message) throws IOException;
 
   /**
    * Inform the consumer the message delivery failed.
    *
-   * @param messageMetaData Meta data of the message that failed
+   * @param message the message that failed
    * @throws IOException
    */
-  void messageDeliveryFailed(MessageMetaData messageMetaData) throws IOException;
+  void messageDeliveryFailed(Message message) throws IOException;
 
   /**
    * Inform the consumer the message delivery failed.
@@ -52,7 +52,7 @@ public interface TaskConsumer extends MessageReceivedHandler {
    * @param exception the exception with which the message failed
    * @throws IOException
    */
-  void messageDeliveryAborted(Message<MessageMetaData> message, RuntimeException exception) throws IOException;
+  void messageDeliveryAborted(Message message, RuntimeException exception) throws IOException;
 
   /**
    * Start the consumer.
