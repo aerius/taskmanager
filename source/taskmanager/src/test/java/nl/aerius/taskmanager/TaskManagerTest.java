@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +43,7 @@ import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskSchedulerFileHa
 class TaskManagerTest {
 
   private static ExecutorService executor;
+  private static ScheduledExecutorService scheduledExecutorService;
   private final PriorityTaskSchedulerFileHandler handler = new PriorityTaskSchedulerFileHandler();
   private PriorityTaskSchedule schedule;
   private TaskManager<PriorityTaskQueue, PriorityTaskSchedule> taskManager;
@@ -49,9 +51,10 @@ class TaskManagerTest {
   @BeforeEach
   void setUp() throws IOException {
     executor = Executors.newCachedThreadPool();
+    scheduledExecutorService = Executors.newScheduledThreadPool(1);
     final AdaptorFactory factory = new MockAdaptorFactory();
     final MockSchedulerFactory schedulerFactory = new MockTaskScheduler.MockSchedulerFactory();
-    taskManager = new TaskManager<>(executor, factory, schedulerFactory, factory.createWorkerSizeProvider());
+    taskManager = new TaskManager<>(executor, scheduledExecutorService, factory, schedulerFactory, factory.createWorkerSizeProvider());
     schedule = handler.read(new File(getClass().getClassLoader().getResource("queue/priority-task-scheduler.ops.json").getFile()));
   }
 
@@ -59,6 +62,7 @@ class TaskManagerTest {
   void after() throws InterruptedException {
     taskManager.shutdown();
     executor.shutdownNow();
+    scheduledExecutorService.shutdownNow();
     executor.awaitTermination(10, TimeUnit.MILLISECONDS);
   }
 

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -144,7 +145,7 @@ class TaskDispatcherTest {
     workerPool.onNumberOfWorkersUpdate(1, 0);
     //should now be unlocked, but waiting for worker to be done
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
-    workerPool.onWorkerFinished(task.getId());
+    workerPool.onWorkerFinished(task.getId(), Map.of());
     //should now again be ready to be used
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_TASK);
     // Check if we can send a task again.

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,6 +39,8 @@ import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
+import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
+import nl.aerius.taskmanager.metrics.PerformanceMetricsReporter;
 import nl.aerius.taskmanager.scheduler.TaskScheduler;
 import nl.aerius.taskmanager.scheduler.TaskScheduler.TaskSchedulerFactory;
 
@@ -49,14 +52,16 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
   private static final Logger LOG = LoggerFactory.getLogger(TaskManager.class);
 
   private final ExecutorService executorService;
+  private final ScheduledExecutorService scheduledExecutorService;
   private final AdaptorFactory factory;
   private final TaskSchedulerFactory<T, S> schedulerFactory;
   private final WorkerSizeProviderProxy workerSizeObserverProxy;
   private final Map<String, TaskScheduleBucket> buckets = new HashMap<>();
 
-  public TaskManager(final ExecutorService executorService, final AdaptorFactory factory, final TaskSchedulerFactory<T, S> schedulerFactory,
-      final WorkerSizeProviderProxy workerSizeObserverProxy) {
+  public TaskManager(final ExecutorService executorService, final ScheduledExecutorService scheduledExecutorService, final AdaptorFactory factory,
+      final TaskSchedulerFactory<T, S> schedulerFactory, final WorkerSizeProviderProxy workerSizeObserverProxy) {
     this.executorService = executorService;
+    this.scheduledExecutorService = scheduledExecutorService;
     this.factory = factory;
     this.schedulerFactory = schedulerFactory;
     this.workerSizeObserverProxy = workerSizeObserverProxy;
@@ -117,6 +122,9 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       taskScheduler = schedulerFactory.createScheduler(queueConfig);
       workerProducer = factory.createWorkerProducer(queueConfig);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
+      final PerformanceMetricsReporter reporter = new PerformanceMetricsReporter(scheduledExecutorService, queueConfig.queueName(),
+          OpenTelemetryMetrics.METER, workerPool);
+      workerProducer.addWorkerFinishedHandler(reporter);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerProducer.start();
       // Set up metrics

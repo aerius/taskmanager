@@ -115,7 +115,11 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
 
   private void updateWorkerQueueState() {
     if (running) {
-      monitors.forEach((k, v) -> v.updateWorkerQueueState(k, getWorkerSizeObserver(k)));
+      try {
+        monitors.forEach((k, v) -> v.updateWorkerQueueState(k, getWorkerSizeObserver(k)));
+      } catch (final RuntimeException e) {
+        LOG.error("Runtime error during updateWorkerQueueState", e);
+      }
     }
   }
 }

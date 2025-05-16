@@ -89,7 +89,8 @@ class TaskManagerClientSenderTest {
   private void assertSendTask(final String correlationId, final String messageId, final ArgumentCaptor<BasicProperties> propertiesCaptor,
       final ArgumentCaptor<byte[]> dataCaptor, final Serializable input, final int times) throws IOException, ClassNotFoundException {
     taskManagerClient.sendTask(input, correlationId, messageId, TASK_QUEUE_NAME);
-    verify(connection.createChannel(), times(times)).basicPublish(eq(""), eq(TASK_QUEUE_NAME), propertiesCaptor.capture(), dataCaptor.capture());
+    verify(connection.createChannel(), times(times)).basicPublish(eq(""), eq(TASK_QUEUE_NAME), propertiesCaptor.capture(),
+        dataCaptor.capture());
     final MockTaskInput dataSent = (MockTaskInput) QueueHelper.bytesToObject(dataCaptor.getValue());
     assertEquals(input, dataSent, "Should sent the data as given to sender.");
     final BasicProperties properties = propertiesCaptor.getValue();

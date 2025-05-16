@@ -39,7 +39,7 @@ class PriorityQueueMap<K extends PriorityQueueMapKeyMapper> {
   private final K keyMapper;
 
   public PriorityQueueMap() {
-    this((K) new PriorityQueueMapKeyMapper());
+    this ((K) new PriorityQueueMapKeyMapper());
   }
 
   public PriorityQueueMap(final K keyMapper) {

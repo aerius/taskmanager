@@ -61,7 +61,7 @@ public class TaskManagerClientSender implements AutoCloseable {
   }
 
   /**
-   * Sends the task directly to the worker queue bypassing the taskmanager.
+   * Sends the task directly to the worker or via the Task Manager with no additional metrics.
    *
    * @param data The input object which the worker needs to do the work.
    * @param correlationId The correlation ID to use for this task. Will be used when a result is received to
@@ -72,6 +72,23 @@ public class TaskManagerClientSender implements AutoCloseable {
    * @throws IOException In case of errors communicating with queue.
    */
   public void sendTask(final Serializable data, final String correlationId, final String messageId, final String queueName) throws IOException {
+    sendTask(data, correlationId, messageId, queueName, new TaskMetrics());
+  }
+
+  /**
+   * Sends the task to the worker via the Task Manager with custom statistics.
+   *
+   * @param data The input object which the worker needs to do the work.
+   * @param correlationId The correlation ID to use for this task. Will be used when a result is received to
+   *          tell the TaskResultCallback which task was the cause. Can be used to correlate a task in the callback.
+   * @param messageId The message ID to use for this task. Will be used when a result is received to
+   *          tell the TaskResultCallback which task was the cause. Should be unique.
+   * @param queueName The name of the queue on which this task should be placed.
+   * @param taskMetrics Additional statistics to communicate about the task to the taskmanager
+   * @throws IOException In case of errors communicating with queue.
+   */
+  public void sendTask(final Serializable data, final String correlationId, final String messageId, final String queueName,
+      final TaskMetrics taskMetrics) throws IOException {
     if (!running) {
       throw new IllegalStateException("Attempt to use closed connection");
     }
@@ -91,6 +108,7 @@ public class TaskManagerClientSender implements AutoCloseable {
         propertiesBuilder.correlationId(correlationId);
         propertiesBuilder.messageId(messageId);
         propertiesBuilder.deliveryMode(DELIVERY_MODE_PERSISTENT);
+        propertiesBuilder.headers(taskMetrics.queueName(queueName).build());
 
         final Channel chn = channel.get();
         if (chn != null) {
@@ -117,7 +135,7 @@ public class TaskManagerClientSender implements AutoCloseable {
   /**
    * Method to enrich the builder with additional data before sending the task.
    *
-   * @param builder builder to enrich
+   * @param builder RabbitMQ builder to enrich properties with additional information
    * @throws IOException
    */
   protected void prepareBeforeSend(final Builder builder) throws IOException {
@@ -172,11 +190,10 @@ public class TaskManagerClientSender implements AutoCloseable {
   }
 
   /**
-   *
-   * @return True if tasks can be sent through this client.
+   * @return True if tasks can be send through this client.
    * @throws IOException message bus exception
    */
-  public boolean isUsable() throws IOException {
+  boolean isUsable() throws IOException {
     return running && factory.isOpen();
   }
 }

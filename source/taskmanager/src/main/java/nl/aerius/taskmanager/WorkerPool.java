@@ -19,6 +19,8 @@ package nl.aerius.taskmanager;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -52,11 +54,15 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   private final WorkerProducer wp;
   private final WorkerUpdateHandler workerUpdateHandler;
 
+  private final Timer deltaTimer = new Timer();
+  private TimerTask deltaTimerTask;
+  private int deltaCounter;
+
   public WorkerPool(final String workerQueueName, final WorkerProducer wp, final WorkerUpdateHandler workerUpdateHandler) {
     this.workerQueueName = workerQueueName;
     this.wp = wp;
     this.workerUpdateHandler = workerUpdateHandler;
-    wp.setWorkerFinishedHandler(this);
+    wp.addWorkerFinishedHandler(this);
   }
 
   /**
@@ -76,7 +82,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
         runningWorkers.put(task.getId(), task.getTaskRecord());
       }
     }
-    wp.forwardMessage(task.getMessage());
+    wp.dispatchMessage(task.getMessage());
     task.getTaskConsumer().messageDelivered(task.getMessage());
     LOG.trace("[{}][taskId:{}] Task sent", workerQueueName, task.getId());
   }
@@ -102,8 +108,8 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   }
 
   @Override
-  public void onWorkerFinished(final String taskId) {
-    releaseWorker(taskId);
+  public void onWorkerFinished(final String messageId, final Map<String, Object> messageMetaData) {
+    releaseWorker(messageId);
   }
 
   @Override
@@ -169,7 +175,19 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   @Override
   public void onDeltaNumberOfWorkersUpdate(final int delta) {
     synchronized (this) {
-      updateNumberOfWorkers(totalConfiguredWorkers + delta);
+      deltaCounter += delta;
+      if (deltaTimerTask != null) {
+        deltaTimerTask.cancel();
+      }
+      deltaTimerTask = new TimerTask() {
+        @Override
+        public void run() {
+          synchronized (WorkerPool.this) {
+            updateNumberOfWorkers(totalConfiguredWorkers + deltaCounter);
+          }
+        }
+      };
+      deltaTimer.schedule(deltaTimerTask, 50L);
     }
   }
 
@@ -194,6 +212,11 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   }
 
   private void updateNumberOfWorkers(final int numberOfWorkers) {
+    if (deltaTimerTask != null) {
+      deltaTimerTask.cancel();
+      deltaTimerTask = null;
+    }
+    deltaCounter = 0;
     totalConfiguredWorkers = numberOfWorkers;
     final int deltaWorkers = totalConfiguredWorkers - getCurrentWorkerSize();
 

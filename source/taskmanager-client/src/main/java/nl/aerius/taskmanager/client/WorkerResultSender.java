@@ -18,7 +18,7 @@ package nl.aerius.taskmanager.client;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.Map;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -69,9 +69,19 @@ public class WorkerResultSender implements WorkerIntermediateResultSender {
     final BasicProperties basicProperties = new BasicProperties.Builder()
         .correlationId(properties.getCorrelationId())
         .messageId(properties.getMessageId())
-        .headers(new HashMap<>())
+        .headers(constructReturnHeaders(properties.getHeaders()))
         .build();
     // reply to the requested queue, converting the object to bytes first.
     channel.basicPublish(EXCHANGE, queue, basicProperties, data);
+  }
+
+  private static Map<String, Object> constructReturnHeaders(final Map<String, Object> map) {
+    final Long startTime = TaskMetrics.longValue(map, TaskMetrics.AER_WORK_STARTTIME);
+
+    if (startTime != null && startTime > 0) {
+      return new TaskMetrics(map).setDuration().build();
+    } else {
+      return Map.of();
+    }
   }
 }

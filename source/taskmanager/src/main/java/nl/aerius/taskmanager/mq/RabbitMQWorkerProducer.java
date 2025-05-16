@@ -17,7 +17,9 @@
 package nl.aerius.taskmanager.mq;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -55,9 +57,12 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   private final String workerQueueName;
   private final boolean durable;
   private final RabbitMQQueueType queueType;
+  private final List<WorkerFinishedHandler> workerFinishedHandlers = new ArrayList<>();
+  private Channel channel;
 
-  private WorkerFinishedHandler workerFinishedHandler;
   private boolean isShutdown;
+
+  private Channel replyChannel;
 
   public RabbitMQWorkerProducer(final BrokerConnectionFactory factory, final QueueConfig queueConfig) {
     this.factory = factory;
@@ -67,8 +72,8 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void setWorkerFinishedHandler(final WorkerFinishedHandler workerFinishedHandler) {
-    this.workerFinishedHandler = workerFinishedHandler;
+  public void addWorkerFinishedHandler(final WorkerFinishedHandler workerFinishedHandler) {
+    this.workerFinishedHandlers.add(workerFinishedHandler);
   }
 
   @Override
@@ -77,39 +82,48 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void forwardMessage(final Message message) throws IOException {
+  public void dispatchMessage(final Message message) throws IOException {
     final RabbitMQMessage rabbitMQMessage = (RabbitMQMessage) message;
-    // Do we set the replyTo to something fake?
-    // or do we expect worker to send instead of CC the message?
-    final Channel channel = factory.getConnection().createChannel();
-    try {
-      channel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, queueType));
-      final BasicProperties.Builder forwardBuilder = rabbitMQMessage.getProperties().builder();
-      // new header map (even in case of existing headers, original can be a UnmodifiableMap)
-      final Map<String, Object> headers = rabbitMQMessage.getProperties().getHeaders() == null ? new HashMap<>()
-          : new HashMap<>(rabbitMQMessage.getProperties().getHeaders());
+    ensureChanne();
+    final BasicProperties.Builder forwardBuilder = rabbitMQMessage.getProperties().builder();
+    // new header map (even in case of existing headers, original can be a UnmodifiableMap)
+    final Map<String, Object> headers = rabbitMQMessage.getProperties().getHeaders() == null
+        ? new HashMap<>()
+        : new HashMap<>(rabbitMQMessage.getProperties().getHeaders());
 
-      // we want to be notified when a worker has finished it's job.
-      // To do this, we set our own property, replyCC.
-      // It's the worker implementation (through taskmanager client) to use this property to return a message.
-      // (either through RabbitMQ CC-mechanism or by sending an empty message to the replyQueue)
-      headers.put(QueueConstants.TASKMANAGER_REPLY_QUEUE, getWorkerReplyQueue());
-      forwardBuilder.headers(headers);
-      final BasicProperties forwardProperties = forwardBuilder.deliveryMode(2).build();
-      channel.basicPublish("", workerQueueName, forwardProperties, rabbitMQMessage.getBody());
-    } finally {
-      try {
-        channel.close();
-      } catch (final IOException | TimeoutException e) {
-        // eat error.
-        LOG.trace("Exception while forwarding message", e);
-      }
+    // we want to be notified when a worker has finished it's job.
+    // To do this, we set our own property, replyCC.
+    // It's the worker implementation (through taskmanager client) to use this property to return a message.
+    // (either through RabbitMQ CC-mechanism or by sending an empty message to the replyQueue)
+    headers.put(QueueConstants.TASKMANAGER_REPLY_QUEUE, getWorkerReplyQueue());
+    forwardBuilder.headers(headers);
+    final BasicProperties forwardProperties = forwardBuilder.deliveryMode(2).build();
+    channel.basicPublish("", workerQueueName, forwardProperties, rabbitMQMessage.getBody());
+    workerFinishedHandlers.forEach(h -> h.onWorkDispatched(message.getMessageId(), headers));
+  }
+
+  private synchronized void ensureChanne() throws IOException {
+    if (channel == null || !channel.isOpen()) {
+      channel = factory.getConnection().createChannel();
+      channel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, queueType));
     }
   }
 
   @Override
   public void shutdown() {
     isShutdown = true;
+    closeChannel(channel);
+    closeChannel(replyChannel);
+  }
+
+  private static void closeChannel(final Channel channel) {
+    if (channel != null && channel.isOpen()) {
+      try {
+        channel.close();
+      } catch (IOException | TimeoutException e) {
+        LOG.warn("Failed to close channel on shutdown");
+      }
+    }
   }
 
   private String getWorkerReplyQueue() {
@@ -155,7 +169,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     if (replyChannelOptional.isEmpty()) {
       return false;
     }
-    final Channel replyChannel = replyChannelOptional.get();
+    replyChannel = replyChannelOptional.get();
     // Create an exclusive reply queue with predefined name (so we can set a replyCC header).
     // Queue will be deleted once taskmanager is down.
     // reply queue is not durable because the system will 'reboot' after connection problems anyway.
@@ -168,7 +182,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     replyChannel.basicConsume(workerReplyQueue, true, workerReplyQueue, new DefaultConsumer(replyChannel) {
       @Override
       public void handleDelivery(final String consumerTag, final Envelope envelope, final BasicProperties properties, final byte[] body) {
-        workerFinishedHandler.onWorkerFinished(properties.getMessageId());
+        workerFinishedHandlers.forEach(h -> h.onWorkerFinished(properties.getMessageId(), properties.getHeaders()));
       }
     });
     return true;
