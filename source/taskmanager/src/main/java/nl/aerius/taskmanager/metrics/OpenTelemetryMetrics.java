@@ -30,16 +30,16 @@ public final class OpenTelemetryMetrics {
 
   public static final Meter METER = GlobalOpenTelemetry.getMeter("nl.aerius.taskmanager");
 
-  private static final AttributeKey<String> WORKER_TYPE_ATTRIBUTE = AttributeKey.stringKey("worker_type");
-  private static final AttributeKey<String> QUEUE_ATTRIBUTE = AttributeKey.stringKey("queue_name");
+  static final AttributeKey<String> WORKER_TYPE_ATTRIBUTE = AttributeKey.stringKey("worker_type");
+  static final AttributeKey<String> QUEUE_ATTRIBUTE = AttributeKey.stringKey("queue_name");
 
   private OpenTelemetryMetrics() {
     // Util class
   }
 
-  public static Attributes workerAttributes(final String workerTyper) {
+  public static Attributes workerAttributes(final String workerType) {
     return Attributes.builder()
-        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerTyper))
+        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerType))
         .build();
   }
 
@@ -53,6 +53,6 @@ public final class OpenTelemetryMetrics {
   private static String workerIdentifier(final String workerQueueName) {
     final int workerTypeIndex = workerQueueName.lastIndexOf('.');
 
-    return (workerTypeIndex > 0 ? workerQueueName.substring(workerTypeIndex) : workerQueueName).toUpperCase(Locale.ROOT);
+    return (workerTypeIndex > 0 ? workerQueueName.substring(workerTypeIndex + 1) : workerQueueName).toLowerCase(Locale.ROOT);
   }
 }
