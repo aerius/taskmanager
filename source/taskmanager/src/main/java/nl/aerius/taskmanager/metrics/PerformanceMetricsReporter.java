@@ -127,7 +127,7 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
   @Override
   public void onWorkDispatched(final String messageId, final Map<String, Object> messageMetaData) {
     final TaskMetrics taskMetrics = new TaskMetrics(messageMetaData);
-    taskMetrics.setDuration();
+    taskMetrics.determineDuration();
     dispatchedQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     dispatchedWorkerMetrics.register(taskMetrics);
     loadMetrics.register(1, workerMetrics.getCurrentWorkerSize());
@@ -136,7 +136,7 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
   @Override
   public synchronized void onWorkerFinished(final String messageId, final Map<String, Object> messageMetaData) {
     final TaskMetrics taskMetrics = new TaskMetrics(messageMetaData);
-    taskMetrics.setDuration();
+    taskMetrics.determineDuration();
     workQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     workWorkerMetrics.register(taskMetrics);
     loadMetrics.register(-1, workerMetrics.getCurrentWorkerSize());

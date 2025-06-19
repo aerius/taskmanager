@@ -72,8 +72,8 @@ public class TaskMetrics {
     return duration;
   }
 
-  public TaskMetrics setDuration() {
-    this.duration = new Date().getTime() - startTime;
+  public TaskMetrics determineDuration() {
+    this.duration = startTime > 0 ? new Date().getTime() - startTime : 0;
     return this;
   }
 

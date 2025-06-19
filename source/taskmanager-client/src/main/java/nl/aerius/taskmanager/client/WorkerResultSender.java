@@ -76,10 +76,10 @@ public class WorkerResultSender implements WorkerIntermediateResultSender {
   }
 
   private static Map<String, Object> constructReturnHeaders(final Map<String, Object> map) {
-    final Long startTime = TaskMetrics.longValue(map, TaskMetrics.AER_WORK_STARTTIME);
+    final long startTime = TaskMetrics.longValue(map, TaskMetrics.AER_WORK_STARTTIME);
 
-    if (startTime != null && startTime > 0) {
-      return new TaskMetrics(map).setDuration().build();
+    if (startTime > 0) {
+      return new TaskMetrics(map).determineDuration().build();
     } else {
       return Map.of();
     }

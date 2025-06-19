@@ -40,7 +40,7 @@ class LoadMetric {
   /**
    * Number of workers running at a time.
    */
-  private int runningeWorkers;
+  private int runningWorkers;
   /**
    * Total number of available workers.
    */
@@ -56,10 +56,10 @@ class LoadMetric {
     this.totalWorkers = totalWorkers;
     final long newLast = System.currentTimeMillis();
     final long delta = newLast - last;
-    totalLoad += delta * (totalWorkers > 0 ? (runningeWorkers / (double) totalWorkers) : 0);
+    totalLoad += delta * (totalWorkers > 0 ? (runningWorkers / (double) totalWorkers) : 0);
     totalMeasureTime += delta;
     last = newLast;
-    runningeWorkers += deltaActiveWorkers;
+    runningWorkers += deltaActiveWorkers;
   }
 
   /**

@@ -63,18 +63,12 @@ class PerformanceMetricsReporterTest {
 
   private final Map<String, DoubleHistogram> mockedHistograms = new HashMap<>();
 
-  @Mock
-  Meter mockedMeter;
-  @Mock
-  WorkerMetrics workMetrics;
-  @Mock
-  ScheduledExecutorService scheduledExecutorService;
-  @Mock
-  DoubleGauge mockGauge;
-  @Captor
-  ArgumentCaptor<Runnable> methodCaptor;
-  @Captor
-  ArgumentCaptor<Double> durationCaptor;
+  @Mock Meter mockedMeter;
+  @Mock WorkerMetrics workMetrics;
+  @Mock ScheduledExecutorService scheduledExecutorService;
+  @Mock DoubleGauge mockGauge;
+  @Captor ArgumentCaptor<Runnable> methodCaptor;
+  @Captor ArgumentCaptor<Double> durationCaptor;
 
   private PerformanceMetricsReporter reporter;
 
