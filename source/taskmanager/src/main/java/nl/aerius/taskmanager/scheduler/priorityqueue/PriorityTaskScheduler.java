@@ -56,9 +56,9 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   /**
    * Constructs scheduler for given configuration.
    *
-   * @param configuration scheduler configuration
    */
-  PriorityTaskScheduler(final PriorityQueueMap priorityQueueKeyMap, final Function<Comparator<Task>, Queue<Task>> queueCreator, final String workerQueueName) {
+  PriorityTaskScheduler(final PriorityQueueMap priorityQueueKeyMap, final Function<Comparator<Task>, Queue<Task>> queueCreator,
+      final String workerQueueName) {
     this.priorityQueueMap = priorityQueueKeyMap;
     this.workerQueueName = workerQueueName;
     queue = queueCreator.apply(this);

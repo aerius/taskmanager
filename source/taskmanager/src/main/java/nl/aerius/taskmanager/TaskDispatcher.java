@@ -128,7 +128,6 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
   private void dispatch(final Task task) {
     try {
       workerPool.sendTaskToWorker(task);
-      TaskDispatcherMetrics.dispatched(workerQueueName);
     } catch (final NoFreeWorkersException e) {
       LOG.info("[NoFreeWorkersException] Workers for queue {} decreased while waiting for task. Rescheduling task.", e.getWorkerQueueName());
       LOG.trace("NoFreeWorkersException thrown", e);

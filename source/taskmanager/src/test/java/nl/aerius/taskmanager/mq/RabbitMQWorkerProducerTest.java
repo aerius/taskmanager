@@ -51,7 +51,7 @@ class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
     final WorkerProducer wp = adapterFactory.createWorkerProducer(new QueueConfig(WORKER_QUEUE_NAME, false, false, null));
     wp.start();
     final BasicProperties bp = new BasicProperties();
-    wp.forwardMessage(new RabbitMQMessage(WORKER_QUEUE_NAME, null, 4321, bp, sendBody) {
+    wp.dispatchMessage(new RabbitMQMessage(WORKER_QUEUE_NAME, null, 4321, bp, sendBody) {
       @Override
       public String getMessageId() {
         return "1234";

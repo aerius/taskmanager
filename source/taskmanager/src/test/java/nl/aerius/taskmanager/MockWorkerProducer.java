@@ -31,7 +31,7 @@ public class MockWorkerProducer implements WorkerProducer {
   private boolean shutdownExceptionOnForward = false;
 
   @Override
-  public void setWorkerFinishedHandler(final WorkerFinishedHandler workerFinishedHandler) {
+  public void addWorkerFinishedHandler(final WorkerFinishedHandler workerFinishedHandler) {
     // no-op
   }
 
@@ -41,7 +41,7 @@ public class MockWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void forwardMessage(final Message message) throws IOException {
+  public void dispatchMessage(final Message message) throws IOException {
     if (shutdownExceptionOnForward) {
       throw new ShutdownSignalException(true, true, null, null);
     }

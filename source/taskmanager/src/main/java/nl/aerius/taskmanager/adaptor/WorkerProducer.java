@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager.adaptor;
 
 import java.io.IOException;
+import java.util.Map;
 
 import nl.aerius.taskmanager.domain.Message;
 
@@ -29,7 +30,7 @@ public interface WorkerProducer {
    * Sets the handler to call when a task is finished by a worker.
    * @param workerFinishedHandler handler.
    */
-  void setWorkerFinishedHandler(WorkerFinishedHandler workerFinishedHandler);
+  void addWorkerFinishedHandler(WorkerFinishedHandler workerFinishedHandler);
 
   /**
    * Starts the worker producer.
@@ -37,11 +38,11 @@ public interface WorkerProducer {
   void start();
 
   /**
-   * Forward a message to the worker.
-   * @param message message to forward
+   * Dispatch a message to the worker.
+   * @param message message to ispatch
    * @throws IOException connection errors
    */
-  void forwardMessage(final Message message) throws IOException;
+  void dispatchMessage(final Message message) throws IOException;
 
   /**
    * Shuts down this worker producer.
@@ -53,16 +54,29 @@ public interface WorkerProducer {
    */
   interface WorkerFinishedHandler {
     /**
-     * Called when worker finished a task.
-     * @param taskId id of the task finished
+     * Called when work dispatched to the worker.
+     *
+     * @param messageId unique id of the message
+     * @param messageMetaData message meta data
      */
-    void onWorkerFinished(String taskId);
+    default void onWorkDispatched(final String messageId, final Map<String, Object> messageMetaData) {
+      // Default nothing to do
+    }
+
+    /**
+     * Called when worker finished a task.
+     *
+     * @param messageId unique id of the message
+     * @param messageMetaData message meta data
+     */
+    void onWorkerFinished(String messageId, Map<String, Object> messageMetaData);
 
     /**
      * Instruct the handler to reset; that means all tasks that are waiting to be finished will never be marked as finished and therefor should
      * be cleaned up.
      */
-    void reset();
+    default void reset() {
+    }
   }
 
   /**

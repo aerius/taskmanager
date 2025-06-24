@@ -67,7 +67,7 @@ public final class WorkerPoolMetrics {
   }
 
   public static void setupMetrics(final WorkerPool workerPool, final String workerQueueName) {
-    final Attributes attributes = OpenTelemetryMetrics.workerDefaultAttributes(workerQueueName);
+    final Attributes attributes = OpenTelemetryMetrics.workerAttributes(workerQueueName);
     for (final WorkerPoolMetricType metricType : WorkerPoolMetricType.values()) {
       REGISTERED_METRICS.put(gaugeIdentifier(workerQueueName, metricType),
           OpenTelemetryMetrics.METER.gaugeBuilder(metricType.getGaugeName())
