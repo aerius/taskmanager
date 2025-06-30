@@ -170,9 +170,9 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     final DurationMetricValue metric = metrics.process();
     final int count = metric.count();
 
+    histogram.record(count, metrics.getAttributes());
+    waitHistorgram.record(metric.avgDuration(), metrics.getAttributes());
     if (count > 0) {
-      histogram.record(count, metrics.getAttributes());
-      waitHistorgram.record(metric.avgDuration(), metrics.getAttributes());
       LOG.debug("{} for {}: {} ms/task (#tasks: {})", prefixText, name, metric.avgDuration(), count);
     }
   }
