@@ -19,8 +19,11 @@ package nl.aerius.taskmanager.mq;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -44,14 +47,26 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
    * Delay first read from the RabittMQ admin to give the taskmanager some time to start up and register all observers.
    */
   private static final int INITIAL_DELAY_SECONDS = 10;
+  /**
+   * The minimum time before the RabbitMQ management api is fetch again to get an update on the queue state.
+   */
+  private static final long DELAY_BEFORE_UPDATE_TIME_SECONDS = 15;
 
   private final ScheduledExecutorService executorService;
   private final BrokerConnectionFactory factory;
   private final RabbitMQChannelQueueEventsWatcher channelQueueEventsWatcher;
   private final RabbitMQWorkerEventProducer eventProducer;
-  private final long refreshDelaySeconds;
+  /**
+   * The time in seconds between each scheduled update.
+   */
+  private final long refreshRateSeconds;
+  /**
+   * The time delay in seconds of the update call is made.
+   */
+  private final long refreshDelayBeforeUpdateSeconds;
 
-  private final Map<String, WorkerSizeObserver> observers = new HashMap<>();
+  private final Map<String, ScheduledFuture<?>> lastRuns = new HashMap<>();
+  private final Map<String, WorkerSizeObserverComposite> observers = new HashMap<>();
   private final Map<String, RabbitMQQueueMonitor> monitors = new HashMap<>();
 
   private boolean running;
@@ -60,22 +75,34 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     this.executorService = executorService;
     this.factory = factory;
     channelQueueEventsWatcher = new RabbitMQChannelQueueEventsWatcher(factory, this);
-    refreshDelaySeconds = factory.getConnectionConfiguration().getBrokerManagementRefreshRate();
+    refreshRateSeconds = factory.getConnectionConfiguration().getBrokerManagementRefreshRate();
     eventProducer = new RabbitMQWorkerEventProducer(executorService, factory);
+    refreshDelayBeforeUpdateSeconds = Math.min(refreshRateSeconds / 2, DELAY_BEFORE_UPDATE_TIME_SECONDS);
   }
 
   @Override
   public void addObserver(final String workerQueueName, final WorkerSizeObserver observer) {
-    observers.put(workerQueueName, observer);
+    observers.computeIfAbsent(workerQueueName, k -> new WorkerSizeObserverComposite()).add(observer);
     if (observer instanceof WorkerMetrics) {
       eventProducer.addMetrics(workerQueueName, (WorkerMetrics) observer);
     }
-    if (refreshDelaySeconds > 0) {
+    if (refreshRateSeconds > 0) {
       final RabbitMQQueueMonitor monitor = new RabbitMQQueueMonitor(factory.getConnectionConfiguration());
-      monitors.put(workerQueueName, monitor);
+
+      putMonitor(workerQueueName, monitor);
     } else {
-      LOG.info("Not monitoring RabbitMQ admin api because refresh delay was {} seconds", refreshDelaySeconds);
+      LOG.info("Not monitoring RabbitMQ admin api because refresh delay was {} seconds", refreshRateSeconds);
     }
+  }
+
+  /**
+   * Store the monitor. Should only be called outside of this class from unit tests to add a mock monitor.
+   *
+   * @param workerQueueName
+   * @param monitor
+   */
+  void putMonitor(final String workerQueueName, final RabbitMQQueueMonitor monitor) {
+    monitors.put(workerQueueName, monitor);
   }
 
   @Override
@@ -93,9 +120,9 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   public void start() throws IOException {
     channelQueueEventsWatcher.start();
     eventProducer.start();
-    if (refreshDelaySeconds > 0) {
+    if (refreshRateSeconds > 0) {
       running = true;
-      executorService.scheduleWithFixedDelay(this::updateWorkerQueueState, INITIAL_DELAY_SECONDS, refreshDelaySeconds, TimeUnit.SECONDS);
+      executorService.scheduleWithFixedDelay(this::updateWorkerQueueState, INITIAL_DELAY_SECONDS, refreshRateSeconds, TimeUnit.SECONDS);
     }
   }
 
@@ -108,17 +135,52 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     channelQueueEventsWatcher.shutdown();
   }
 
-  @Override
-  public WorkerSizeObserver getWorkerSizeObserver(final String workerQueueName) {
-    return observers.get(workerQueueName);
-  }
-
   private void updateWorkerQueueState() {
     if (running) {
       try {
-        monitors.forEach((k, v) -> v.updateWorkerQueueState(k, getWorkerSizeObserver(k)));
+        monitors.forEach((k, v) -> triggerWorkerQueueState(k));
       } catch (final RuntimeException e) {
         LOG.error("Runtime error during updateWorkerQueueState", e);
+      }
+    }
+  }
+
+  @Override
+  public void triggerWorkerQueueState(final String queueName) {
+    // This uses a delayed update. It schedules a task to run in x-seconds.
+    // If a new update is received before the schedule has run it will cancel the current schedule and reschedule.
+    // This is mainly for when multiple events are triggered to not trigger a call for every event,
+    // and also to manage the events trigger in combination with the scheduled process.
+    synchronized (queueName) {
+      Optional.ofNullable(lastRuns.get(queueName)).ifPresent(f -> f.cancel(false));
+      final Runnable updateTask = () -> updateWorkerQueueState(queueName);
+
+      lastRuns.put(queueName, executorService.schedule(updateTask, refreshDelayBeforeUpdateSeconds, TimeUnit.SECONDS));
+    }
+  }
+
+  private void updateWorkerQueueState(final String queueName) {
+    synchronized (queueName) {
+      monitors.get(queueName).updateWorkerQueueState(queueName, observers.get(queueName));
+      lastRuns.remove(queueName);
+    }
+  }
+
+  private static class WorkerSizeObserverComposite implements WorkerSizeObserver {
+    private final List<WorkerSizeObserver> list = new ArrayList<>();
+
+    public void add(final WorkerSizeObserver observer) {
+      list.add(observer);
+    }
+
+    @Override
+    public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
+      for (final WorkerSizeObserver observer : list) {
+        try {
+          observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
+        } catch (final RuntimeException e) {
+          LOG.error("RuntimeException during onNumberOfWorkersUpdate in {}", observer.getClass(), e);
+        }
       }
     }
   }

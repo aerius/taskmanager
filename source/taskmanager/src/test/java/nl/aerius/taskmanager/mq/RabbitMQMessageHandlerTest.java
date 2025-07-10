@@ -59,7 +59,7 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
   private @Captor ArgumentCaptor<ShutdownListener> shutdownListenerCaptor;
 
   @Test
-  @Timeout(10000)
+  @Timeout(value = 10, unit = TimeUnit.SECONDS)
   void testMessageReceivedHandler() throws IOException, InterruptedException {
     final byte[] receivedBody = "4321".getBytes();
     final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(new QueueConfig(taskQueueName, false, false, null));

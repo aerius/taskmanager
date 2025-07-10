@@ -27,6 +27,8 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nl.aerius.taskmanager.QueueWatchDog;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskRecord;
@@ -39,14 +41,15 @@ import nl.aerius.taskmanager.scheduler.TaskScheduler;
  * like with other priorities.
  *
  */
-class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Comparator<Task> {
+class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Comparator<Task>, WorkerSizeObserver {
 
   private static final Logger LOG = LoggerFactory.getLogger(PriorityTaskScheduler.class);
   private static final int NEXT_TASK_MAX_WAIT_TIME_SECONDS = 120;
 
+  private final QueueWatchDog watchDog = new QueueWatchDog();
   private final PriorityTaskSchedulerMetrics metrics = new PriorityTaskSchedulerMetrics();
   private final Queue<Task> queue;
-  private final PriorityQueueMap priorityQueueMap;
+  private final PriorityQueueMap<?> priorityQueueMap;
   private final Lock lock = new ReentrantLock();
   private final Condition nextTaskCondition = lock.newCondition();
   private final String workerQueueName;
@@ -55,9 +58,8 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   /**
    * Constructs scheduler for given configuration.
-   *
    */
-  PriorityTaskScheduler(final PriorityQueueMap priorityQueueKeyMap, final Function<Comparator<Task>, Queue<Task>> queueCreator,
+  PriorityTaskScheduler(final PriorityQueueMap<?> priorityQueueKeyMap, final Function<Comparator<Task>, Queue<Task>> queueCreator,
       final String workerQueueName) {
     this.priorityQueueMap = priorityQueueKeyMap;
     this.workerQueueName = workerQueueName;
@@ -116,14 +118,14 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
     return task;
   }
 
-  private Task obtainTask() {
+  private void obtainTask() {
     tasksOnWorkers++;
     final Task task = queue.poll();
+
     priorityQueueMap.incrementOnWorker(task.getTaskRecord());
     if (task.getContext() != null) {
       task.getContext().makeCurrent();
     }
-    return task;
   }
 
   /**
@@ -284,6 +286,33 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
    * Signal that the next task process can check again..
    */
   private void signalNextTask() {
-    nextTaskCondition.signalAll();
+    try {
+      nextTaskCondition.signalAll();
+    } catch (final IllegalMonitorStateException e) {
+      LOG.error("Caller of signalNextTask did not wrapped call with lock field.", e);
+    }
+  }
+
+  @Override
+  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
+    if (watchDog.isItDead(tasksOnWorkers > 0, numberOfMessages)) {
+      LOG.info("It looks like some tasks are zombies on {} worker queue in priority scheduler, so all tasks currently in state running are released.", workerQueueName);
+      reset();
+    }
+  }
+
+  /**
+   * Resets the internal state. Called in case a difference was detected that internally it still has messages as being on the queue,
+   * while the queue is empty.
+   */
+  void reset() {
+    lock.lock();
+    try {
+      tasksOnWorkers = 0;
+      priorityQueueMap.reset();
+      signalNextTask();
+    } finally {
+      lock.unlock();
+    }
   }
 }

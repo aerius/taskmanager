@@ -30,7 +30,6 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.ShutdownSignalException;
 
-import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 
@@ -42,7 +41,6 @@ class RabbitMQChannelQueueEventsWatcher {
   private static final String AMQ_RABBITMQ_EVENT = "amq.rabbitmq.event";
   private static final String CHANNEL_PATTERN = "consumer.*";
   private static final String HEADER_PARAM_QUEUE = "queue";
-  private static final String CONSUMER_CREATED = "consumer.created";
 
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQChannelQueueEventsWatcher.class);
 
@@ -104,20 +102,9 @@ class RabbitMQChannelQueueEventsWatcher {
         final Map<String, Object> headers = properties.getHeaders();
         final Object queue = headers.get(HEADER_PARAM_QUEUE);
         final String queueName = queue == null ? null : queue.toString();
-        final WorkerSizeObserver observer = proxy.getWorkerSizeObserver(queueName);
 
-        if (observer == null) {
-          LOG.trace("No handler to watch channel changes for queue: {}", queueName);
-          return;
-        }
-        final String event = envelope.getRoutingKey();
-
-        LOG.trace("Event: {} - queue: {}", event, queueName);
-        if (CONSUMER_CREATED.equals(event)) {
-          observer.onDeltaNumberOfWorkersUpdate(1);
-        } else { // consumer.deleted is the only other possibility
-          observer.onDeltaNumberOfWorkersUpdate(-1);
-        }
+        LOG.trace("Event: {} - queue: {}", envelope.getRoutingKey(), queueName);
+        proxy.triggerWorkerQueueState(queueName);
       }
     };
   }

@@ -77,6 +77,10 @@ class PriorityQueueMap<K extends PriorityQueueMapKeyMapper> {
         .sum();
   }
 
+  public void reset() {
+    tasksOnWorkersPerQueue.forEach((k, v) -> v.set(0));
+  }
+
   public int onWorker(final TaskRecord taskRecord) {
     return Optional.ofNullable(tasksOnWorkersPerQueue.get(key(taskRecord))).map(AtomicInteger::intValue).orElse(0);
   }

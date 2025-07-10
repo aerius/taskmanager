@@ -110,7 +110,7 @@ public class RabbitMQWorkerEventProducer {
   private void updateMetrics() {
     try {
       metrics.forEach((q, wpm) -> {
-        final int size = wpm.getCurrentWorkerSize();
+        final int size = wpm.getReportedWorkerSize();
         final int utilisation = wpm.getRunningWorkerSize();
 
         try {

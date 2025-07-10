@@ -89,8 +89,8 @@ public interface WorkerProducer {
     int getRunningWorkerSize();
 
     /**
-     * @return Returns the number total number of workers .
+     * @return Returns the number total number of workers based on what the queue reports as being active.
      */
-    int getCurrentWorkerSize();
+    int getReportedWorkerSize();
   }
 }

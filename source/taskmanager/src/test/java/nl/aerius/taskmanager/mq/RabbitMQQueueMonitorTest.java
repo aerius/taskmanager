@@ -44,17 +44,7 @@ class RabbitMQQueueMonitorTest {
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost(DUMMY).brokerPort(0).brokerUsername(DUMMY).brokerPassword(DUMMY).build();
     final AtomicInteger workerSize = new AtomicInteger();
-    final WorkerSizeObserver mwps = new WorkerSizeObserver() {
-      @Override
-      public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
-        workerSize.set(numberOfWorkers);
-      }
-
-      @Override
-      public void onDeltaNumberOfWorkersUpdate(final int deltaNumberOfWorkers) {
-        // not tested here.
-      }
-    };
+    final WorkerSizeObserver mwps = (numberOfWorkers, numberOfMessages) -> workerSize.set(numberOfWorkers);
     final RabbitMQQueueMonitor rpm = new RabbitMQQueueMonitor(configuration) {
       @Override
       protected JsonNode getJsonResultFromApi(final String apiPath) throws IOException {

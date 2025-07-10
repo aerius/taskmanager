@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
  * the queue was purged after some restart. In such a case the scheduler keeps the tasks locked and since there will never come an message
  * for the task it's locked indefinitely. This watch dog tries to detect such tasks and release them at some point.
  */
-class QueueWatchDog {
+public class QueueWatchDog {
 
   /**
    * If for more than 10 minutes the problem remains the sign to reset is given.

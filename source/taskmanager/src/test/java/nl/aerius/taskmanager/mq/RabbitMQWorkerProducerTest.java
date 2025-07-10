@@ -44,7 +44,7 @@ class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
   private @Mock WorkerSizeObserver queueSizeObserver;
 
   @Test
-  @Timeout(5000)
+  @Timeout(value = 5, unit = TimeUnit.SECONDS)
   void testForwardMessage() throws IOException, InterruptedException {
     final byte[] sendBody = "4321".getBytes();
 

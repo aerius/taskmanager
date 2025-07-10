@@ -19,8 +19,6 @@ package nl.aerius.taskmanager;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -54,10 +52,6 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   private final WorkerProducer wp;
   private final WorkerUpdateHandler workerUpdateHandler;
 
-  private final Timer deltaTimer = new Timer();
-  private TimerTask deltaTimerTask;
-  private int deltaCounter;
-
   public WorkerPool(final String workerQueueName, final WorkerProducer wp, final WorkerUpdateHandler workerUpdateHandler) {
     this.workerQueueName = workerQueueName;
     this.wp = wp;
@@ -89,15 +83,13 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
 
   public int getWorkerSize() {
     synchronized (this) {
-      return totalConfiguredWorkers;
+      return freeWorkers.availablePermits() + runningWorkers.size();
     }
   }
 
   @Override
-  public int getCurrentWorkerSize() {
-    synchronized (this) {
-      return freeWorkers.availablePermits() + runningWorkers.size();
-    }
+  public int getReportedWorkerSize() {
+    return totalConfiguredWorkers;
   }
 
   @Override
@@ -143,7 +135,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
         if (runningWorkers.containsKey(taskId)) {
           // if currentSize is smaller than the worker size it means the worker
           // must not be re-added as free worker but removed from the pool.
-          if (totalConfiguredWorkers >= getCurrentWorkerSize()) {
+          if (totalConfiguredWorkers >= runningWorkers.size()) {
             freeWorkers.release(1);
           }
           runningWorkers.remove(taskId);
@@ -172,24 +164,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
     }
   }
 
-  @Override
-  public void onDeltaNumberOfWorkersUpdate(final int delta) {
-    synchronized (this) {
-      deltaCounter += delta;
-      if (deltaTimerTask != null) {
-        deltaTimerTask.cancel();
-      }
-      deltaTimerTask = new TimerTask() {
-        @Override
-        public void run() {
-          synchronized (WorkerPool.this) {
-            updateNumberOfWorkers(totalConfiguredWorkers + deltaCounter);
-          }
-        }
-      };
-      deltaTimer.schedule(deltaTimerTask, 50L);
-    }
-  }
+
 
   /**
    * Sets the number of workers which are actually available. This number should
@@ -212,22 +187,18 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   }
 
   private void updateNumberOfWorkers(final int numberOfWorkers) {
-    if (deltaTimerTask != null) {
-      deltaTimerTask.cancel();
-      deltaTimerTask = null;
-    }
-    deltaCounter = 0;
+    final int previousTotalConfiguredWorkers = totalConfiguredWorkers;
     totalConfiguredWorkers = numberOfWorkers;
-    final int deltaWorkers = totalConfiguredWorkers - getCurrentWorkerSize();
+    final int deltaWorkers = totalConfiguredWorkers - getWorkerSize();
 
     if (deltaWorkers > 0) {
       freeWorkers.release(deltaWorkers);
       LOG.info("# Workers of {} increased to {}(+{})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
     } else if ((deltaWorkers < 0) && (freeWorkers.availablePermits() > 0)) {
-      freeWorkers.acquireUninterruptibly(Math.min(freeWorkers.availablePermits(), -deltaWorkers));
+      freeWorkers.tryAcquire(Math.min(freeWorkers.availablePermits(), -deltaWorkers));
       LOG.info("# Workers of {} decreased to {}({})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
     }
-    if (deltaWorkers != 0) {
+    if (previousTotalConfiguredWorkers != totalConfiguredWorkers) {
       workerUpdateHandler.onWorkerPoolSizeChange(totalConfiguredWorkers);
     }
   }

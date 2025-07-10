@@ -40,12 +40,11 @@ public interface WorkerSizeProviderProxy {
   boolean removeObserver(String workerQueueName);
 
   /**
-   * Returns the {@link WorkerSizeObserver} for the given worker queue name.
+   * Triggers to get the worker queue state.
    *
-   * @param workerQueueName name of the worker queue
-   * @return observer for the worker queue
+   * @param queueName name of the worker queue
    */
-  WorkerSizeObserver getWorkerSizeObserver(String workerQueueName);
+  void triggerWorkerQueueState(final String queueName);
 
   /**
    * Starts the worker size provider.

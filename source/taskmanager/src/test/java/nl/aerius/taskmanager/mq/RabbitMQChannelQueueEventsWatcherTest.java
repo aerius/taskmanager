@@ -17,19 +17,18 @@
 package nl.aerius.taskmanager.mq;
 
 import static nl.aerius.taskmanager.client.mq.RabbitMQWorkerMonitor.HEADER_PARAM_QUEUE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,7 +43,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
 
-import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
 
@@ -89,25 +87,13 @@ class RabbitMQChannelQueueEventsWatcherTest {
 
   @Test
   void testReceiving() throws IOException {
-    final AtomicInteger deltaAI = new AtomicInteger();
-    final WorkerSizeObserver observer = new WorkerSizeObserver() {
-
-      @Override
-      public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
-        fail("Should not call onNumberOfWorkersUpdate in this class");
-      }
-
-      @Override
-      public void onDeltaNumberOfWorkersUpdate(final int deltaNumberOfWorkers) {
-        deltaAI.set(deltaNumberOfWorkers);
-      }
-    };
-    doReturn(observer).when(proxy).getWorkerSizeObserver(TEST_QUEUENAME);
-    assertDeltaCheck("consumer.created", deltaAI, 1);
-    assertDeltaCheck("consumer.removed", deltaAI, -1);
+    assertDeltaCheck("consumer.created");
+    verify(proxy).triggerWorkerQueueState(TEST_QUEUENAME);
+    assertDeltaCheck("consumer.removed");
+    verify(proxy, times(2)).triggerWorkerQueueState(TEST_QUEUENAME);
   }
 
-  private void assertDeltaCheck(final String event, final AtomicInteger deltaAI, final int expected) throws IOException {
+  private void assertDeltaCheck(final String event) throws IOException {
     doAnswer(i -> {
       final Envelope envelope = Mockito.mock(Envelope.class);
       doReturn(event).when(envelope).getRoutingKey();
@@ -118,6 +104,5 @@ class RabbitMQChannelQueueEventsWatcherTest {
       return null;
     }).when(mockChannel).basicConsume(any(), eq(true), any());
     watcher.start();
-    assertEquals(expected, deltaAI.get(), "Expected increment by 1");
   }
 }
