@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.IntSupplier;
 
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.ObservableDoubleGauge;
 
 import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
@@ -47,7 +45,8 @@ class PriorityTaskSchedulerMetrics {
     metrics.put(clientQueueName, OpenTelemetryMetrics.METER
         .gaugeBuilder(METRIC_PREFIX)
         .setDescription(DESCRIPTION)
-        .buildWithCallback(result -> result.record(countSupplier.getAsInt(), workerDefaultAttributes(workerQueueName, clientQueueName))));
+        .buildWithCallback(
+            result -> result.record(countSupplier.getAsInt(), OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName))));
   }
 
   /**
@@ -59,12 +58,5 @@ class PriorityTaskSchedulerMetrics {
     if (metrics.containsKey(clienQueueName)) {
       metrics.remove(clienQueueName).close();
     }
-  }
-
-  private static Attributes workerDefaultAttributes(final String workerQueueName, final String clientQueueName) {
-    return Attributes.builder()
-        .put(AttributeKey.stringKey("worker_type"), workerQueueName)
-        .put(AttributeKey.stringKey("client_queue_name"), clientQueueName)
-        .build();
   }
 }

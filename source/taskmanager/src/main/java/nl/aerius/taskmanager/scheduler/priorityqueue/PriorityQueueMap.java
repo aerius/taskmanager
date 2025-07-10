@@ -71,7 +71,10 @@ class PriorityQueueMap<K extends PriorityQueueMapKeyMapper> {
   }
 
   public int onWorkerTotal(final String queueName) {
-    return tasksOnWorkersPerQueue.entrySet().stream().filter(e -> keyMapper.queueName(e.getKey()).equals(queueName)).mapToInt(e -> e.getValue().get()).sum();
+    return tasksOnWorkersPerQueue.entrySet().stream()
+        .filter(e -> keyMapper.queueName(e.getKey()).equals(queueName))
+        .mapToInt(e -> e.getValue().get())
+        .sum();
   }
 
   public int onWorker(final TaskRecord taskRecord) {
