@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleGauge;
-import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.Meter;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerFinishedHandler;
@@ -57,15 +56,15 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
   private static final String DISPATCH = "Avg dispatch wait time ";
   private static final String WORK = "Avg work duration ";
 
-  private final DoubleHistogram dispatchedWorkerCountHistorgram;
-  private final DoubleHistogram dispatchedWorkerWaitHistorgram;
-  private final DoubleHistogram dispatchedQueueCountHistorgram;
-  private final DoubleHistogram dispatchedQueueWaitHistogram;
+  private final DoubleGauge dispatchedWorkerCountGauge;
+  private final DoubleGauge dispatchedWorkerWaitGauge;
+  private final DoubleGauge dispatchedQueueCountGauge;
+  private final DoubleGauge dispatchedQueueWaitGauge;
 
-  private final DoubleHistogram workWorkerCountHistogram;
-  private final DoubleHistogram workWorkerDurationHistogram;
-  private final DoubleHistogram workQueueCountHistogram;
-  private final DoubleHistogram workQueueDurationHistogram;
+  private final DoubleGauge workWorkerCountGauge;
+  private final DoubleGauge workWorkerDurationGauge;
+  private final DoubleGauge workQueueCountGauge;
+  private final DoubleGauge workQueueDurationGauge;
 
   private static final int UPDATE_TIME_SECONDS = 60;
 
@@ -88,24 +87,24 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     this.meter = meter;
     this.workerMetrics = workerMetrics;
 
-    // Histograms for measuring number of tasks, and average duration time it took before a task was send to to the worker.
+    // Gauges for measuring number of tasks, and average duration time it took before a task was send to to the worker.
     // Measures by worker and per queue to the worker
-    dispatchedWorkerCountHistorgram = createHistorgram("aer.taskmanager.dispatched", "Count the number of tasks that are dispatched to a worker.");
-    dispatchedWorkerWaitHistorgram = createHistorgram("aer.taskmanager.dispatched.wait",
+    dispatchedWorkerCountGauge = createGauge("aer.taskmanager.dispatched", "Count the number of tasks that are dispatched to a worker.");
+    dispatchedWorkerWaitGauge = createGauge("aer.taskmanager.dispatched.wait",
         "Average wait time before a task is dispatched to a worker.");
-    dispatchedQueueCountHistorgram = createHistorgram("aer.taskmanager.dispatched.queue",
+    dispatchedQueueCountGauge = createGauge("aer.taskmanager.dispatched.queue",
         "Count the number of tasks from a queue that are dispatched to a worker.");
-    dispatchedQueueWaitHistogram = createHistorgram("aer.taskmanager.dispatched.queue.wait",
+    dispatchedQueueWaitGauge = createGauge("aer.taskmanager.dispatched.queue.wait",
         "Average wait time before a task from a queue is dispatched to a worker.");
 
-    // Histograms for measuring number of tasks, and average duration time a task run took on a worker.
+    // Gauges for measuring number of tasks, and average duration time a task run took on a worker.
     // Measures by worker and per queue to the worker
-    workWorkerCountHistogram = createHistorgram("aer.taskmanager.work", "Count the number task processed on a worker.");
-    workWorkerDurationHistogram = createHistorgram("aer.taskmanager.work.duration",
+    workWorkerCountGauge = createGauge("aer.taskmanager.work", "Count the number task processed on a worker.");
+    workWorkerDurationGauge = createGauge("aer.taskmanager.work.duration",
         "Average duration time a task took to process on a worker, including wait time.");
-    workQueueCountHistogram = createHistorgram("aer.taskmanager.work.queue",
+    workQueueCountGauge = createGauge("aer.taskmanager.work.queue",
         "Count the number task from a queue processed on a worker.");
-    workQueueDurationHistogram = createHistorgram("aer.taskmanager.work.queue.duration",
+    workQueueDurationGauge = createGauge("aer.taskmanager.work.queue.duration",
         "Average duration time a task from a queue took to process on a worker, including wait time.");
 
     // Average load time (in percentage) of the work load on all workers together.
@@ -117,9 +116,9 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     newScheduledThreadPool.scheduleWithFixedDelay(this::update, 1, UPDATE_TIME_SECONDS, TimeUnit.SECONDS);
   }
 
-  private DoubleHistogram createHistorgram(final String name, final String description) {
+  private DoubleGauge createGauge(final String name, final String description) {
     return meter
-        .histogramBuilder(name)
+        .gaugeBuilder(name)
         .setDescription(description)
         .build();
   }
@@ -148,30 +147,30 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
 
   private synchronized void update() {
     try {
-      metrics(DISPATCH, dispatchedQueueMetrics, dispatchedWorkerCountHistorgram, dispatchedWorkerWaitHistorgram);
-      metrics(DISPATCH, dispatchedQueueCountHistorgram, dispatchedQueueWaitHistogram, queueGroupName, dispatchedWorkerMetrics);
-      metrics(WORK, workQueueMetrics, workWorkerCountHistogram, workWorkerDurationHistogram);
-      metrics(WORK, workQueueCountHistogram, workQueueDurationHistogram, queueGroupName, workWorkerMetrics);
+      metrics(DISPATCH, dispatchedQueueMetrics, dispatchedWorkerCountGauge, dispatchedWorkerWaitGauge);
+      metrics(DISPATCH, dispatchedQueueCountGauge, dispatchedQueueWaitGauge, queueGroupName, dispatchedWorkerMetrics);
+      metrics(WORK, workQueueMetrics, workWorkerCountGauge, workWorkerDurationGauge);
+      metrics(WORK, workQueueCountGauge, workQueueDurationGauge, queueGroupName, workWorkerMetrics);
       workLoad();
     } catch (final RuntimeException e) {
       LOG.error("Update metrics failed.", e);
     }
   }
 
-  private void metrics(final String prefixText, final Map<String, DurationMetric> metrics, final DoubleHistogram histogram,
-      final DoubleHistogram waitHistorgram) {
+  private void metrics(final String prefixText, final Map<String, DurationMetric> metrics, final DoubleGauge gauge,
+      final DoubleGauge waitGauge) {
     for (final Entry<String, DurationMetric> entry : metrics.entrySet()) {
-      metrics(prefixText, histogram, waitHistorgram, entry.getKey(), entry.getValue());
+      metrics(prefixText, gauge, waitGauge, entry.getKey(), entry.getValue());
     }
   }
 
-  private void metrics(final String prefixText, final DoubleHistogram histogram, final DoubleHistogram waitHistorgram, final String name,
+  private void metrics(final String prefixText, final DoubleGauge gauge, final DoubleGauge waitGauge, final String name,
       final DurationMetric metrics) {
     final DurationMetricValue metric = metrics.process();
     final int count = metric.count();
 
-    histogram.record(count, metrics.getAttributes());
-    waitHistorgram.record(metric.avgDuration(), metrics.getAttributes());
+    gauge.set(count, metrics.getAttributes());
+    waitGauge.set(metric.avgDuration(), metrics.getAttributes());
     if (count > 0) {
       LOG.debug("{} for {}: {} ms/task (#tasks: {})", prefixText, name, metric.avgDuration(), count);
     }
