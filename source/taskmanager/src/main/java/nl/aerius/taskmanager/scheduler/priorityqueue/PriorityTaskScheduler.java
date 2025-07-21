@@ -289,7 +289,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
     try {
       nextTaskCondition.signalAll();
     } catch (final IllegalMonitorStateException e) {
-      LOG.error("Caller of signalNextTask did not wrapped call with lock field.", e);
+      LOG.error("Caller of signalNextTask did not wrap call with lock field.", e);
     }
   }
 

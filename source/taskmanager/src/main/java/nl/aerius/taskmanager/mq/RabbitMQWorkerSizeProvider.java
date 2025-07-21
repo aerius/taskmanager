@@ -48,7 +48,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
    */
   private static final int INITIAL_DELAY_SECONDS = 10;
   /**
-   * The minimum time before the RabbitMQ management api is fetch again to get an update on the queue state.
+   * The minimum time before the RabbitMQ management api is fetched again to get an update on the queue state.
    */
   private static final long DELAY_BEFORE_UPDATE_TIME_SECONDS = 15;
 
@@ -61,7 +61,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
    */
   private final long refreshRateSeconds;
   /**
-   * The time delay in seconds of the update call is made.
+   * The time delay in seconds before the update call is made.
    */
   private final long refreshDelayBeforeUpdateSeconds;
 
@@ -82,16 +82,18 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
 
   @Override
   public void addObserver(final String workerQueueName, final WorkerSizeObserver observer) {
+    if (!observers.containsKey(workerQueueName)) {
+      if (refreshRateSeconds > 0) {
+        final RabbitMQQueueMonitor monitor = new RabbitMQQueueMonitor(factory.getConnectionConfiguration());
+
+        putMonitor(workerQueueName, monitor);
+      } else {
+        LOG.info("Not monitoring RabbitMQ admin api because refresh delay was {} seconds", refreshRateSeconds);
+      }
+    }
     observers.computeIfAbsent(workerQueueName, k -> new WorkerSizeObserverComposite()).add(observer);
     if (observer instanceof WorkerMetrics) {
       eventProducer.addMetrics(workerQueueName, (WorkerMetrics) observer);
-    }
-    if (refreshRateSeconds > 0) {
-      final RabbitMQQueueMonitor monitor = new RabbitMQQueueMonitor(factory.getConnectionConfiguration());
-
-      putMonitor(workerQueueName, monitor);
-    } else {
-      LOG.info("Not monitoring RabbitMQ admin api because refresh delay was {} seconds", refreshRateSeconds);
     }
   }
 
