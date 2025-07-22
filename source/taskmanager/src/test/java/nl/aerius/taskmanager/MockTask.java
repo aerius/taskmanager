@@ -34,11 +34,12 @@ public class MockTask extends Task {
     this(taskConsumer, UUID.randomUUID().toString());
   }
 
-  public MockTask(final TaskConsumer taskConsumer, final String id) {
+  public MockTask(final TaskConsumer taskConsumer, final String messageId) {
     super(taskConsumer);
     final RabbitMQMessage message = mock(RabbitMQMessage.class);
 
-    doReturn(id).when(message).getMessageId();
+    doReturn(messageId).when(message).getMessageId();
+    doReturn(taskConsumer.getQueueName()).when(message).getCorrelationId();
     setData(message);
   }
 }

@@ -35,8 +35,8 @@ public final class WorkerPoolMetrics {
 
   private enum WorkerPoolMetricType {
     // @formatter:off
-    WORKER_SIZE(WorkerPool::getWorkerSize, "Configured number of workers according to taskmanager"),
-    CURRENT_WORKER_SIZE(WorkerPool::getCurrentWorkerSize, "Current number of workers according to taskmanager"),
+    WORKER_SIZE(WorkerPool::getWorkerSize, "Number of workers based on internal state of taskmanager"),
+    CURRENT_WORKER_SIZE(WorkerPool::getReportedWorkerSize, "Current number of workers according to taskmanager"),
     RUNNING_WORKER_SIZE(WorkerPool::getRunningWorkerSize, "Running (or occupied) number of workers according to taskmanager");
     // @formatter:on
 

@@ -78,17 +78,17 @@ class WorkerPoolTest {
 
   @Test
   void testWorkerPoolSizing() throws IOException {
-    assertSame(0, workerPool.getCurrentWorkerSize(), "Check if workerPool size is empty at start");
+    assertSame(0, workerPool.getReportedWorkerSize(), "Check if workerPool size is empty at start");
     workerPool.onNumberOfWorkersUpdate(10, 0);
-    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is changed after sizing");
+    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is changed after sizing");
     assertEquals(10, numberOfWorkers, "Check if workerPool change handler called.");
     workerPool.reserveWorker();
-    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
+    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
     final Task task = createTask();
     workerPool.sendTaskToWorker(task);
-    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
+    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
     workerPool.releaseWorker(task.getId());
-    assertSame(10, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after releasing 1 worker");
+    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after releasing 1 worker");
   }
 
   @Test
@@ -105,16 +105,16 @@ class WorkerPoolTest {
     workerPool.sendTaskToWorker(task2);
     final Task task3 = createTask();
     workerPool.sendTaskToWorker(task3);
-    assertSame(5, workerPool.getCurrentWorkerSize(), "Check if workerPool size is same after 2 workers running");
+    assertEquals(5, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after 2 workers running");
     workerPool.onNumberOfWorkersUpdate(1, 0);
-    assertSame(1, workerPool.getWorkerSize(), "Check if workerPool size is lower");
-    assertSame(3, workerPool.getCurrentWorkerSize(), "Check if current workerPool size is same after decreasing # workers");
+    assertEquals(3, workerPool.getWorkerSize(), "Workpool size should match number of running tasks, since new total is lower than currently running");
+    assertEquals(1, workerPool.getReportedWorkerSize(), "Check if current workerPool size is same after decreasing # workers");
     workerPool.releaseWorker(task1.getId());
-    assertSame(2, workerPool.getCurrentWorkerSize(), "Check if workerPool size is lower, but not yet same as total because still process running");
+    assertEquals(2, workerPool.getWorkerSize(), "Check if workerPool size is lower, but not yet same as total because still process running");
     workerPool.releaseWorker(task2.getId());
-    assertSame(1, workerPool.getCurrentWorkerSize(), "Check if workerPool size is lower");
+    assertEquals(1, workerPool.getWorkerSize(), "Check if workerPool size is lower");
     workerPool.releaseWorker(task3.getId());
-    assertSame(1, workerPool.getCurrentWorkerSize(), "Check if workerPool size should remain the same");
+    assertEquals(1, workerPool.getWorkerSize(), "Check if workerPool size should remain the same");
   }
 
   @Test
@@ -124,11 +124,11 @@ class WorkerPoolTest {
     workerPool.sendTaskToWorker(task1);
     final String id = task1.getId();
     workerPool.releaseWorker(id);
-    final int currentWorkerSize1 = workerPool.getCurrentWorkerSize();
+    final int currentWorkerSize1 = workerPool.getReportedWorkerSize();
     workerPool.releaseWorker(id);
-    final int currentWorkerSize2 = workerPool.getCurrentWorkerSize();
+    final int currentWorkerSize2 = workerPool.getReportedWorkerSize();
     assertEquals(currentWorkerSize1, currentWorkerSize2, "Check if task is not sent twice");
-    assertEquals(2, workerPool.getCurrentWorkerSize(), "Check if task worker size not decreased to much");
+    assertEquals(2, workerPool.getReportedWorkerSize(), "Check if task worker size not decreased to much");
   }
 
   @Disabled("Exception is not thrown anymore, so test ignored for now")

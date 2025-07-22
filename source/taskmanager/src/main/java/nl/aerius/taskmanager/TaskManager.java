@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.domain.QueueConfig;
 import nl.aerius.taskmanager.domain.TaskConsumer;
@@ -126,6 +127,9 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
           OpenTelemetryMetrics.METER, workerPool);
       workerProducer.addWorkerFinishedHandler(reporter);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
+      if (taskScheduler instanceof final WorkerSizeObserver wzo) {
+        workerSizeObserverProxy.addObserver(workerQueueName, wzo);
+      }
       workerProducer.start();
       // Set up metrics
       WorkerPoolMetrics.setupMetrics(workerPool, workerQueueName);

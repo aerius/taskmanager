@@ -87,7 +87,7 @@ class PerformanceMetricsReporterTest {
 
   @Test
   void testOnWorkDispatched() {
-    doReturn(10).when(workMetrics).getCurrentWorkerSize();
+    doReturn(10).when(workMetrics).getReportedWorkerSize();
     reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkDispatched("2", createMap(QUEUE_2, 200L));
     methodCaptor.getValue().run();
@@ -101,7 +101,7 @@ class PerformanceMetricsReporterTest {
 
   @Test
   void testOnWorkerFinished() {
-    doReturn(10).when(workMetrics).getCurrentWorkerSize();
+    doReturn(10).when(workMetrics).getReportedWorkerSize();
     reporter.onWorkerFinished("1", createMap(QUEUE_1, 100L));
     reporter.onWorkerFinished("2", createMap(QUEUE_2, 200L));
     methodCaptor.getValue().run();
@@ -115,7 +115,7 @@ class PerformanceMetricsReporterTest {
 
   @Test
   void testWorkLoad() throws InterruptedException {
-    doReturn(4).when(workMetrics).getCurrentWorkerSize();
+    doReturn(4).when(workMetrics).getReportedWorkerSize();
     reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkDispatched("2", createMap(QUEUE_2, 200L));
     methodCaptor.getValue().run();

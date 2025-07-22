@@ -73,7 +73,7 @@ class TaskDispatcherTest {
   }
 
   @Test
-  @Timeout(3000)
+  @Timeout(value = 3, unit = TimeUnit.SECONDS)
   void testNoFreeWorkers() {
     // Add Worker which will unlock
     workerPool.onNumberOfWorkersUpdate(1, 0);
@@ -85,13 +85,13 @@ class TaskDispatcherTest {
     forwardTaskAsync(createTask(), null);
     // Dispatcher should go back to wait for worker to become available.
     await().until(() -> dispatcher.getState() == State.WAIT_FOR_WORKER);
-    assertEquals(0, workerPool.getCurrentWorkerSize(), "WorkerPool should be empty");
+    assertEquals(0, workerPool.getReportedWorkerSize(), "WorkerPool should be empty");
     workerPool.onNumberOfWorkersUpdate(1, 0);
-    assertEquals(1, workerPool.getCurrentWorkerSize(), "WorkerPool should have 1 running");
+    assertEquals(1, workerPool.getReportedWorkerSize(), "WorkerPool should have 1 running");
   }
 
   @Test
-  @Timeout(3000)
+  @Timeout(value = 3, unit = TimeUnit.SECONDS)
   void testForwardTest() {
     final Task task = createTask();
     final Future<?> future = forwardTaskAsync(task, null);
@@ -104,7 +104,7 @@ class TaskDispatcherTest {
 
   @Disabled("TaskAlreadySendexception error willl not be thrown")
   @Test
-  @Timeout(3000)
+  @Timeout(value = 3, unit = TimeUnit.SECONDS)
   void testForwardDuplicateTask() {
     final Task task = createTask();
     executor.execute(dispatcher);
@@ -122,7 +122,7 @@ class TaskDispatcherTest {
   }
 
   @Test
-  @Timeout(3000)
+  @Timeout(value = 3, unit = TimeUnit.SECONDS)
   void testExceptionDuringForward() {
     workerProducer.setShutdownExceptionOnForward(true);
     final Task task = createTask();

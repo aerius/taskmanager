@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class ConfigurationManagerTest {
   }
 
   @Test
-  @Timeout(2000)
+  @Timeout(value = 2, unit = TimeUnit.SECONDS)
   void testLoadConfiguration() {
     final TaskManagerConfiguration tmc = ConfigurationManager.loadConfiguration(properties);
 

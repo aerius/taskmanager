@@ -182,9 +182,17 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     replyChannel.basicConsume(workerReplyQueue, true, workerReplyQueue, new DefaultConsumer(replyChannel) {
       @Override
       public void handleDelivery(final String consumerTag, final Envelope envelope, final BasicProperties properties, final byte[] body) {
-        workerFinishedHandlers.forEach(h -> h.onWorkerFinished(properties.getMessageId(), properties.getHeaders()));
+        workerFinishedHandlers.forEach(h -> handleWorkFinished(h, properties));
       }
     });
     return true;
+  }
+
+  private void handleWorkFinished(final WorkerFinishedHandler handler, final BasicProperties properties) {
+    try {
+      handler.onWorkerFinished(properties.getMessageId(), properties.getHeaders());
+    } catch (final RuntimeException e) {
+      LOG.error("Runtime exception during handleWorkFinished of {}", handler.getClass(), e);
+    }
   }
 }

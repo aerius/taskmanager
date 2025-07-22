@@ -82,7 +82,7 @@ class PriorityTaskSchedulerTest {
     configuration.getQueues().add(tc1);
     configuration.getQueues().add(tc2);
     configuration.getQueues().add(tc3);
-    scheduler = (PriorityTaskScheduler) factory.createScheduler(new QueueConfig(QUEUE1, false, false, null));
+    scheduler = (PriorityTaskScheduler) factory.createScheduler(new QueueConfig(QUEUE1, false, true, null));
     configuration.getQueues().forEach(scheduler::updateQueue);
     task1 = createTask(taskConsumer1, "1", QUEUE1);
     task2a = createTask(taskConsumer2, "2a", QUEUE2);
@@ -91,13 +91,13 @@ class PriorityTaskSchedulerTest {
   }
 
   @Test
-  @Timeout(5000)
+  @Timeout(value = 5, unit = TimeUnit.SECONDS)
   void testCompare() throws InterruptedException {
     assertTrue(compare(task1, task2a, 1), "Compare Ok");
   }
 
   @Test
-  @Timeout(5000)
+  @Timeout(value = 5, unit = TimeUnit.SECONDS)
   void testCompareReverse() throws InterruptedException {
     assertTrue(compare(task2a, task1, -1), "Compare reserve Ok");
   }
@@ -118,13 +118,13 @@ class PriorityTaskSchedulerTest {
   }
 
   @Test
-  @Timeout(5000)
+  @Timeout(value = 5, unit = TimeUnit.SECONDS)
   void testCompareSame() throws InterruptedException {
     assertTrue(compareSame(task2a, task3, -1), "Compare same Ok");
   }
 
   @Test
-  @Timeout(5000)
+  @Timeout(value = 5, unit = TimeUnit.SECONDS)
   void testCompareSameReverse() throws InterruptedException {
     assertTrue(compareSame(task3, task2a, 1), "Compare same reserve Ok");
   }
@@ -167,7 +167,7 @@ class PriorityTaskSchedulerTest {
    * it should not be run until that more than one or the task of that queue is finished.
    */
   @Test
-  @Timeout(7000)
+  @Timeout(value = 7, unit = TimeUnit.SECONDS)
   void testGetTask() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(2);
     final Task task1a = createTask(taskConsumer1, "1a", QUEUE1);
@@ -200,7 +200,7 @@ class PriorityTaskSchedulerTest {
    * In the meanwhile, other tasks can start/finish (as long as there is a capacity for those tasks).
    */
   @Test
-  @Timeout(7000)
+  @Timeout(value = 7, unit = TimeUnit.SECONDS)
   void testGetTaskBigPool() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(10);
     final List<Task> tasks = new ArrayList<>();
@@ -243,7 +243,7 @@ class PriorityTaskSchedulerTest {
    * @throws InterruptedException
    */
   @Test
-  @Timeout(1000)
+  @Timeout(value = 1, unit = TimeUnit.SECONDS)
   void testCompare2Workers() throws InterruptedException {
     scheduler.onWorkerPoolSizeChange(2);
     scheduler.addTask(task2a);
@@ -252,6 +252,17 @@ class PriorityTaskSchedulerTest {
     scheduler.addTask(task2b);
     scheduler.addTask(task3);
     assertSame(task3, scheduler.getNextTask(), "Scheduler should prefer task3");
+  }
+
+  @Test
+  @Timeout(value = 1, unit = TimeUnit.SECONDS)
+  void testReset() throws InterruptedException {
+    scheduler.onWorkerPoolSizeChange(2);
+    scheduler.addTask(task2a);
+    scheduler.getNextTask();
+    assertEquals(1, scheduler.compare(task2b, task3), "Scheduler should prefer task3");
+    scheduler.reset();
+    assertEquals(0, scheduler.compare(task2b, task3), "After reset Scheduler should not have a preference because all are on the same level");
   }
 
   private Future<Task> waitForTask(final Task task, final AtomicInteger chkCounter) {

@@ -45,6 +45,7 @@ class AbstractRabbitMQTest {
   protected BrokerConnectionFactory factory;
   protected Channel mockChannel;
   protected AdaptorFactory adapterFactory;
+  protected int brokerManagementRefreshRate;
 
   @BeforeAll
   static void setupClass() {
@@ -61,7 +62,7 @@ class AbstractRabbitMQTest {
   void setUp() throws Exception {
     final Connection mockConnection = Mockito.mock(Connection.class);
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
-        .brokerHost("localhost").brokerUsername("guest").brokerPassword("guest").build();
+        .brokerHost("localhost").brokerUsername("guest").brokerPassword("guest").brokerManagementRefreshRate(brokerManagementRefreshRate).build();
     mockChannel = MockedChannelFactory.create();
 
     lenient().doReturn(mockChannel).when(mockConnection).createChannel();

@@ -129,7 +129,7 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     taskMetrics.determineDuration();
     dispatchedQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     dispatchedWorkerMetrics.register(taskMetrics);
-    loadMetrics.register(1, workerMetrics.getCurrentWorkerSize());
+    loadMetrics.register(1, workerMetrics.getReportedWorkerSize());
   }
 
   @Override
@@ -138,7 +138,7 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     taskMetrics.determineDuration();
     workQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     workWorkerMetrics.register(taskMetrics);
-    loadMetrics.register(-1, workerMetrics.getCurrentWorkerSize());
+    loadMetrics.register(-1, workerMetrics.getReportedWorkerSize());
   }
 
   private DurationMetric createQueueDurationMetric(final TaskMetrics taskMetrics) {

@@ -17,12 +17,19 @@
 package nl.aerius.taskmanager.mq;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 
@@ -31,19 +38,41 @@ import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
  */
 public class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
 
+  private static final String TEST_QUEUE = "test";
+
   private RabbitMQWorkerSizeProvider provider;
 
   @Override
   @BeforeEach
   void setUp() throws Exception {
+    brokerManagementRefreshRate = 5;
     super.setUp();
     provider = new RabbitMQWorkerSizeProvider(executor, factory);
   }
 
   @Test
+  @Timeout(value = 10, unit = TimeUnit.SECONDS)
+  void testTriggerWorkerQueueState() throws IOException, InterruptedException {
+    final CountDownLatch latch = new CountDownLatch(1);
+    final RabbitMQQueueMonitor mockMonitor = mock(RabbitMQQueueMonitor.class);
+
+    doAnswer(inv -> {
+      latch.countDown();
+      return null;
+    }).when(mockMonitor).updateWorkerQueueState(eq(TEST_QUEUE), any());
+    provider.putMonitor(TEST_QUEUE, mockMonitor);
+    // Call twice, which should result in only 1 call to updateWorkerQueueState
+    provider.triggerWorkerQueueState(TEST_QUEUE);
+    provider.triggerWorkerQueueState(TEST_QUEUE);
+    latch.await();
+    verify(mockMonitor).updateWorkerQueueState(eq(TEST_QUEUE), any());
+  }
+
+  @Test
   void testStartShutdown() throws IOException {
-    final WorkerSizeObserver dummyObserver = Mockito.mock(WorkerSizeObserver.class);
-    provider.addObserver("test", dummyObserver);
+    final WorkerSizeObserver dummyObserver = mock(WorkerSizeObserver.class);
+
+    provider.addObserver(TEST_QUEUE, dummyObserver);
     provider.start();
     provider.shutdown();
     assertFalse(provider.removeObserver("test"), "Observer should already have been removed");
