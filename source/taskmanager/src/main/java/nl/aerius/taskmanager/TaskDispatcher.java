@@ -157,7 +157,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     }
   }
 
-  private void taskAbortedOnDuplicateMessageId(final Task task) {
+  private static void taskAbortedOnDuplicateMessageId(final Task task) {
     try {
       task.getTaskConsumer().messageDeliveryAborted(task.getMessage(),
           new RuntimeException("Duplicate messageId found for task" + task.getMessage().getMessageId()));

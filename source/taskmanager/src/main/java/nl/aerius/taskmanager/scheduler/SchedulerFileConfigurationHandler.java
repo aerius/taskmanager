@@ -24,8 +24,8 @@ import nl.aerius.taskmanager.domain.TaskSchedule;
 
 /**
  * Interface to read and write specific scheduler configuration files.
- * @param <T>
- * @param <S>
+ * @param <T> queue configuration
+ * @param <S> scheduler configuration
  */
 public interface SchedulerFileConfigurationHandler<T extends TaskQueue, S extends TaskSchedule<T>> {
 

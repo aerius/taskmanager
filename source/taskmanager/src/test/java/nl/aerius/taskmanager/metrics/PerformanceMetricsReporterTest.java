@@ -28,7 +28,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -96,7 +95,7 @@ class PerformanceMetricsReporterTest {
     verify(mockedGauges.get("aer.taskmanager.dispatched.queue")).set(eq(2.0), any());
     verify(mockedGauges.get("aer.taskmanager.dispatched.queue.wait")).set(durationCaptor.capture(), any());
     durationCaptor.getAllValues()
-    .forEach(v -> assertTrue(v > 99.0, "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
+        .forEach(v -> assertTrue(v > 99.0, "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
   }
 
   @Test
@@ -110,7 +109,7 @@ class PerformanceMetricsReporterTest {
     verify(mockedGauges.get("aer.taskmanager.work.queue")).set(eq(2.0), any());
     verify(mockedGauges.get("aer.taskmanager.work.queue.duration")).set(durationCaptor.capture(), any());
     durationCaptor.getAllValues()
-    .forEach(v -> assertTrue(v > 99.0, "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
+        .forEach(v -> assertTrue(v > 99.0, "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
   }
 
   @Test
@@ -121,11 +120,11 @@ class PerformanceMetricsReporterTest {
     methodCaptor.getValue().run();
     Thread.sleep(10); // Add a bit of delay to get some time frame between these 2 run calls.
     methodCaptor.getValue().run();
-    verify(mockedGauges.get("aer.taskmanager.work.load") , times(2)).set(durationCaptor.capture(), any());
-    assertEquals(50.0, durationCaptor.getAllValues().get(1));
+    verify(mockedGauges.get("aer.taskmanager.work.load"), times(2)).set(durationCaptor.capture(), any());
+    assertEquals(50.0, durationCaptor.getAllValues().get(1), "Expected workload of 50%");
   }
 
   private Map<String, Object> createMap(final String queueName, final long duration) {
-    return new TaskMetrics().duration(duration).queueName(queueName).start(new Date().getTime() - 100).build();
+    return new TaskMetrics().duration(duration).queueName(queueName).start(System.currentTimeMillis() - 100).build();
   }
 }

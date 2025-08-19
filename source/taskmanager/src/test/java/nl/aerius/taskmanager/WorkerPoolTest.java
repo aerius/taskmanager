@@ -58,7 +58,6 @@ class WorkerPoolTest {
   private @Mock WorkerUpdateHandler workerUpdateHandler;
   private int numberOfWorkers;
 
-
   @BeforeEach
   void setUp() throws IOException {
     numberOfWorkers = 0;
@@ -93,7 +92,8 @@ class WorkerPoolTest {
 
   @Test
   void testNoFreeWorkers() {
-    assertThrows(NoFreeWorkersException.class, () -> workerPool.sendTaskToWorker(createTask()));
+    assertThrows(NoFreeWorkersException.class, () -> workerPool.sendTaskToWorker(createTask()),
+        "Expected NoFreeWorkersException when trying to send a task while there are no free workers.");
   }
 
   @Test
@@ -107,7 +107,8 @@ class WorkerPoolTest {
     workerPool.sendTaskToWorker(task3);
     assertEquals(5, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after 2 workers running");
     workerPool.onNumberOfWorkersUpdate(1, 0);
-    assertEquals(3, workerPool.getWorkerSize(), "Workpool size should match number of running tasks, since new total is lower than currently running");
+    assertEquals(3, workerPool.getWorkerSize(),
+        "Workpool size should match number of running tasks, since new total is lower than currently running");
     assertEquals(1, workerPool.getReportedWorkerSize(), "Check if current workerPool size is same after decreasing # workers");
     workerPool.releaseWorker(task1.getId());
     assertEquals(2, workerPool.getWorkerSize(), "Check if workerPool size is lower, but not yet same as total because still process running");
@@ -133,13 +134,13 @@ class WorkerPoolTest {
 
   @Disabled("Exception is not thrown anymore, so test ignored for now")
   @Test
-  void testSendSameTaskTwice() {
-    assertThrows(TaskAlreadySentException.class, () -> {
-      workerPool.onNumberOfWorkersUpdate(3, 0);
-      final Task task1 = createTask();
-      workerPool.sendTaskToWorker(task1);
-      workerPool.sendTaskToWorker(task1);
-    });
+  void testSendSameTaskTwice() throws IOException {
+    workerPool.onNumberOfWorkersUpdate(3, 0);
+    final Task task1 = createTask();
+    workerPool.sendTaskToWorker(task1);
+
+    assertThrows(TaskAlreadySentException.class, () -> workerPool.sendTaskToWorker(task1),
+        "Expected TaskAlreadySentException when a message is send a second time.");
   }
 
   @Test

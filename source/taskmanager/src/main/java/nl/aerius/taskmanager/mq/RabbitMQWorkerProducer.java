@@ -188,7 +188,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     return true;
   }
 
-  private void handleWorkFinished(final WorkerFinishedHandler handler, final BasicProperties properties) {
+  private static void handleWorkFinished(final WorkerFinishedHandler handler, final BasicProperties properties) {
     try {
       handler.onWorkerFinished(properties.getMessageId(), properties.getHeaders());
     } catch (final RuntimeException e) {

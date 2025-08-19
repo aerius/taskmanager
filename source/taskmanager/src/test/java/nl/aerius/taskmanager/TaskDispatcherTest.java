@@ -34,6 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.TaskDispatcher.State;
 import nl.aerius.taskmanager.domain.QueueConfig;
@@ -44,6 +46,8 @@ import nl.aerius.taskmanager.domain.TaskConsumer;
  * Test for {@link TaskDispatcher} class.
  */
 class TaskDispatcherTest {
+
+  private static final Logger LOG = LoggerFactory.getLogger(TaskDispatcherTest.class);
 
   private static final String WORKER_QUEUE_NAME_TEST = "TEST";
   private static ExecutorService executor;
@@ -162,6 +166,7 @@ class TaskDispatcherTest {
         }
         dispatcher.forwardTask(task);
       } catch (InterruptedException | ExecutionException e) {
+        LOG.error("Exception in dispatcher forwardTask", e);
       }
     });
   }

@@ -65,6 +65,8 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
    */
   private final long refreshDelayBeforeUpdateSeconds;
 
+  private final Object sync = new Object();
+
   private final Map<String, ScheduledFuture<?>> lastRuns = new HashMap<>();
   private final Map<String, WorkerSizeObserverComposite> observers = new HashMap<>();
   private final Map<String, RabbitMQQueueMonitor> monitors = new HashMap<>();
@@ -153,7 +155,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     // If a new update is received before the schedule has run it will cancel the current schedule and reschedule.
     // This is mainly for when multiple events are triggered to not trigger a call for every event,
     // and also to manage the events trigger in combination with the scheduled process.
-    synchronized (queueName) {
+    synchronized (sync) {
       Optional.ofNullable(lastRuns.get(queueName)).ifPresent(f -> f.cancel(false));
       final Runnable updateTask = () -> updateWorkerQueueState(queueName);
 
@@ -162,8 +164,8 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   }
 
   private void updateWorkerQueueState(final String queueName) {
-    synchronized (queueName) {
-      monitors.get(queueName).updateWorkerQueueState(queueName, observers.get(queueName));
+    synchronized (sync) {
+      Optional.ofNullable(monitors.get(queueName)).ifPresent(m -> m.updateWorkerQueueState(queueName, observers.get(queueName)));
       lastRuns.remove(queueName);
     }
   }

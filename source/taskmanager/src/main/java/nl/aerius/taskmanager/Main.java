@@ -54,12 +54,11 @@ public final class Main {
    * When this main method is used, the task manager will be started.
    *
    * @param args no arguments needed, but if supplied, they should fit the description given by using -help.
-   * @throws IOException When an error occurred reading a file during configuration.
-   * @throws ParseException When command line option parsing failed
    */
-  public static void main(final String[] args) throws IOException, ParseException {
-    final CmdOptions cmdOptions = new CmdOptions(args);
-    if (cmdOptions.printIfInfoOption()) {
+  public static void main(final String[] args) {
+    final CmdOptions cmdOptions = cmdOptions(args);
+
+    if (cmdOptions == null || cmdOptions.printIfInfoOption()) {
       return;
     }
     LOG.info("--------------------------------TASKMANAGER STARTED------------------------------------");
@@ -74,6 +73,17 @@ public final class Main {
     try (final ExecutorService executorService = Executors.newCachedThreadPool();
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(THREAD_POOL_SIZE)) {
       startupFromConfiguration(executorService, scheduledExecutorService, cmdOptions.getConfigFile());
+    } catch (final IOException e) {
+      LOG.error("IOException during startup.", e);
+    }
+  }
+
+  private static CmdOptions cmdOptions(final String[] args) {
+    try {
+      return new CmdOptions(args);
+    } catch (final ParseException e) {
+      LOG.error("Command line options could not be parsed.", e);
+      return null;
     }
   }
 

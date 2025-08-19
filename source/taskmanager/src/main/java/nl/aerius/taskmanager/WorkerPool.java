@@ -194,8 +194,8 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
     if (deltaWorkers > 0) {
       freeWorkers.release(deltaWorkers);
       LOG.info("# Workers of {} increased to {}(+{})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
-    } else if ((deltaWorkers < 0) && (freeWorkers.availablePermits() > 0)) {
-      freeWorkers.tryAcquire(Math.min(freeWorkers.availablePermits(), -deltaWorkers));
+    } else if ((deltaWorkers < 0) && (freeWorkers.availablePermits() > 0)
+        && freeWorkers.tryAcquire(Math.min(freeWorkers.availablePermits(), -deltaWorkers))) {
       LOG.info("# Workers of {} decreased to {}({})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
     }
     if (previousTotalConfiguredWorkers != totalConfiguredWorkers) {

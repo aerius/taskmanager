@@ -36,7 +36,7 @@ import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 /**
  * Test class for {@link RabbitMQWorkerSizeProvider}
  */
-public class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
+class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
 
   private static final String TEST_QUEUE = "test";
 
@@ -52,7 +52,7 @@ public class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
 
   @Test
   @Timeout(value = 10, unit = TimeUnit.SECONDS)
-  void testTriggerWorkerQueueState() throws IOException, InterruptedException {
+  void testTriggerWorkerQueueState() throws InterruptedException {
     final CountDownLatch latch = new CountDownLatch(1);
     final RabbitMQQueueMonitor mockMonitor = mock(RabbitMQQueueMonitor.class);
 

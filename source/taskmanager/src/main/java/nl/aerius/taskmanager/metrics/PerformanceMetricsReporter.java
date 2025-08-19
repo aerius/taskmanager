@@ -56,6 +56,8 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
   private static final String DISPATCH = "Avg dispatch wait time ";
   private static final String WORK = "Avg work duration ";
 
+  private static final int UPDATE_TIME_SECONDS = 60;
+
   private final DoubleGauge dispatchedWorkerCountGauge;
   private final DoubleGauge dispatchedWorkerWaitGauge;
   private final DoubleGauge dispatchedQueueCountGauge;
@@ -65,8 +67,6 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
   private final DoubleGauge workWorkerDurationGauge;
   private final DoubleGauge workQueueCountGauge;
   private final DoubleGauge workQueueDurationGauge;
-
-  private static final int UPDATE_TIME_SECONDS = 60;
 
   private final Map<String, DurationMetric> dispatchedQueueMetrics = new HashMap<>();
   private final DurationMetric dispatchedWorkerMetrics;
@@ -157,14 +157,14 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     }
   }
 
-  private void metrics(final String prefixText, final Map<String, DurationMetric> metrics, final DoubleGauge gauge,
+  private static void metrics(final String prefixText, final Map<String, DurationMetric> metrics, final DoubleGauge gauge,
       final DoubleGauge waitGauge) {
     for (final Entry<String, DurationMetric> entry : metrics.entrySet()) {
       metrics(prefixText, gauge, waitGauge, entry.getKey(), entry.getValue());
     }
   }
 
-  private void metrics(final String prefixText, final DoubleGauge gauge, final DoubleGauge waitGauge, final String name,
+  private static void metrics(final String prefixText, final DoubleGauge gauge, final DoubleGauge waitGauge, final String name,
       final DurationMetric metrics) {
     final DurationMetricValue metric = metrics.process();
     final int count = metric.count();
