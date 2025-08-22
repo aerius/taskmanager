@@ -298,7 +298,7 @@ public final class ConnectionConfiguration {
       addMissing(missings, this.brokerRetryWaitTime, "brokerRetryWaitTime");
       addMissing(missings, this.brokerMaxInboundMessageBodySize, "brokerMaxInboundMessageBodySize");
       if (!missings.isEmpty()) {
-        throw new IllegalArgumentException("Missing required properties:" + String.join(", ", missings));
+        throw new IllegalArgumentException("Missing required properties: " + String.join(", ", missings));
       }
       return new ConnectionConfiguration(
           this.brokerHost,
