@@ -46,74 +46,56 @@ class BrokerConnectionFactoryTest {
 
   @Test
   void testTaskManagerClientWithoutBrokerHost() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerHost(null);
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerHost(null);
+
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker host is set.");
   }
 
   @Test
   void testTaskManagerClientWithEmptyBrokerHost() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerHost("");
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerHost("");
+
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker host is empty.");
   }
 
   @Test
   void testTaskManagerClientWithoutBrokerUsername() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerUsername(null);
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerUsername(null);
+
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker username is set.");
   }
 
   @Test
   void testTaskManagerClientWithEmptyBrokerUsername() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerUsername("");
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerUsername("");
+
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker username is empty.");
   }
 
   @Test
   void testTaskManagerClientWithoutBrokerPassword() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerPassword(null);
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerPassword(null);
+
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker password is set.");
   }
 
   @Test
   void testTaskManagerClientWithEmptyBrokerPassword() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerPassword("");
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerPassword("");
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker password is empty.");
   }
 
   @Test
   void testTaskManagerClientWithoutBrokerVirtualHost() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerVirtualHost(null);
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerVirtualHost(null);
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker virtual host is set.");
   }
 
   @Test
   void testTaskManagerClientWithEmptyBrokerVirtualHost() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder();
-      builder.brokerVirtualHost("");
-      new BrokerConnectionFactory(executor, builder.build());
-    });
+    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerVirtualHost("");
+
+    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker virtual host is empty.");
   }
 
   private ConnectionConfiguration.Builder getFullConnectionConfigurationBuilder() {

@@ -107,7 +107,6 @@ class WorkerResultSenderTest {
     final BasicProperties replyProperties = propertiesCaptor.getValue();
     assertEquals("1", replyProperties.getCorrelationId(), "Expected same correlationid");
     assertEquals("2", replyProperties.getMessageId(), "Expected same messageid");
-    final Map<String, Object> replyHeaders = replyProperties.getHeaders();
-    return replyHeaders;
+    return replyProperties.getHeaders();
   }
 }

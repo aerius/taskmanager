@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +50,7 @@ class TaskManagerClientSenderWithCallbackTest {
   private @Mock MockTaskResultHandler mockTaskResultHandler;
 
   @BeforeEach
-  void setUp() throws IOException, TimeoutException {
+  void setUp() throws IOException {
     final Connection connection = mock(Connection.class);
     doAnswer(a -> {
       final Channel channel = mock(Channel.class);

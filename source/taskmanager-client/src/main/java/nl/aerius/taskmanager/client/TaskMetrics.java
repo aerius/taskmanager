@@ -16,7 +16,6 @@
  */
 package nl.aerius.taskmanager.client;
 
-import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 
@@ -53,7 +52,7 @@ public class TaskMetrics {
    * Creates a new metrics
    */
   public TaskMetrics() {
-    this.startTime = new Date().getTime();
+    this.startTime = System.currentTimeMillis();
     this.queueName = "";
   }
 
@@ -63,7 +62,7 @@ public class TaskMetrics {
 
   public static String stringValue(final Map<String, Object> messageMetaData, final String key) {
     return Optional.ofNullable(messageMetaData.get(key))
-        .filter(t -> t instanceof LongString)
+        .filter(LongString.class::isInstance)
         .map(t -> new String(((LongString) t).getBytes()))
         .orElse("");
   }
@@ -73,7 +72,7 @@ public class TaskMetrics {
   }
 
   public TaskMetrics determineDuration() {
-    this.duration = startTime > 0 ? new Date().getTime() - startTime : 0;
+    this.duration = startTime > 0 ? System.currentTimeMillis() - startTime : 0;
     return this;
   }
 

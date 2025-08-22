@@ -16,10 +16,14 @@
  */
 package nl.aerius.taskmanager.client.configuration;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 /**
  * Configuration object for different (queue) properties.
  */
-public class ConnectionConfiguration {
+public final class ConnectionConfiguration {
 
   /**
    * RabbitMQ default port.
@@ -203,26 +207,8 @@ public class ConnectionConfiguration {
 
   @Override
   public int hashCode() {
-    int h$ = 1;
-    h$ *= 1000003;
-    h$ ^= brokerHost.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerPort;
-    h$ *= 1000003;
-    h$ ^= brokerUsername.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerPassword.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerVirtualHost.hashCode();
-    h$ *= 1000003;
-    h$ ^= brokerManagementPort;
-    h$ *= 1000003;
-    h$ ^= brokerManagementRefreshRate;
-    h$ *= 1000003;
-    h$ ^= brokerRetryWaitTime;
-    h$ *= 1000003;
-    h$ ^= brokerMaxInboundMessageBodySize;
-    return h$;
+    return Objects.hash(brokerHost.hashCode(), brokerPort, brokerUsername.hashCode(), brokerPassword.hashCode(), brokerVirtualHost.hashCode(),
+        brokerManagementPort, brokerManagementRefreshRate, brokerRetryWaitTime, brokerMaxInboundMessageBodySize);
   }
 
   public static final class Builder {
@@ -255,9 +241,6 @@ public class ConnectionConfiguration {
     }
 
     public ConnectionConfiguration.Builder brokerHost(final String brokerHost) {
-      if (brokerHost == null) {
-        throw new IllegalArgumentException("brokerHost null");
-      }
       this.brokerHost = brokerHost;
       return this;
     }
@@ -268,25 +251,16 @@ public class ConnectionConfiguration {
     }
 
     public ConnectionConfiguration.Builder brokerUsername(final String brokerUsername) {
-      if (brokerUsername == null) {
-        throw new IllegalArgumentException("brokerUsername null");
-      }
       this.brokerUsername = brokerUsername;
       return this;
     }
 
     public ConnectionConfiguration.Builder brokerPassword(final String brokerPassword) {
-      if (brokerPassword == null) {
-        throw new IllegalArgumentException("brokerPassword null");
-      }
       this.brokerPassword = brokerPassword;
       return this;
     }
 
     public ConnectionConfiguration.Builder brokerVirtualHost(final String brokerVirtualHost) {
-      if (brokerVirtualHost == null) {
-        throw new IllegalArgumentException("brokerVirtualHost null");
-      }
       this.brokerVirtualHost = brokerVirtualHost;
       return this;
     }
@@ -312,36 +286,19 @@ public class ConnectionConfiguration {
     }
 
     ConnectionConfiguration autoBuild() {
-      String missing = "";
-      if (this.brokerHost == null) {
-        missing += " brokerHost";
-      }
-      if (this.brokerPort == null) {
-        missing += " brokerPort";
-      }
-      if (this.brokerUsername == null) {
-        missing += " brokerUsername";
-      }
-      if (this.brokerPassword == null) {
-        missing += " brokerPassword";
-      }
-      if (this.brokerVirtualHost == null) {
-        missing += " brokerVirtualHost";
-      }
-      if (this.brokerManagementPort == null) {
-        missing += " brokerManagementPort";
-      }
-      if (this.brokerManagementRefreshRate == null) {
-        missing += " brokerManagementRefreshRate";
-      }
-      if (this.brokerRetryWaitTime == null) {
-        missing += " brokerRetryWaitTime";
-      }
-      if (this.brokerMaxInboundMessageBodySize == null) {
-        missing += " brokerMaxInboundMessageBodySize";
-      }
-      if (!missing.isEmpty()) {
-        throw new IllegalStateException("Missing required properties:" + missing);
+      final List<String> missings = new ArrayList<>();
+
+      addMissing(missings, this.brokerHost, "brokerHost");
+      addMissing(missings, this.brokerPort, "brokerPort");
+      addMissing(missings, this.brokerUsername, "brokerUsername");
+      addMissing(missings, this.brokerPassword, "brokerPassword");
+      addMissing(missings, this.brokerVirtualHost, "brokerVirtualHost");
+      addMissing(missings, this.brokerManagementPort, "brokerManagementPort");
+      addMissing(missings, this.brokerManagementRefreshRate, "brokerManagementRefreshRate");
+      addMissing(missings, this.brokerRetryWaitTime, "brokerRetryWaitTime");
+      addMissing(missings, this.brokerMaxInboundMessageBodySize, "brokerMaxInboundMessageBodySize");
+      if (!missings.isEmpty()) {
+        throw new IllegalArgumentException("Missing required properties: " + String.join(", ", missings));
       }
       return new ConnectionConfiguration(
           this.brokerHost,
@@ -353,6 +310,12 @@ public class ConnectionConfiguration {
           this.brokerManagementRefreshRate,
           this.brokerRetryWaitTime,
           this.brokerMaxInboundMessageBodySize);
+    }
+
+    private final void addMissing(final List<String> missings, final Object value, final String text) {
+      if (value == null) {
+        missings.add(text);
+      }
     }
   }
 }

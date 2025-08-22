@@ -151,8 +151,8 @@ public class TaskManagerClientSender implements AutoCloseable {
    */
   protected boolean ensureChannel(final AtomicReference<Channel> channelReference) throws IOException {
     synchronized (this) {
-      final Channel channel = channelReference.get();
-      if (running && (channel == null || !channel.isOpen())) {
+      final Channel chn = channelReference.get();
+      if (running && (chn == null || !chn.isOpen())) {
         channelReference.set(getConnection().createChannel());
         return true;
       }

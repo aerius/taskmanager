@@ -139,37 +139,7 @@ public class RabbitMQWorkerMonitor {
       channel.exchangeDeclare(AERIUS_EVENT_EXCHANGE, EXCHANGE_TYPE);
       queueName = channel.queueDeclare().getQueue();
       channel.queueBind(queueName, AERIUS_EVENT_EXCHANGE, "");
-      consumer = new DefaultConsumer(channel) {
-        @Override
-        public void handleDelivery(final String consumerTag, final Envelope envelope, final AMQP.BasicProperties properties, final byte[] body)
-            throws IOException {
-          RabbitMQWorkerMonitor.this.handleDelivery(properties);
-        }
-
-        @Override
-        public void handleShutdownSignal(final String consumerTag, final ShutdownSignalException sig) {
-          if (sig.isInitiatedByApplication()) {
-            isShutdown = true;
-            LOG.info("Worker event monitor {} was shut down by the application.", consumerTag);
-          } else {
-            LOG.debug("Worker event monitor {} was shut down.", consumerTag);
-            // restart
-            try {
-              try {
-                channel.abort();
-              } catch (final IOException e) {
-                // Eat error when closing channel.
-              }
-              if (!tryStartingConsuming.get()) {
-                start();
-                LOG.info("Restarted worker event monitor {}", consumerTag);
-              }
-            } catch (final IOException e) {
-              LOG.debug("Worker event monitor restart failed", e);
-            }
-          }
-        }
-      };
+      consumer = new MonitorConsumer(channel);
       channel.basicConsume(queueName, true, consumer);
     }
   }
@@ -226,6 +196,46 @@ public class RabbitMQWorkerMonitor {
       channel.close();
     } catch (final IOException | TimeoutException e) {
       LOG.trace("Worker event monitor shutdown failed", e);
+    }
+  }
+
+  private class MonitorConsumer extends DefaultConsumer {
+    public MonitorConsumer(final Channel channel) {
+      super(channel);
+    }
+
+    @Override
+    public void handleDelivery(final String consumerTag, final Envelope envelope, final AMQP.BasicProperties properties, final byte[] body)
+        throws IOException {
+      RabbitMQWorkerMonitor.this.handleDelivery(properties);
+    }
+
+    @Override
+    public void handleShutdownSignal(final String consumerTag, final ShutdownSignalException sig) {
+      if (sig.isInitiatedByApplication()) {
+        isShutdown = true;
+        LOG.info("Worker event monitor {} was shut down by the application.", consumerTag);
+      } else {
+        LOG.debug("Worker event monitor {} was shut down.", consumerTag);
+        // restart
+        try {
+          abort();
+          if (!tryStartingConsuming.get()) {
+            start();
+            LOG.info("Restarted worker event monitor {}", consumerTag);
+          }
+        } catch (final IOException e) {
+          LOG.debug("Worker event monitor restart failed", e);
+        }
+      }
+    }
+
+    private void abort() {
+      try {
+        channel.abort();
+      } catch (final IOException e) {
+        // Eat error when closing channel.
+      }
     }
   }
 }

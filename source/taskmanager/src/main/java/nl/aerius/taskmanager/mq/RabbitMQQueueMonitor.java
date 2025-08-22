@@ -131,6 +131,7 @@ public class RabbitMQQueueMonitor {
   }
 
   protected JsonNode getJsonResultFromApi(final String apiPath) throws URISyntaxException, IOException {
+    // Not using new URI constructor because it will escape the %2f in apiPath to %252f.
     final URI uri = new URL("http", configuration.getBrokerHost(), configuration.getBrokerManagementPort(), apiPath).toURI();
 
     try (final CloseableHttpResponse response = httpClient.execute(targetHost, new HttpGet(uri), context)) {

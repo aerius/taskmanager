@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.Serializable;
 import java.util.UUID;
-import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +58,7 @@ class TaskManagerClientSenderTest {
   private Connection connection;
 
   @BeforeEach
-  void setUp() throws IOException, TimeoutException {
+  void setUp() {
     connection = MockConnectionUtil.mockConnection();
     lenient().doReturn(connection).when(factory).getConnection();
     lenient().doReturn(true).when(factory).isOpen();
@@ -72,7 +71,7 @@ class TaskManagerClientSenderTest {
   }
 
   @Test
-  void testSendTask() throws IOException, InterruptedException, ClassNotFoundException {
+  void testSendTask() throws IOException, ClassNotFoundException {
     final ArgumentCaptor<BasicProperties> propertiesCaptor = ArgumentCaptor.forClass(BasicProperties.class);
     final ArgumentCaptor<byte[]> dataCaptor = ArgumentCaptor.forClass(byte[].class);
     final Serializable input = new MockTaskInput(1);
@@ -111,8 +110,9 @@ class TaskManagerClientSenderTest {
   }
 
   @Test
-  void testTaskManagerClientWithoutConnectionConfiguration() throws IOException {
-    assertThrows(IllegalArgumentException.class, () -> taskManagerClient = new TaskManagerClientSender(null));
+  void testTaskManagerClientWithoutConnectionConfiguration() {
+    assertThrows(IllegalArgumentException.class, () -> taskManagerClient = new TaskManagerClientSender(null),
+        "Expected IllegalArgumentException when configuration is null.");
   }
 
   @Test
@@ -131,7 +131,7 @@ class TaskManagerClientSenderTest {
         private static final long serialVersionUID = 7681080846084936169L;
       };
       taskManagerClient.sendTask(input, NORMAL_TASK_ID, NORMAL_TASK_ID, TASK_QUEUE_NAME);
-    });
+    }, "Expected NotSerializableException for unserialisable object.");
   }
 
   /**
@@ -152,7 +152,7 @@ class TaskManagerClientSenderTest {
     assertThrows(IllegalStateException.class, () -> {
       taskManagerClient.close();
       testSendTask();
-    });
+    }, "Expected IllegalStateException for sending task after sender was shutdown.");
   }
 
   /**
@@ -161,7 +161,8 @@ class TaskManagerClientSenderTest {
   @Test
   void testSendTaskToNullQueue() {
     assertThrows(IllegalArgumentException.class,
-        () -> taskManagerClient.sendTask(new MockTaskInput(1), NORMAL_TASK_ID, NORMAL_TASK_ID, null));
+        () -> taskManagerClient.sendTask(new MockTaskInput(1), NORMAL_TASK_ID, NORMAL_TASK_ID, null),
+        "Expected IllegalArgumentException when the queue passed is null.");
   }
 
   /**
@@ -169,7 +170,8 @@ class TaskManagerClientSenderTest {
    */
   @Test
   void testSendNullObjectAsTask() {
-    assertThrows(IllegalArgumentException.class, () -> taskManagerClient.sendTask(null, NORMAL_TASK_ID, NORMAL_TASK_ID, TASK_QUEUE_NAME));
+    assertThrows(IllegalArgumentException.class, () -> taskManagerClient.sendTask(null, NORMAL_TASK_ID, NORMAL_TASK_ID, TASK_QUEUE_NAME),
+        "Expected IllegalArgumentException when a null object is given to be send.");
   }
 
   static record MockTaskInput(int aNumber) implements Serializable {

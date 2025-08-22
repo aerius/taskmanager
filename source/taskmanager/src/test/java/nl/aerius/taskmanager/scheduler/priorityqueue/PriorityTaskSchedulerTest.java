@@ -38,6 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.MockAdaptorFactory;
 import nl.aerius.taskmanager.MockTask;
@@ -54,6 +56,8 @@ import nl.aerius.taskmanager.domain.TaskConsumer;
  * Test class for {@link PriorityTaskScheduler}.
  */
 class PriorityTaskSchedulerTest {
+
+  private static final Logger LOG = LoggerFactory.getLogger(PriorityTaskSchedulerTest.class);
 
   private static final String QUEUE1 = "queue1";
   private static final String QUEUE2 = "queue2";
@@ -84,10 +88,10 @@ class PriorityTaskSchedulerTest {
     configuration.getQueues().add(tc3);
     scheduler = (PriorityTaskScheduler) factory.createScheduler(new QueueConfig(QUEUE1, false, true, null));
     configuration.getQueues().forEach(scheduler::updateQueue);
-    task1 = createTask(taskConsumer1, "1", QUEUE1);
-    task2a = createTask(taskConsumer2, "2a", QUEUE2);
-    task2b = createTask(taskConsumer2, "2b", QUEUE2);
-    task3 = createTask(taskConsumer3, "3", QUEUE3);
+    task1 = createTask(taskConsumer1, "1");
+    task2a = createTask(taskConsumer2, "2a");
+    task2b = createTask(taskConsumer2, "2b");
+    task3 = createTask(taskConsumer3, "3");
   }
 
   @Test
@@ -152,10 +156,10 @@ class PriorityTaskSchedulerTest {
   @Timeout(7000)
   void testGetTaskWith1WorkerAvailable() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(1);
-    final Task task1 = createTask(taskConsumer1, "1", QUEUE1); //add task with priority 0.
-    scheduler.addTask(task1);
+    final Task task = createTask(taskConsumer1, "1"); //add task with priority 0.
+    scheduler.addTask(task);
     final AtomicInteger chkCounter = new AtomicInteger();
-    final Future<Task> receivedTask = waitForTask(task1, chkCounter);
+    final Future<Task> receivedTask = waitForTask(task, chkCounter);
     await().atMost(1, TimeUnit.SECONDS).until(receivedTask::isDone);
     assertNotNull(receivedTask.get(), "Received task");
     assertEquals(1, chkCounter.intValue(), "Counter should be 1 when only one slot available");
@@ -170,9 +174,9 @@ class PriorityTaskSchedulerTest {
   @Timeout(value = 7, unit = TimeUnit.SECONDS)
   void testGetTask() throws InterruptedException, ExecutionException {
     scheduler.onWorkerPoolSizeChange(2);
-    final Task task1a = createTask(taskConsumer1, "1a", QUEUE1);
+    final Task task1a = createTask(taskConsumer1, "1a");
     scheduler.addTask(task1a);
-    final Task task1b = createTask(taskConsumer1, "1b", QUEUE1);
+    final Task task1b = createTask(taskConsumer1, "1b");
     scheduler.addTask(task1b);
     scheduler.addTask(task2a);
     assertSame(task2a, scheduler.getNextTask(), "Should get task2a back.");
@@ -206,7 +210,7 @@ class PriorityTaskSchedulerTest {
     final List<Task> tasks = new ArrayList<>();
     final List<Task> sendTasks = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      final Task task = createTask(taskConsumer2, "1", QUEUE2);
+      final Task task = createTask(taskConsumer2, "1");
       scheduler.addTask(task);
       tasks.add(task);
     }
@@ -216,7 +220,7 @@ class PriorityTaskSchedulerTest {
     }
     scheduler.addTask(task1);
     assertSame(task1, scheduler.getNextTask(), "Should still get task 1");
-    final Task task1b = createTask(taskConsumer1, "1b", QUEUE1);
+    final Task task1b = createTask(taskConsumer1, "1b");
     scheduler.addTask(task1b);
     assertSame(task1b, scheduler.getNextTask(), "Should still get task 1b");
     final AtomicInteger chkCounter = new AtomicInteger();
@@ -273,14 +277,15 @@ class PriorityTaskSchedulerTest {
         Task result = null;
         try {
           result = scheduler.getNextTask();
-          if (task == null) {
-            assertNotNull(result, "Should get any task back");
-          } else {
-            assertSame(task, result, "Should get task back.");
-          }
-          chkCounter.incrementAndGet();
         } catch (final InterruptedException e) {
+          LOG.error("InterruptedException when waiting for next task", e);
         }
+        if (task == null) {
+          assertNotNull(result, "Should get any task back");
+        } else {
+          assertSame(task, result, "Should get task back.");
+        }
+        chkCounter.incrementAndGet();
         return result;
       }
     });
@@ -298,7 +303,7 @@ class PriorityTaskSchedulerTest {
     };
   }
 
-  private Task createTask(final TaskConsumer tc, final String messageId, final String queue) {
+  private static Task createTask(final TaskConsumer tc, final String messageId) {
     return new MockTask(tc, messageId);
   }
 }

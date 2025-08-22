@@ -62,7 +62,7 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
   @Timeout(value = 10, unit = TimeUnit.SECONDS)
   void testMessageReceivedHandler() throws IOException, InterruptedException {
     final byte[] receivedBody = "4321".getBytes();
-    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(new QueueConfig(taskQueueName, false, false, null));
+    final TaskMessageHandler<?> tmh = adapterFactory.createTaskMessageHandler(new QueueConfig(taskQueueName, false, false, null));
     final Semaphore lock = new Semaphore(0);
     final DataDock data = new DataDock();
     tmh.start();
@@ -108,7 +108,7 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
     final AtomicInteger shutdownCallsCounter = new AtomicInteger();
 
     final MessageReceivedHandler mockMessageReceivedHandler = mock(MessageReceivedHandler.class);
-    final TaskMessageHandler tmh = adapterFactory.createTaskMessageHandler(new QueueConfig(taskQueueName, false, false, null));
+    final TaskMessageHandler<?> tmh = adapterFactory.createTaskMessageHandler(new QueueConfig(taskQueueName, false, false, null));
 
     ((RabbitMQMessageHandler) tmh).setRetryTimeMilliseconds(1L);
     doAnswer(invoke -> null).when(mockChannel).addShutdownListener(shutdownListenerCaptor.capture());
@@ -144,9 +144,9 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
     // Wait till TaskMessageHandler has called basicConsume in the consumer.
     verifyTryStartConsumingLock.acquire();
     // Release the consumer start lock, it should throw an IOException and not call the shutdown handler.
-    triggerRestartConsumer(tryStartConsumingLock, verifyTryStartConsumingLock, mockMessageReceivedHandler, 0);
+    triggerRestartConsumer(tryStartConsumingLock, verifyTryStartConsumingLock, mockMessageReceivedHandler);
     // Release the second time, it should not throw an IOException this time, but just finish start without issue.
-    triggerRestartConsumer(tryStartConsumingLock, verifyTryStartConsumingLock, mockMessageReceivedHandler, 0);
+    triggerRestartConsumer(tryStartConsumingLock, verifyTryStartConsumingLock, mockMessageReceivedHandler);
     // Release the second start call. It should just finished normally.
     tryStartConsumingLock.release();
     // Wait for thread to finish.
@@ -162,8 +162,7 @@ class RabbitMQMessageHandlerTest extends AbstractRabbitMQTest {
   }
 
   private static void triggerRestartConsumer(final Semaphore tryStartConsumingLock, final Semaphore verifyTryStartConsumingLock,
-      final MessageReceivedHandler mockMessageReceivedHandler, final int expectedNumberMessageReceivedHandlerShutdownCalled)
-      throws InterruptedException {
+      final MessageReceivedHandler mockMessageReceivedHandler) throws InterruptedException {
     // Let the consumer basicConsume continue.
     tryStartConsumingLock.release();
     // Consumer should have restarted.
