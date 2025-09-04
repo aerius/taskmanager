@@ -95,6 +95,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
   public void run() {
     Thread.currentThread().setName("TaskDispatcher-" + workerQueueName);
     running = true;
+    Task retryTask = null;
     try {
       while (running) {
         state = State.WAIT_FOR_WORKER;
@@ -103,10 +104,10 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
         state = State.WAIT_FOR_TASK;
         LOG.debug("Wait for task {}", workerQueueName);
-        final Task task = getNextTask();
+        final Task task = retryTask == null ? getNextTask() : retryTask;
         LOG.debug("Send task to worker {}, ({})", workerQueueName, task.getId());
         state = State.DISPATCH_TASK;
-        dispatch(task);
+        retryTask = dispatch(task);
       }
     } catch (final RuntimeException e) {
       LOG.error("TaskDispatcher crashed with RuntimeException: {}", getState(), e);
@@ -125,13 +126,13 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
     return task;
   }
 
-  private void dispatch(final Task task) {
+  private Task dispatch(final Task task) {
     try {
       workerPool.sendTaskToWorker(task);
     } catch (final NoFreeWorkersException e) {
       LOG.info("[NoFreeWorkersException] Workers for queue {} decreased while waiting for task. Rescheduling task.", e.getWorkerQueueName());
       LOG.trace("NoFreeWorkersException thrown", e);
-      scheduler.addTask(task);
+      return task;
     } catch (final TaskAlreadySentException e) {
       LOG.error("Duplicate task detected for worker queue: {}, from task queue: {}", e.getWorkerQueueName(), e.getTaskQueueName(), e);
       taskAbortedOnDuplicateMessageId(task);
@@ -139,6 +140,7 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
       LOG.error("Sending task to worker failed", e);
       taskDeliveryFailed(task);
     }
+    return null;
   }
 
   /**

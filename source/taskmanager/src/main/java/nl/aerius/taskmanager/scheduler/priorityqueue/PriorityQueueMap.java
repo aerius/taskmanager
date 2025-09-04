@@ -61,7 +61,7 @@ class PriorityQueueMap<K extends PriorityQueueMapKeyMapper> {
   public void decrementOnWorker(final TaskRecord taskRecord) {
     final String trKey = key(taskRecord);
 
-    if (tasksOnWorkersPerQueue.get(trKey).decrementAndGet() == 0) {
+    if (Optional.ofNullable(tasksOnWorkersPerQueue.get(trKey)).map(v -> v.decrementAndGet() == 0).orElse(false)) {
       tasksOnWorkersPerQueue.remove(trKey);
     }
   }
