@@ -17,8 +17,10 @@
 package nl.aerius.taskmanager.metrics;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -80,6 +82,9 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
   private final DoubleGauge loadGauge;
 
   private final Attributes workerAttributes;
+  // Keep track of dispatched tasks, because when taskmanager restarts it should not register tasks already on the queue
+  // as it doesn't have any metrics on it anymore.
+  private final Set<String> dispatchedTasks = new HashSet<>();
 
   public PerformanceMetricsReporter(final ScheduledExecutorService newScheduledThreadPool, final String queueGroupName, final Meter meter,
       final WorkerMetrics workerMetrics) {
@@ -125,6 +130,7 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
 
   @Override
   public void onWorkDispatched(final String messageId, final Map<String, Object> messageMetaData) {
+    dispatchedTasks.add(messageId);
     final TaskMetrics taskMetrics = new TaskMetrics(messageMetaData);
     taskMetrics.determineDuration();
     dispatchedQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
@@ -138,7 +144,9 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     taskMetrics.determineDuration();
     workQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     workWorkerMetrics.register(taskMetrics);
-    loadMetrics.register(-1, workerMetrics.getReportedWorkerSize());
+    if (dispatchedTasks.remove(messageId)) {
+      loadMetrics.register(-1, workerMetrics.getReportedWorkerSize());
+    }
   }
 
   private DurationMetric createQueueDurationMetric(final TaskMetrics taskMetrics) {

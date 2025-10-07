@@ -59,7 +59,7 @@ class LoadMetric {
     totalLoad += delta * (totalWorkers > 0 ? (runningWorkers / (double) totalWorkers) : 0);
     totalMeasureTime += delta;
     last = newLast;
-    runningWorkers += deltaActiveWorkers;
+    runningWorkers = Math.max(0, runningWorkers + deltaActiveWorkers);
   }
 
   /**
