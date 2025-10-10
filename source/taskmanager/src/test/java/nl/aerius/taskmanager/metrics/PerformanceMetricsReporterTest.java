@@ -25,6 +25,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -61,11 +62,11 @@ class PerformanceMetricsReporterTest {
 
   private final Map<String, DoubleGauge> mockedGauges = new HashMap<>();
 
-  @Mock Meter mockedMeter;
-  @Mock WorkerMetrics workMetrics;
-  @Mock ScheduledExecutorService scheduledExecutorService;
-  @Captor ArgumentCaptor<Runnable> methodCaptor;
-  @Captor ArgumentCaptor<Double> durationCaptor;
+  private @Mock Meter mockedMeter;
+  private @Mock WorkerMetrics workMetrics;
+  private @Mock ScheduledExecutorService scheduledExecutorService;
+  private @Captor ArgumentCaptor<Runnable> methodCaptor;
+  private @Captor ArgumentCaptor<Double> durationCaptor;
 
   private PerformanceMetricsReporter reporter;
 
@@ -100,7 +101,8 @@ class PerformanceMetricsReporterTest {
 
   @Test
   void testOnWorkerFinished() {
-    doReturn(10).when(workMetrics).getReportedWorkerSize();
+    lenient().doReturn(10).when(workMetrics).getReportedWorkerSize();
+    reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkerFinished("1", createMap(QUEUE_1, 100L));
     reporter.onWorkerFinished("2", createMap(QUEUE_2, 200L));
     methodCaptor.getValue().run();
@@ -110,6 +112,8 @@ class PerformanceMetricsReporterTest {
     verify(mockedGauges.get("aer.taskmanager.work.queue.duration")).set(durationCaptor.capture(), any());
     durationCaptor.getAllValues()
         .forEach(v -> assertTrue(v > 99.0, "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
+    // getReportedWorkerSize should only be called on tasks also dispatched, so only for task "1"
+    verify(workMetrics, times(2)).getReportedWorkerSize();
   }
 
   @Test
