@@ -26,3 +26,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
           DOCKER_WORK_DIRECTORY: repo/source
+          DOCKER_BUILD_PLATFORMS: linux/amd64,linux/arm64

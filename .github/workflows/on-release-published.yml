@@ -32,3 +32,4 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
           ROOT_POM_DIRECTORY: repo/source
           DOCKER_WORK_DIRECTORY: repo/source
+          DOCKER_BUILD_PLATFORMS: linux/amd64,linux/arm64
