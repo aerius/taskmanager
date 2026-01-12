@@ -37,6 +37,7 @@ import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.domain.QueueConfig;
+import nl.aerius.taskmanager.domain.QueueWatchDog;
 import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
@@ -120,13 +121,23 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
 
     public TaskScheduleBucket(final QueueConfig queueConfig) throws InterruptedException {
       this.workerQueueName = queueConfig.queueName();
+      final QueueWatchDog watchDog = new QueueWatchDog(workerQueueName);
       taskScheduler = schedulerFactory.createScheduler(queueConfig);
       workerProducer = factory.createWorkerProducer(queueConfig);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
       final PerformanceMetricsReporter reporter = new PerformanceMetricsReporter(scheduledExecutorService, queueConfig.queueName(),
           OpenTelemetryMetrics.METER, workerPool);
-      workerProducer.addWorkerFinishedHandler(reporter);
+
+      watchDog.addQueueWatchDogListener(workerPool);
+      watchDog.addQueueWatchDogListener(taskScheduler);
+      watchDog.addQueueWatchDogListener(reporter);
+
+      workerProducer.addWorkerProducerHandler(reporter);
+      workerProducer.addWorkerProducerHandler(watchDog);
+
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
+      workerSizeObserverProxy.addObserver(workerQueueName, watchDog);
+
       if (taskScheduler instanceof final WorkerSizeObserver wzo) {
         workerSizeObserverProxy.addObserver(workerQueueName, wzo);
       }

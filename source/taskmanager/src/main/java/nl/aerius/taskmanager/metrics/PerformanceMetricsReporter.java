@@ -31,9 +31,10 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleGauge;
 import io.opentelemetry.api.metrics.Meter;
 
-import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerFinishedHandler;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
+import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.client.TaskMetrics;
+import nl.aerius.taskmanager.domain.QueueWatchDog.QueueWatchDogListener;
 import nl.aerius.taskmanager.metrics.DurationMetric.DurationMetricValue;
 
 /**
@@ -51,7 +52,7 @@ import nl.aerius.taskmanager.metrics.DurationMetric.DurationMetricValue;
  *
  * - Average load (in percentage) of all workers (of a certain type) together.
  */
-public class PerformanceMetricsReporter implements WorkerFinishedHandler {
+public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueWatchDogListener {
 
   private static final Logger LOG = LoggerFactory.getLogger(PerformanceMetricsReporter.class);
 
@@ -149,6 +150,15 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     }
   }
 
+  @Override
+  public void reset() {
+    dispatchedTasks.clear();
+    dispatchedQueueMetrics.entrySet().forEach(e -> e.getValue().process());
+    dispatchedWorkerMetrics.process();
+    // work metrics not needed to be reset because they are about work already done.
+    loadMetrics.reset();
+  }
+
   private DurationMetric createQueueDurationMetric(final TaskMetrics taskMetrics) {
     return new DurationMetric(OpenTelemetryMetrics.queueAttributes(queueGroupName, taskMetrics.queueName()));
   }
@@ -172,13 +182,13 @@ public class PerformanceMetricsReporter implements WorkerFinishedHandler {
     }
   }
 
-  private static void metrics(final String prefixText, final DoubleGauge gauge, final DoubleGauge waitGauge, final String name,
+  private static void metrics(final String prefixText, final DoubleGauge gauge, final DoubleGauge averageGauge, final String name,
       final DurationMetric metrics) {
     final DurationMetricValue metric = metrics.process();
     final int count = metric.count();
 
     gauge.set(count, metrics.getAttributes());
-    waitGauge.set(metric.avgDuration(), metrics.getAttributes());
+    averageGauge.set(metric.avgDuration(), metrics.getAttributes());
     if (count > 0) {
       LOG.debug("{} for {}: {} ms/task (#tasks: {})", prefixText, name, metric.avgDuration(), count);
     }

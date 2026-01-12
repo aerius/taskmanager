@@ -28,9 +28,9 @@ public interface WorkerProducer {
 
   /**
    * Sets the handler to call when a task is finished by a worker.
-   * @param workerFinishedHandler handler.
+   * @param workerProducerHandler handler.
    */
-  void addWorkerFinishedHandler(WorkerFinishedHandler workerFinishedHandler);
+  void addWorkerProducerHandler(WorkerProducerHandler workerProducerHandler);
 
   /**
    * Starts the worker producer.
@@ -39,7 +39,7 @@ public interface WorkerProducer {
 
   /**
    * Dispatch a message to the worker.
-   * @param message message to ispatch
+   * @param message message to dispatch
    * @throws IOException connection errors
    */
   void dispatchMessage(final Message message) throws IOException;
@@ -50,9 +50,9 @@ public interface WorkerProducer {
   void shutdown();
 
   /**
-   * Interface for handling finished tasks from the communication layer send by the workers.
+   * Interface for called when the tasks is finished by the worker.
    */
-  interface WorkerFinishedHandler {
+  interface WorkerProducerHandler {
     /**
      * Called when work dispatched to the worker.
      *
@@ -70,13 +70,6 @@ public interface WorkerProducer {
      * @param messageMetaData message meta data
      */
     void onWorkerFinished(String messageId, Map<String, Object> messageMetaData);
-
-    /**
-     * Instruct the handler to reset; that means all tasks that are waiting to be finished will never be marked as finished and therefor should
-     * be cleaned up.
-     */
-    default void reset() {
-    }
   }
 
   /**

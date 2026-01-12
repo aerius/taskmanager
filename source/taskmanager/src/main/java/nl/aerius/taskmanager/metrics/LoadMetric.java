@@ -63,6 +63,14 @@ class LoadMetric {
   }
 
   /**
+   * Resets the metric state. Sets running workers to 0, and resets the average load time by calling process.
+   */
+  public synchronized void reset() {
+    runningWorkers = 0;
+    process();
+  }
+
+  /**
    * Calculates average duration over the last time frame since this method was called. Internals are reset in this method to a new measure point.
    *
    * @return Average load of the workers since the last time this method was called

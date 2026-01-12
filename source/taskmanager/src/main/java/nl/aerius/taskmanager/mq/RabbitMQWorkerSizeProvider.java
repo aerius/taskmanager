@@ -171,15 +171,15 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   }
 
   private static class WorkerSizeObserverComposite implements WorkerSizeObserver {
-    private final List<WorkerSizeObserver> list = new ArrayList<>();
+    private final List<WorkerSizeObserver> observers = new ArrayList<>();
 
     public void add(final WorkerSizeObserver observer) {
-      list.add(observer);
+      observers.add(observer);
     }
 
     @Override
     public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
-      for (final WorkerSizeObserver observer : list) {
+      for (final WorkerSizeObserver observer : observers) {
         try {
           observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
         } catch (final RuntimeException e) {

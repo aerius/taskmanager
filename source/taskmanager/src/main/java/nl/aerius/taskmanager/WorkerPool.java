@@ -26,9 +26,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
-import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerFinishedHandler;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
+import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
+import nl.aerius.taskmanager.domain.QueueWatchDog.QueueWatchDogListener;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskRecord;
 import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
@@ -40,13 +41,12 @@ import nl.aerius.taskmanager.exception.NoFreeWorkersException;
  * <p>Reserved workers are workers that are waiting for a task to become available on the queue.
  * <p>Running workers are workers for that are busy running the task and are waiting for the task to finish.
  */
-class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMetrics {
+class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMetrics, QueueWatchDogListener {
 
   private static final Logger LOG = LoggerFactory.getLogger(WorkerPool.class);
 
   private final Semaphore freeWorkers = new Semaphore(0);
   private final Map<String, TaskRecord> runningWorkers = new ConcurrentHashMap<>();
-  private final QueueWatchDog watchDog = new QueueWatchDog();
   private int totalConfiguredWorkers;
   private final String workerQueueName;
   private final WorkerProducer wp;
@@ -56,7 +56,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
     this.workerQueueName = workerQueueName;
     this.wp = wp;
     this.workerUpdateHandler = workerUpdateHandler;
-    wp.addWorkerFinishedHandler(this);
+    wp.addWorkerProducerHandler(this);
   }
 
   /**
@@ -104,22 +104,12 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
     releaseWorker(messageId);
   }
 
-  @Override
-  public void reset() {
-    synchronized (this) {
-      for (final Entry<String, TaskRecord> taskEntry : runningWorkers.entrySet()) {
-        releaseWorker(taskEntry.getKey(), taskEntry.getValue());
-      }
-      updateNumberOfWorkers(0);
-    }
-  }
-
   /**
    * Adds the worker to the pool of available workers and calls onWorkerReady.
    *
    * @param taskId Id of the task to release
    */
-  public void releaseWorker(final String taskId) {
+  void releaseWorker(final String taskId) {
     releaseWorker(taskId, runningWorkers.get(taskId));
   }
 
@@ -129,7 +119,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
    * @param taskId Id of the task that was reported done and can be released
    * @param taskRecord the task is expected to be on.
    */
-  public void releaseWorker(final String taskId, final TaskRecord taskRecord) {
+  void releaseWorker(final String taskId, final TaskRecord taskRecord) {
     if (taskRecord != null) {
       synchronized (this) {
         if (runningWorkers.containsKey(taskId)) {
@@ -164,8 +154,6 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
     }
   }
 
-
-
   /**
    * Sets the number of workers which are actually available. This number should
    * be determined on the number of workers that are actually in operation.
@@ -182,7 +170,6 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
   public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
     synchronized (this) {
       updateNumberOfWorkers(numberOfWorkers);
-      checkDeadTasks(numberOfMessages);
     }
   }
 
@@ -203,10 +190,12 @@ class WorkerPool implements WorkerSizeObserver, WorkerFinishedHandler, WorkerMet
     }
   }
 
-  private void checkDeadTasks(final int numberOfMessages) {
-    if (watchDog.isItDead(!runningWorkers.isEmpty(), numberOfMessages)) {
-      LOG.info("It looks like some tasks are zombies on {} worker queue, so all tasks currently in state running are released.", workerQueueName);
-      reset();
+  @Override
+  public void reset() {
+    synchronized (this) {
+      for (final Entry<String, TaskRecord> taskEntry : runningWorkers.entrySet()) {
+        releaseWorker(taskEntry.getKey(), taskEntry.getValue());
+      }
     }
   }
 }

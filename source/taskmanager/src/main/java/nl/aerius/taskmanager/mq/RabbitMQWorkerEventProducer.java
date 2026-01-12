@@ -127,9 +127,7 @@ public class RabbitMQWorkerEventProducer {
   }
 
   private void publish(final String queueName, final int size, final int utilisation) throws IOException, TimeoutException {
-    final Channel channel = factory.getConnection().createChannel();
-
-    try {
+    try (final Channel channel = factory.getConnection().createChannel()) {
       channel.exchangeDeclare(AERIUS_EVENT_EXCHANGE, EXCHANGE_TYPE);
 
       final Map<String, Object> headers = new HashMap<>();
@@ -139,8 +137,6 @@ public class RabbitMQWorkerEventProducer {
       final BasicProperties props = new BasicProperties().builder().headers(headers).build();
       channel.basicPublish(AERIUS_EVENT_EXCHANGE, "", props, null);
       debugLogState(queueName, size, utilisation);
-    } finally {
-      channel.close();
     }
   }
 
