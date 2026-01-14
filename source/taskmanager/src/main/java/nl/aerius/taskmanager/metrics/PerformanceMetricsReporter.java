@@ -34,7 +34,7 @@ import io.opentelemetry.api.metrics.Meter;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.client.TaskMetrics;
-import nl.aerius.taskmanager.domain.QueueWatchDog.QueueWatchDogListener;
+import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 import nl.aerius.taskmanager.metrics.DurationMetric.DurationMetricValue;
 
 /**

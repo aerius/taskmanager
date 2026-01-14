@@ -50,7 +50,7 @@ public interface WorkerProducer {
   void shutdown();
 
   /**
-   * Interface for called when the tasks is finished by the worker.
+   * Interface called when the tasks is finished by the worker.
    */
   interface WorkerProducerHandler {
     /**

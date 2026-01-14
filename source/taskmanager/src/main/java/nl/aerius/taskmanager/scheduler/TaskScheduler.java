@@ -17,7 +17,7 @@
 package nl.aerius.taskmanager.scheduler;
 
 import nl.aerius.taskmanager.domain.QueueConfig;
-import nl.aerius.taskmanager.domain.QueueWatchDog.QueueWatchDogListener;
+import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;

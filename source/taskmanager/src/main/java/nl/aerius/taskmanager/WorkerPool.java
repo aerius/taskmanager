@@ -29,7 +29,7 @@ import nl.aerius.taskmanager.adaptor.WorkerProducer;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
-import nl.aerius.taskmanager.domain.QueueWatchDog.QueueWatchDogListener;
+import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskRecord;
 import nl.aerius.taskmanager.domain.WorkerUpdateHandler;

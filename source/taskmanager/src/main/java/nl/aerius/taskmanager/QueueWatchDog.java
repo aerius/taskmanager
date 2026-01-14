@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.domain;
+package nl.aerius.taskmanager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,20 +28,14 @@ import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
+import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 
 /**
  * WatchDog to detect dead messages. Dead messages are messages once put on the queue, but those messages have gone. For example because
  * the queue was purged after some restart. In such a case the scheduler keeps the tasks locked and since there will never come an message
  * for the task it's locked indefinitely. This watch dog tries to detect such tasks and release them at some point.
  */
-public class QueueWatchDog implements WorkerSizeObserver, WorkerProducerHandler {
-
-  /**
-   * Interface for classes that need to be reset when the watch dog is triggered.
-   */
-  public interface QueueWatchDogListener {
-    void reset();
-  }
+class QueueWatchDog implements WorkerSizeObserver, WorkerProducerHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(QueueWatchDog.class);
 

@@ -30,8 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import nl.aerius.taskmanager.domain.QueueWatchDog;
-import nl.aerius.taskmanager.domain.QueueWatchDog.QueueWatchDogListener;
+import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 
 /**
  * Test class for {@link QueueWatchDog}.
