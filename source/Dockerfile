@@ -1,5 +1,5 @@
 # Builder part for maven packaging.
-FROM maven:3-eclipse-temurin-21 as builder
+FROM --platform=$BUILDPLATFORM maven:3-eclipse-temurin-21 as builder
 
 WORKDIR /app
 
