@@ -36,6 +36,7 @@ import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.client.TaskMetrics;
 import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 import nl.aerius.taskmanager.metrics.DurationMetric.DurationMetricValue;
+import nl.aerius.taskmanager.metrics.LoadMetric.AverageLoad;
 
 /**
  * Reports the following open telemetry metrics:
@@ -81,11 +82,13 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   private final String queueGroupName;
   private final WorkerMetrics workerMetrics;
   private final DoubleGauge loadGauge;
+  private final DoubleGauge freeGauge;
 
   private final Attributes workerAttributes;
   // Keep track of dispatched tasks, because when taskmanager restarts it should not register tasks already on the queue
   // as it doesn't have any metrics on it anymore.
   private final Set<String> dispatchedTasks = new HashSet<>();
+
 
   public PerformanceMetricsReporter(final ScheduledExecutorService newScheduledThreadPool, final String queueGroupName, final Meter meter,
       final WorkerMetrics workerMetrics) {
@@ -115,6 +118,7 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
 
     // Average load time (in percentage) of the work load on all workers together.
     loadGauge = meter.gaugeBuilder("aer.taskmanager.work.load").setDescription("Percentage of workers used in the timeframe.").build();
+    freeGauge = meter.gaugeBuilder("aer.taskmanager.work.free").setDescription("Average number of free workers in the timeframe.").build();
 
     workerAttributes = OpenTelemetryMetrics.workerAttributes(queueGroupName);
     dispatchedWorkerMetrics = new DurationMetric(workerAttributes);
@@ -195,9 +199,10 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   }
 
   private void workLoad() {
-    final double load = loadMetrics.process();
+    final AverageLoad load = loadMetrics.process();
 
-    loadGauge.set(load, workerAttributes);
-    LOG.debug("Workload for '{}' is: {}%", queueGroupName, Math.round(load));
+    loadGauge.set(load.averageLoad(), workerAttributes);
+    freeGauge.set(load.averageFree(), workerAttributes);
+    LOG.debug("Workload for '{}' is: {}%, avg. free is {}", queueGroupName, load.averageLoad(), load.averageFree());
   }
 }

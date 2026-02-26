@@ -44,7 +44,7 @@ class PriorityTaskSchedulerMetrics {
   public void addMetric(final IntSupplier countSupplier, final String workerQueueName, final String clientQueueName) {
     metrics.put(clientQueueName, OpenTelemetryMetrics.METER
         .gaugeBuilder(METRIC_PREFIX)
-        .setDescription(DESCRIPTION)
+        .setDescription(DESCRIPTION + clientQueueName)
         .buildWithCallback(
             result -> result.record(countSupplier.getAsInt(), OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName))));
   }
