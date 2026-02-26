@@ -25,7 +25,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -33,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,33 +87,32 @@ class PerformanceMetricsReporterTest {
 
   @Test
   void testOnWorkDispatched() {
-    doReturn(10).when(workMetrics).getReportedWorkerSize();
     reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkDispatched("2", createMap(QUEUE_2, 200L));
+    lenient().doReturn(10).when(workMetrics).getReportedWorkerSize();
     methodCaptor.getValue().run();
-    verify(mockedGauges.get("aer.taskmanager.dispatched")).set(eq(2.0), any());
-    verify(mockedGauges.get("aer.taskmanager.dispatched.wait")).set(durationCaptor.capture(), any());
-    verify(mockedGauges.get("aer.taskmanager.dispatched.queue")).set(eq(2.0), any());
-    verify(mockedGauges.get("aer.taskmanager.dispatched.queue.wait")).set(durationCaptor.capture(), any());
-    durationCaptor.getAllValues()
-        .forEach(v -> assertTrue(v > 99.0, "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
+    assertGaugeCalls("dispatched", "wait", 2.0, v -> v > 99.0);
   }
 
   @Test
   void testOnWorkerFinished() {
-    lenient().doReturn(10).when(workMetrics).getReportedWorkerSize();
     reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkerFinished("1", createMap(QUEUE_1, 100L));
     reporter.onWorkerFinished("2", createMap(QUEUE_2, 200L));
+    lenient().doReturn(10).when(workMetrics).getReportedWorkerSize();
     methodCaptor.getValue().run();
-    verify(mockedGauges.get("aer.taskmanager.work")).set(eq(2.0), any());
-    verify(mockedGauges.get("aer.taskmanager.work.duration")).set(durationCaptor.capture(), any());
-    verify(mockedGauges.get("aer.taskmanager.work.queue")).set(eq(2.0), any());
-    verify(mockedGauges.get("aer.taskmanager.work.queue.duration")).set(durationCaptor.capture(), any());
-    durationCaptor.getAllValues()
-        .forEach(v -> assertTrue(v > 99.0, "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
+    assertGaugeCalls("work", "duration", 2.0, v -> v > 99.0);
     // getReportedWorkerSize should only be called on tasks also dispatched, so only for task "1"
     verify(workMetrics, times(2)).getReportedWorkerSize();
+  }
+
+  private void assertGaugeCalls(final String label, final String type, final double expected, final Predicate<Double> duration) {
+    verify(mockedGauges.get("aer.taskmanager." + label)).set(eq(expected), any());
+    verify(mockedGauges.get("aer.taskmanager.%s.%s".formatted(label, type))).set(durationCaptor.capture(), any());
+    verify(mockedGauges.get("aer.taskmanager.%s.queue".formatted(label))).set(eq(expected), any());
+    verify(mockedGauges.get("aer.taskmanager.%s.queue.%s".formatted(label, type))).set(durationCaptor.capture(), any());
+    durationCaptor.getAllValues()
+        .forEach(v -> assertTrue(duration.test(v), "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
   }
 
   @Test
@@ -126,6 +125,22 @@ class PerformanceMetricsReporterTest {
     methodCaptor.getValue().run();
     verify(mockedGauges.get("aer.taskmanager.work.load"), times(2)).set(durationCaptor.capture(), any());
     assertEquals(50.0, durationCaptor.getAllValues().get(1), "Expected workload of 50%");
+  }
+
+  @Test
+  void testReset() throws InterruptedException {
+    doReturn(4).when(workMetrics).getReportedWorkerSize();
+    reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
+    reporter.onWorkDispatched("2", createMap(QUEUE_2, 200L));
+    Thread.sleep(2); // Add a bit of delay to get some time frame between updates..
+    reporter.reset();
+    methodCaptor.getValue().run();
+    // Verify dispatched metrics have been reset.
+    assertGaugeCalls("dispatched", "wait", 0.0, v -> v == 0.0);
+
+    // Verify load metric have been reset.
+    verify(mockedGauges.get("aer.taskmanager.work.load"), times(1)).set(durationCaptor.capture(), any());
+    assertEquals(0.0, durationCaptor.getAllValues().get(0), 1E-5, "Expected to have no workload anymore");
   }
 
   private Map<String, Object> createMap(final String queueName, final long duration) {

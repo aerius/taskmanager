@@ -31,7 +31,7 @@ public class MockWorkerProducer implements WorkerProducer {
   private boolean shutdownExceptionOnForward = false;
 
   @Override
-  public void addWorkerFinishedHandler(final WorkerFinishedHandler workerFinishedHandler) {
+  public void addWorkerProducerHandler(final WorkerProducerHandler workerFinishedHandler) {
     // no-op
   }
 

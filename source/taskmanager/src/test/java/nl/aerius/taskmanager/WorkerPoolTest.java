@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -41,7 +40,6 @@ import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskConsumer;
 import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
-import nl.aerius.taskmanager.exception.TaskAlreadySentException;
 import nl.aerius.taskmanager.mq.RabbitMQMessage;
 
 /**
@@ -83,8 +81,7 @@ class WorkerPoolTest {
     assertEquals(10, numberOfWorkers, "Check if workerPool change handler called.");
     workerPool.reserveWorker();
     assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
-    final Task task = createTask();
-    workerPool.sendTaskToWorker(task);
+    final Task task = createAndSendTaskToWorker();
     assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
     workerPool.releaseWorker(task.getId());
     assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after releasing 1 worker");
@@ -92,19 +89,16 @@ class WorkerPoolTest {
 
   @Test
   void testNoFreeWorkers() {
-    assertThrows(NoFreeWorkersException.class, () -> workerPool.sendTaskToWorker(createTask()),
+    assertThrows(NoFreeWorkersException.class, () -> createAndSendTaskToWorker(),
         "Expected NoFreeWorkersException when trying to send a task while there are no free workers.");
   }
 
   @Test
   void testWorkerPoolScaleDown() throws IOException {
     workerPool.onNumberOfWorkersUpdate(5, 0);
-    final Task task1 = createTask();
-    workerPool.sendTaskToWorker(task1);
-    final Task task2 = createTask();
-    workerPool.sendTaskToWorker(task2);
-    final Task task3 = createTask();
-    workerPool.sendTaskToWorker(task3);
+    final Task task1 = createAndSendTaskToWorker();
+    final Task task2 = createAndSendTaskToWorker();
+    final Task task3 = createAndSendTaskToWorker();
     assertEquals(5, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after 2 workers running");
     workerPool.onNumberOfWorkersUpdate(1, 0);
     assertEquals(3, workerPool.getWorkerSize(),
@@ -118,11 +112,11 @@ class WorkerPoolTest {
     assertEquals(1, workerPool.getWorkerSize(), "Check if workerPool size should remain the same");
   }
 
+
   @Test
   void testReleaseTaskTwice() throws IOException {
     workerPool.onNumberOfWorkersUpdate(2, 0);
-    final Task task1 = createTask();
-    workerPool.sendTaskToWorker(task1);
+    final Task task1 = createAndSendTaskToWorker();
     final String id = task1.getId();
     workerPool.releaseWorker(id);
     final int currentWorkerSize1 = workerPool.getReportedWorkerSize();
@@ -132,26 +126,27 @@ class WorkerPoolTest {
     assertEquals(2, workerPool.getReportedWorkerSize(), "Check if task worker size not decreased to much");
   }
 
-  @Disabled("Exception is not thrown anymore, so test ignored for now")
-  @Test
-  void testSendSameTaskTwice() throws IOException {
-    workerPool.onNumberOfWorkersUpdate(3, 0);
-    final Task task1 = createTask();
-    workerPool.sendTaskToWorker(task1);
-
-    assertThrows(TaskAlreadySentException.class, () -> workerPool.sendTaskToWorker(task1),
-        "Expected TaskAlreadySentException when a message is send a second time.");
-  }
-
   @Test
   void testMessageDeliverd() throws IOException {
     workerPool.onNumberOfWorkersUpdate(1, 0);
-    final Task task1 = createTask();
-    workerPool.sendTaskToWorker(task1);
+    createAndSendTaskToWorker();
     assertNotSame(0, message.getDeliveryTag(), "Check if message is delivered");
   }
 
-  private Task createTask() {
-    return new MockTask(taskConsumer);
+  @Test
+  void testReset() throws IOException {
+    workerPool.onNumberOfWorkersUpdate(5, 0);
+    createAndSendTaskToWorker();
+    createAndSendTaskToWorker();
+    assertEquals(2, workerPool.getRunningWorkerSize(), "Should report 2 workers running.");
+    workerPool.reset();
+    assertEquals(0, workerPool.getRunningWorkerSize(), "Should report no workers running after internal state reset.");
+  }
+
+  private Task createAndSendTaskToWorker() throws IOException {
+    final Task task = new MockTask(taskConsumer);
+
+    workerPool.sendTaskToWorker(task);
+    return task;
   }
 }

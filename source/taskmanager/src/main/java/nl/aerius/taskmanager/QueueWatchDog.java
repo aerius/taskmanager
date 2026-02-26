@@ -17,20 +17,64 @@
 package nl.aerius.taskmanager;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
+import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 
 /**
  * WatchDog to detect dead messages. Dead messages are messages once put on the queue, but those messages have gone. For example because
  * the queue was purged after some restart. In such a case the scheduler keeps the tasks locked and since there will never come an message
  * for the task it's locked indefinitely. This watch dog tries to detect such tasks and release them at some point.
  */
-public class QueueWatchDog {
+class QueueWatchDog implements WorkerSizeObserver, WorkerProducerHandler {
+
+  private static final Logger LOG = LoggerFactory.getLogger(QueueWatchDog.class);
 
   /**
    * If for more than 10 minutes the problem remains the sign to reset is given.
    */
   private static final long RESET_TIME_MINUTES = 10;
 
+  private final String workerQueueName;
+  private final List<QueueWatchDogListener> listeners = new ArrayList<>();
+  private final Set<String> runningTasks = new HashSet<>();
+
   private LocalDateTime firstProblem;
+
+  public QueueWatchDog(final String workerQueueName) {
+    this.workerQueueName = workerQueueName;
+  }
+
+  public void addQueueWatchDogListener(final QueueWatchDogListener listener) {
+    listeners.add(listener);
+  }
+
+  @Override
+  public void onWorkDispatched(final String messageId, final Map<String, Object> messageMetaData) {
+    runningTasks.add(messageId);
+  }
+
+  @Override
+  public void onWorkerFinished(final String messageId, final Map<String, Object> messageMetaData) {
+    runningTasks.remove(messageId);
+  }
+
+  @Override
+  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
+    if (isItDead(!runningTasks.isEmpty(), numberOfMessages)) {
+      LOG.info("It looks like some tasks are zombies on {} worker queue, so all tasks currently in state running are released.", workerQueueName);
+      listeners.forEach(QueueWatchDogListener::reset);
+    }
+  }
 
   /**
    * Check if the condition is met to do a reset. This is if for more than {@link #RESET_TIME_MINUTES} workers are running,
@@ -39,7 +83,7 @@ public class QueueWatchDog {
    * @param numberOfMessages number of messages on queue
    * @return true if it's time to free all tasks
    */
-  public boolean isItDead(final boolean runningWorkers, final int numberOfMessages) {
+  private boolean isItDead(final boolean runningWorkers, final int numberOfMessages) {
     boolean doReset = false;
     if (runningWorkers && numberOfMessages == 0) {
       if (firstProblem == null) {
@@ -59,4 +103,5 @@ public class QueueWatchDog {
   protected LocalDateTime now() {
     return LocalDateTime.now();
   }
+
 }

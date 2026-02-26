@@ -63,7 +63,7 @@ class PriorityTaskSchedulerTest {
   private static final String QUEUE2 = "queue2";
   private static final String QUEUE3 = "queue3";
   private static final double TEST_CAPACITY = 0.7;
-  private static final PriorityTaskSchedulerFactory factory = new PriorityTaskSchedulerFactory();
+  private static final PriorityTaskSchedulerFactory FACTORY = new PriorityTaskSchedulerFactory();
 
   private TaskConsumer taskConsumer1;
   private TaskConsumer taskConsumer2;
@@ -86,7 +86,7 @@ class PriorityTaskSchedulerTest {
     configuration.getQueues().add(tc1);
     configuration.getQueues().add(tc2);
     configuration.getQueues().add(tc3);
-    scheduler = (PriorityTaskScheduler) factory.createScheduler(new QueueConfig(QUEUE1, false, true, null));
+    scheduler = (PriorityTaskScheduler) FACTORY.createScheduler(new QueueConfig(QUEUE1, false, true, null));
     configuration.getQueues().forEach(scheduler::updateQueue);
     task1 = createTask(taskConsumer1, "1");
     task2a = createTask(taskConsumer2, "2a");

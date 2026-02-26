@@ -83,4 +83,9 @@ public class MockTaskScheduler implements TaskScheduler<PriorityTaskQueue> {
     }
   }
 
+  @Override
+  public void reset() {
+    // No-op
+  }
+
 }

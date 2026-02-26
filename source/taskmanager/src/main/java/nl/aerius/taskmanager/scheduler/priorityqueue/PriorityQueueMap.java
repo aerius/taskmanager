@@ -70,7 +70,11 @@ class PriorityQueueMap<K extends PriorityQueueMapKeyMapper> {
     tasksOnWorkersPerQueue.computeIfAbsent(key(taskRecord), k -> new AtomicInteger()).incrementAndGet();
   }
 
-  public int onWorkerTotal(final String queueName) {
+  public int onWorkerTotal() {
+    return tasksOnWorkersPerQueue.entrySet().stream().mapToInt(e -> e.getValue().get()).sum();
+  }
+
+  public int onWorkerByQueue(final String queueName) {
     return tasksOnWorkersPerQueue.entrySet().stream()
         .filter(e -> keyMapper.queueName(e.getKey()).equals(queueName))
         .mapToInt(e -> e.getValue().get())

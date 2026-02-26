@@ -57,7 +57,7 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   private final String workerQueueName;
   private final boolean durable;
   private final RabbitMQQueueType queueType;
-  private final List<WorkerFinishedHandler> workerFinishedHandlers = new ArrayList<>();
+  private final List<WorkerProducerHandler> workerProducerHandlers = new ArrayList<>();
   private Channel channel;
 
   private boolean isShutdown;
@@ -72,8 +72,8 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void addWorkerFinishedHandler(final WorkerFinishedHandler workerFinishedHandler) {
-    this.workerFinishedHandlers.add(workerFinishedHandler);
+  public void addWorkerProducerHandler(final WorkerProducerHandler workerProducerHandler) {
+    this.workerProducerHandlers.add(workerProducerHandler);
   }
 
   @Override
@@ -99,7 +99,15 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     forwardBuilder.headers(headers);
     final BasicProperties forwardProperties = forwardBuilder.deliveryMode(2).build();
     channel.basicPublish("", workerQueueName, forwardProperties, rabbitMQMessage.getBody());
-    workerFinishedHandlers.forEach(h -> h.onWorkDispatched(message.getMessageId(), headers));
+    workerProducerHandlers.forEach(h -> handleWorkDispatched(message, headers, h));
+  }
+
+  private static void handleWorkDispatched(final Message message, final Map<String, Object> headers, final WorkerProducerHandler handler) {
+    try {
+      handler.onWorkDispatched(message.getMessageId(), headers);
+    } catch (final RuntimeException e) {
+      LOG.error("Runtime exception during onWorkDispatched of {}", handler.getClass(), e);
+    }
   }
 
   private synchronized void ensureChanne() throws IOException {
@@ -182,13 +190,13 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     replyChannel.basicConsume(workerReplyQueue, true, workerReplyQueue, new DefaultConsumer(replyChannel) {
       @Override
       public void handleDelivery(final String consumerTag, final Envelope envelope, final BasicProperties properties, final byte[] body) {
-        workerFinishedHandlers.forEach(h -> handleWorkFinished(h, properties));
+        workerProducerHandlers.forEach(h -> handleWorkFinished(h, properties));
       }
     });
     return true;
   }
 
-  private static void handleWorkFinished(final WorkerFinishedHandler handler, final BasicProperties properties) {
+  private static void handleWorkFinished(final WorkerProducerHandler handler, final BasicProperties properties) {
     try {
       handler.onWorkerFinished(properties.getMessageId(), properties.getHeaders());
     } catch (final RuntimeException e) {
