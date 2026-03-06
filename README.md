@@ -51,6 +51,10 @@ The flow of a tasks is as follows:
 9. The taskmanager marks the tasks as finished and marks the worker as free.
    A new task can now be scheduled.
 
+## Telemetry
+
+See the page on [telemetry](doc/telemetry.md) about telemetry metrics and tips about (auto)scaling.
+
 ## Configuration
 
 The task manager configuration consists of 2 parts.
