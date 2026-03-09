@@ -14,20 +14,20 @@ Setting the time span for scaling to low can result in erratic behavior either r
 or will trigger blocks by the service provider.
 
 > [!NOTE]
-> There is no mechanism in place to control which workers to scaling down if they are doing work or are idle.
+> There is no mechanism in place to control which workers to scale down if they are doing work or are idle.
 > This means scaling down means workers are arbitrary shutdown if they are running or not.
-> This is no problem as the task will just be put on the queue.
+> This is no problem as the task will just be put back on the queue.
 > But when task run long this means all that work will be redone.
 > Therefore it is recommended to use a scale down strategy which only scales down when no works is done for workers that handle long running tasks.
 
 To control the scaling there are several metrics available both in the TaskManager as well as based on RabbitMQ metrics.
-The metrics from the TaskManager a more fine-grained as they calculate averages per minute.
+The metrics from the TaskManager are more precise as they calculate averages per minute.
 The metrics from RabbitMQ are snap shots,
 require a bit more work to get the same information as the TaskManager metrics.
-But can handle situations where the TaskManager restarts, see Note.
+RabbitMQ metrics however can handle situations where the TaskManager restarts, see Note.
 
 > [!NOTE]
-> When the TaskManager is restarted it looses the state of the task running.
+> When the TaskManager is restarted it loses the state of the task running.
 > This is no issue for the operation of the system because that doesn't depend on that information.
 > However, it can affect auto scaling.
 > Because after restart the TaskManager will report as if there are no tasks running.
@@ -53,7 +53,7 @@ To calculate the load use the following formule:
 The metrics the attribute value `aerius.worker.<worker type>` of the `rabbitmq_queue` should be used for this.
 
 Scaling on percentage works best when scaling percentages are close to 100%
-or the total number of workers is that can be scaled up to is not that high (below 100).
+or the total number of workers that can be scaled up to is not that high (below 100).
 Because with the higher the amount of possible workers the higher the margin becomes.
 For example if the scale down percentage is 70%,
 and there are 300 workers running it won't scale down until there are less than 210 running.
@@ -82,6 +82,7 @@ These metrics are all defined with the `nl.aerius.TaskManager` instrumentation s
 | `aer.taskmanager.worker_size`<sup>1</sup>           | gauge     | The sum of idle workers + occupied workers.                          |
 | `aer.taskmanager.current_worker_size`<sup>1</sup>   | gauge     | The number of workers based on what RabbitMQ reports.                |
 | `aer.taskmanager.running_worker_size`<sup>1</sup>   | gauge     | The number of workers that are occupied.                             |
+| `aer.taskmanager.free_worker_size`<sup>1</sup>      | gauge     | The number of workers that are idle.                                 |
 | `aer.taskmanager.running_client_size`<sup>2</sup>   | gauge     | The number of workers that are occupied for a specific client queue. |
 | `aer.taskmanager.dispatched`<sup>1</sup>            | histogram | The number of tasks dispatched.                                      |
 | `aer.taskmanager.dispatched.wait`<sup>1</sup>       | histogram | The average wait time of tasks dispatched.                           |
@@ -115,7 +116,7 @@ For scaling these are relevant.
 Second the queues with work towards the TaskManager.
 These have the pattern `aerius.<worker type>.<job type>`.
 
-It will require some arithmetic to calculate the amount of tasks  on the worker or idle workers because the metrics don't give that information directly.
+It will require some arithmetic to calculate the amount of tasks on the worker or idle workers because the metrics don't give that information directly.
 Because each worker process represents 1 RabbitMQ consumer the metric `rabbitmq_detailed_queue_messages_consumers` can be used to measure the amount of workers available.
 
 ## Traces
