@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -74,7 +74,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
    * @param schedule scheduler configuration
    * @throws InterruptedException
    */
-  public boolean updateTaskScheduler(final TaskSchedule<T> schedule) throws InterruptedException {
+  public void updateTaskScheduler(final TaskSchedule<T> schedule) throws InterruptedException {
     // Set up scheduler with worker pool
     final String workerQueueName = schedule.getWorkerQueueName();
     final QueueConfig workerQueueConfig = new QueueConfig(workerQueueName, schedule.isDurable(), schedule.isEagerFetch(), schedule.getQueueType());
@@ -85,7 +85,10 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     final TaskScheduleBucket taskScheduleBucket = buckets.get(workerQueueName);
 
     taskScheduleBucket.updateQueues(schedule.getQueues(), workerQueueConfig);
-    return taskScheduleBucket.isRunning();
+  }
+
+  public boolean isRunning(final String queue) {
+    return Optional.ofNullable(buckets.get(queue)).map(TaskScheduleBucket::isRunning).orElse(false);
   }
 
   /**
@@ -121,11 +124,13 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     public TaskScheduleBucket(final QueueConfig queueConfig) throws InterruptedException {
       this.workerQueueName = queueConfig.queueName();
       final QueueWatchDog watchDog = new QueueWatchDog(workerQueueName);
+      final StartupGuard startupGuard = new StartupGuard();
+
       taskScheduler = schedulerFactory.createScheduler(queueConfig);
       workerProducer = factory.createWorkerProducer(queueConfig);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
       final PerformanceMetricsReporter reporter = new PerformanceMetricsReporter(scheduledExecutorService, queueConfig.queueName(),
-          OpenTelemetryMetrics.METER, workerPool);
+          OpenTelemetryMetrics.METER, workerPool, startupGuard);
 
       watchDog.addQueueWatchDogListener(workerPool);
       watchDog.addQueueWatchDogListener(taskScheduler);
@@ -134,6 +139,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       workerProducer.addWorkerProducerHandler(reporter);
       workerProducer.addWorkerProducerHandler(watchDog);
 
+      workerSizeObserverProxy.addObserver(workerQueueName, startupGuard);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerSizeObserverProxy.addObserver(workerQueueName, watchDog);
 
@@ -143,15 +149,21 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       workerProducer.start();
       // Set up metrics
       WorkerPoolMetrics.setupMetrics(workerPool, workerQueueName);
-      // Set up dispatcher
+
       dispatcher = new TaskDispatcher(workerQueueName, taskScheduler, workerPool);
-      executorService.execute(dispatcher);
-      Thread.sleep(TimeUnit.SECONDS.toMillis(1)); // just wait a little second to make sure the process is actually running.
-      LOG.info("Started taskscheduler {}: {}", taskScheduler.getClass().getSimpleName(), queueConfig);
+      executorService.execute(() -> {
+        try {
+          // Wait for worker queue to be empty.
+          startupGuard.waitForOpen();
+          LOG.info("Starting task scheduler {}: {}", taskScheduler.getClass().getSimpleName(), queueConfig);
+          dispatcher.run();
+        } catch (final InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }});
     }
 
     /**
-     * @return
+     * @return true if the dispatcher is running.
      */
     public boolean isRunning() {
       return dispatcher.isRunning();

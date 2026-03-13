@@ -31,6 +31,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleGauge;
 import io.opentelemetry.api.metrics.Meter;
 
+import nl.aerius.taskmanager.StartupGuard;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.client.TaskMetrics;
@@ -77,6 +78,8 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   private final DurationMetric workWorkerMetrics;
   private final LoadMetric loadMetrics = new LoadMetric();
 
+  private final StartupGuard startupGuard;
+
   private final Meter meter;
   private final String queueGroupName;
   private final WorkerMetrics workerMetrics;
@@ -88,10 +91,11 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   private final Set<String> dispatchedTasks = new HashSet<>();
 
   public PerformanceMetricsReporter(final ScheduledExecutorService newScheduledThreadPool, final String queueGroupName, final Meter meter,
-      final WorkerMetrics workerMetrics) {
+      final WorkerMetrics workerMetrics, final StartupGuard startupGuard) {
     this.queueGroupName = queueGroupName;
     this.meter = meter;
     this.workerMetrics = workerMetrics;
+    this.startupGuard = startupGuard;
 
     // Gauges for measuring number of tasks, and average duration time it took before a task was send to to the worker.
     // Measures by worker and per queue to the worker
@@ -195,9 +199,11 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   }
 
   private void workLoad() {
-    final double load = loadMetrics.process();
+    if (startupGuard.isOpen()) {
+      final double load = loadMetrics.process();
 
-    loadGauge.set(load, workerAttributes);
-    LOG.debug("Workload for '{}' is: {}%", queueGroupName, Math.round(load));
+      loadGauge.set(load, workerAttributes);
+      LOG.debug("Workload for '{}' is: {}%", queueGroupName, Math.round(load));
+    }
   }
 }

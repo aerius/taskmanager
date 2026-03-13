@@ -46,6 +46,7 @@ import io.opentelemetry.api.metrics.DoubleGauge;
 import io.opentelemetry.api.metrics.DoubleGaugeBuilder;
 import io.opentelemetry.api.metrics.Meter;
 
+import nl.aerius.taskmanager.StartupGuard;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.client.TaskMetrics;
 
@@ -75,13 +76,17 @@ class PerformanceMetricsReporterTest {
     final DoubleGaugeBuilder mockGaugeBuilder = mock(DoubleGaugeBuilder.class);
     doAnswer(inv -> {
       final DoubleGauge gauge = mock(DoubleGauge.class);
+
       doReturn(mockGaugeBuilder).when(mockGaugeBuilder).setDescription(any());
       doReturn(gauge).when(mockGaugeBuilder).build();
       mockedGauges.put(inv.getArgument(0, String.class), gauge);
       return mockGaugeBuilder;
     }).when(mockedMeter).gaugeBuilder(any());
     lenient().doReturn(mockGaugeBuilder).when(mockGaugeBuilder).setDescription(any());
-    reporter = new PerformanceMetricsReporter(scheduledExecutorService, QUEUE_GROUP_NAME, mockedMeter, workMetrics);
+    final StartupGuard startupGuard = new StartupGuard();
+
+    startupGuard.onNumberOfWorkersUpdate(0, 0);
+    reporter = new PerformanceMetricsReporter(scheduledExecutorService, QUEUE_GROUP_NAME, mockedMeter, workMetrics, startupGuard);
     verify(scheduledExecutorService).scheduleWithFixedDelay(methodCaptor.capture(), anyLong(), anyLong(), any(TimeUnit.class));
   }
 
