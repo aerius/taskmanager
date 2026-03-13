@@ -45,10 +45,10 @@ class TaskDispatcher implements ForwardTaskHandler, Runnable {
 
   private final WorkerPool workerPool;
   private final TaskScheduler<?> scheduler;
+  private final String workerQueueName;
 
   private boolean running;
   private State state;
-  private final String workerQueueName;
 
   public TaskDispatcher(final String workerQueueName, final TaskScheduler<?> scheduler, final WorkerPool workerPool) {
     this.workerQueueName = workerQueueName;

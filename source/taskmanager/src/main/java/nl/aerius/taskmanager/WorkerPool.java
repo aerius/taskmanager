@@ -47,10 +47,13 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMet
 
   private final Semaphore freeWorkers = new Semaphore(0);
   private final Map<String, TaskRecord> runningWorkers = new ConcurrentHashMap<>();
-  private int totalConfiguredWorkers;
   private final String workerQueueName;
   private final WorkerProducer wp;
   private final WorkerUpdateHandler workerUpdateHandler;
+
+  private int totalReportedWorkers;
+  private int initialUnaccountedWorkers;
+  private boolean firstUpdateReceived;
 
   public WorkerPool(final String workerQueueName, final WorkerProducer wp, final WorkerUpdateHandler workerUpdateHandler) {
     this.workerQueueName = workerQueueName;
@@ -83,19 +86,19 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMet
 
   public int getWorkerSize() {
     synchronized (this) {
-      return freeWorkers.availablePermits() + runningWorkers.size();
+      return freeWorkers.availablePermits() + runningWorkers.size() + initialUnaccountedWorkers;
     }
   }
 
   @Override
   public int getReportedWorkerSize() {
-    return totalConfiguredWorkers;
+    return totalReportedWorkers;
   }
 
   @Override
   public int getRunningWorkerSize() {
     synchronized (this) {
-      return runningWorkers.size();
+      return runningWorkers.size() + initialUnaccountedWorkers;
     }
   }
 
@@ -120,21 +123,29 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMet
    * @param taskRecord the task is expected to be on.
    */
   void releaseWorker(final String taskId, final TaskRecord taskRecord) {
-    if (taskRecord != null) {
-      synchronized (this) {
-        if (runningWorkers.containsKey(taskId)) {
-          // if currentSize is smaller than the worker size it means the worker
-          // must not be re-added as free worker but removed from the pool.
-          if (totalConfiguredWorkers >= runningWorkers.size()) {
-            freeWorkers.release(1);
-          }
-          runningWorkers.remove(taskId);
-        } else {
-          LOG.info("[{}][taskId:{}] Task for queue '{}' not found, maybe it was already released).", workerQueueName, taskId, taskRecord.queueName());
+    synchronized (this) {
+      if (runningWorkers.containsKey(taskId)) {
+        freeWorker();
+        runningWorkers.remove(taskId);
+      } else {
+        if (initialUnaccountedWorkers > 0) {
+          freeWorker();
         }
+        initialUnaccountedWorkers = Math.max(initialUnaccountedWorkers - 1, 0);
+        LOG.info("[{}][taskId:{}] Unknown task received, possible left over of restart).", workerQueueName, taskId);
       }
+    }
+    if (taskRecord != null) {
       workerUpdateHandler.onTaskFinished(taskRecord);
       LOG.debug("[{}][taskId:{}] Task released).", workerQueueName, taskId);
+    }
+  }
+
+  private void freeWorker() {
+    // if currentSize is smaller than the worker size it means the worker
+    // must not be re-added as free worker but removed from the pool.
+    if (totalReportedWorkers >= (runningWorkers.size() + initialUnaccountedWorkers)) {
+      freeWorkers.release(1);
     }
   }
 
@@ -169,24 +180,28 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMet
   @Override
   public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
     synchronized (this) {
+      if (!firstUpdateReceived) {
+        initialUnaccountedWorkers = numberOfMessages;
+        firstUpdateReceived = true;
+      }
       updateNumberOfWorkers(numberOfWorkers);
     }
   }
 
   private void updateNumberOfWorkers(final int numberOfWorkers) {
-    final int previousTotalConfiguredWorkers = totalConfiguredWorkers;
-    totalConfiguredWorkers = numberOfWorkers;
-    final int deltaWorkers = totalConfiguredWorkers - getWorkerSize();
+    final int previousTotalReportedWorkers = totalReportedWorkers;
+    totalReportedWorkers = numberOfWorkers;
+    final int deltaWorkers = totalReportedWorkers - getWorkerSize();
 
     if (deltaWorkers > 0) {
       freeWorkers.release(deltaWorkers);
-      LOG.info("# Workers of {} increased to {}(+{})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
+      LOG.info("# Workers of {} increased to {}(+{})", workerQueueName, totalReportedWorkers, deltaWorkers);
     } else if ((deltaWorkers < 0) && (freeWorkers.availablePermits() > 0)
         && freeWorkers.tryAcquire(Math.min(freeWorkers.availablePermits(), -deltaWorkers))) {
-      LOG.info("# Workers of {} decreased to {}({})", workerQueueName, totalConfiguredWorkers, deltaWorkers);
+      LOG.info("# Workers of {} decreased to {}({})", workerQueueName, totalReportedWorkers, deltaWorkers);
     }
-    if (previousTotalConfiguredWorkers != totalConfiguredWorkers) {
-      workerUpdateHandler.onWorkerPoolSizeChange(totalConfiguredWorkers);
+    if (previousTotalReportedWorkers != totalReportedWorkers) {
+      workerUpdateHandler.onWorkerPoolSizeChange(totalReportedWorkers);
     }
   }
 
