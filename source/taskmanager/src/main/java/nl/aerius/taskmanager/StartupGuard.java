@@ -21,9 +21,9 @@ import java.util.concurrent.Semaphore;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 
 /**
- * Class to be used at startup. The Scheduler should not start before the worker queue is empty.
- * This to let any work that was left over after a restart of the taskmanager to complete before adding new tasks.
- * Because the Taskmanager is not aware of the tasks already on the queue and therefore won't be counted in the metrics.
+ * Class to be used at startup. The Scheduler should not start before it is known how many messages are still on the queue.
+ * This to register any work that is still on the queuue and to properly calculate load metrics.
+ * Because the Taskmanager is not aware of the tasks already on the queue and therefore otherwise these messaages won't be counted in the metrics.
  * This can result in the metrics being skewed, and thereby negatively reporting load metrics.
  */
 public class StartupGuard implements WorkerSizeObserver {
@@ -49,7 +49,7 @@ public class StartupGuard implements WorkerSizeObserver {
   @Override
   public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
     synchronized (openSemaphore) {
-      if (!open && numberOfMessages == 0) {
+      if (!open) {
         open = true;
         openSemaphore.release();
       }

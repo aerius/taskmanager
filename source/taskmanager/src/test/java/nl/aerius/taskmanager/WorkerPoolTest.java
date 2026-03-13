@@ -18,7 +18,6 @@ package nl.aerius.taskmanager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.lenient;
@@ -26,6 +25,7 @@ import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,16 +75,30 @@ class WorkerPoolTest {
 
   @Test
   void testWorkerPoolSizing() throws IOException {
-    assertSame(0, workerPool.getReportedWorkerSize(), "Check if workerPool size is empty at start");
+    assertEquals(0, workerPool.getReportedWorkerSize(), "Check if workerPool size is empty at start");
     workerPool.onNumberOfWorkersUpdate(10, 0);
-    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is changed after sizing");
+    assertEquals(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is changed after sizing");
     assertEquals(10, numberOfWorkers, "Check if workerPool change handler called.");
     workerPool.reserveWorker();
-    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
+    assertEquals(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
     final Task task = createAndSendTaskToWorker();
-    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
+    assertEquals(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after reserving 1 worker");
     workerPool.releaseWorker(task.getId());
-    assertSame(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after releasing 1 worker");
+    assertEquals(10, workerPool.getReportedWorkerSize(), "Check if workerPool size is same after releasing 1 worker");
+  }
+
+  @Test
+  void testWorkerPoolSizingWithInitialSize() throws IOException {
+    workerPool.onNumberOfWorkersUpdate(10, 5);
+    assertEquals(5, workerPool.getRunningWorkerSize(), "Check if workerPool size is 5");
+    assertEquals(10, workerPool.getWorkerSize(), "Internal worker size should match reported number of workers");
+    workerPool.onNumberOfWorkersUpdate(10, 5);
+    assertEquals(5, workerPool.getRunningWorkerSize(), "Check if workerPool size is still 5");
+    assertEquals(10, workerPool.getWorkerSize(), "Internal worker size should still match reported number of workers");
+    IntStream.range(1, 6).forEach(a -> workerPool.onWorkerFinished("", null));
+    //    workerPool.onNumberOfWorkersUpdate(10, 0);
+    assertEquals(0, workerPool.getRunningWorkerSize(), "After unknonw tasks received running size should be 0");
+    assertEquals(10, workerPool.getWorkerSize(), "Internal worker size should still match reported number of workers");
   }
 
   @Test
@@ -111,7 +125,6 @@ class WorkerPoolTest {
     workerPool.releaseWorker(task3.getId());
     assertEquals(1, workerPool.getWorkerSize(), "Check if workerPool size should remain the same");
   }
-
 
   @Test
   void testReleaseTaskTwice() throws IOException {

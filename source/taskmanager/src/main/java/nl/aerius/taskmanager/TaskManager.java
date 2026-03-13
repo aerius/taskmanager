@@ -130,7 +130,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       workerProducer = factory.createWorkerProducer(queueConfig);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
       final PerformanceMetricsReporter reporter = new PerformanceMetricsReporter(scheduledExecutorService, queueConfig.queueName(),
-          OpenTelemetryMetrics.METER, workerPool, startupGuard);
+          OpenTelemetryMetrics.METER, startupGuard);
 
       watchDog.addQueueWatchDogListener(workerPool);
       watchDog.addQueueWatchDogListener(taskScheduler);
@@ -139,9 +139,11 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       workerProducer.addWorkerProducerHandler(reporter);
       workerProducer.addWorkerProducerHandler(watchDog);
 
-      workerSizeObserverProxy.addObserver(workerQueueName, startupGuard);
+      workerSizeObserverProxy.addObserver(workerQueueName, reporter);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerSizeObserverProxy.addObserver(workerQueueName, watchDog);
+      // startup Guard should be the last observer added as it will unlock the task dispatcher
+      workerSizeObserverProxy.addObserver(workerQueueName, startupGuard);
 
       if (taskScheduler instanceof final WorkerSizeObserver wzo) {
         workerSizeObserverProxy.addObserver(workerQueueName, wzo);

@@ -19,29 +19,50 @@ package nl.aerius.taskmanager;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test class for {@link StartupGuard}
  */
 class StartupGuardTest {
 
-  private boolean open;
   @Test
   void testOpen() {
-    open = false;
     final StartupGuard guard = new StartupGuard();
-    new Thread(this::trigger).run();
+
     assertFalse(guard.isOpen(), "Guard should not be open.");
     guard.onNumberOfWorkersUpdate(0, 1);
-    assertFalse(guard.isOpen(), "Guard should still not be open when number of message > 0.");
-    guard.onNumberOfWorkersUpdate(0, 0);
-    assertTrue(guard.isOpen(), "Guard should be open when number of message has become 0.");
+    assertTrue(guard.isOpen(), "Guard should be open when onNumberOfWorkersUpdate is called.");
     guard.onNumberOfWorkersUpdate(0, 1);
-    assertTrue(guard.isOpen(), "Guard should still be be open once the number of messages has been zero once.");
+    assertTrue(guard.isOpen(), "Guard should still remain open onNumberOfWorkersUpdate has been called.");
   }
 
-  private void trigger() {
-    open = true;
+  @Test
+  @Timeout(value = 3, unit = TimeUnit.SECONDS)
+  void testWaitForOpen() throws InterruptedException {
+    final StartupGuard guard = new StartupGuard();
+    final Semaphore waitForStart = new Semaphore(0);
+    final Semaphore waitForOpen = new Semaphore(0);
+
+    new Thread(() -> {
+      try {
+        waitForStart.release();
+        guard.waitForOpen();
+        waitForOpen.release();
+      } catch (final InterruptedException e) {
+        // Ignore exception
+      }
+    }).start();
+    // First wait for first semaphore to be unlocked.
+    waitForStart.acquire();
+    assertFalse(guard.isOpen(), "Guard should not be open.");
+    guard.onNumberOfWorkersUpdate(1, 1);
+    // Wait for semaphore that is called after waitForOpen is unlocked.
+    waitForOpen.acquire();
+    assertTrue(guard.isOpen(), "Guard should now be open.");
   }
 }
