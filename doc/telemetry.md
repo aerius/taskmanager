@@ -6,24 +6,26 @@ That means that it supports the use of an OpenTelemetry java agent, even though 
 ## Using metrics for autoscaling
 
 To effectively use resources it is recommended to use automatic scaling of workers based on work load.
-When load is low the system can be scaled down and when demand increases the system can be scaled up.
+Scaling in this context means adding or removing nodes/containers/tasks (horizontal scaling).
+When utilisation is low the system can be scaled down and when demand increases the system can be scaled up.
 Metrics are reported by a 1 minute time frame.
 Scaling can be triggered by monitoring metrics and when certain conditions are met for several minutes it can trigger scaling up or down.
 Scaling up or down is typically done by increasing/decreasing the number of workers by a preset amount.
 Setting the time span for scaling to low can result in erratic behavior either reducing performance because tasks are constantly redone
 or will trigger blocks by the service provider.
 
+
 > [!NOTE]
 > There is no mechanism in place to control which workers to scale down if they are doing work or are idle.
-> This means scaling down means workers are arbitrary shutdown if they are running or not.
+> Meaning workers are arbitrarily shut down whether they are handling work or not.
 > This is no problem as the task will just be put back on the queue.
-> But when task run long this means all that work will be redone.
-> Therefore it is recommended to use a scale down strategy which only scales down when no works is done for workers that handle long running tasks.
+> But when tasks take a long time this means all that work will be redone.
+> Therefore it is recommended to use a scale down strategy which only scales down when no work is done for workers that handle long running tasks.
 
 To control the scaling there are several metrics available both in the TaskManager as well as based on RabbitMQ metrics.
 The metrics from the TaskManager are more precise as they calculate averages per minute.
-The metrics from RabbitMQ are snap shots,
-require a bit more work to get the same information as the TaskManager metrics.
+The metrics from RabbitMQ are snapshots,
+they require a bit more work to get the same information as the TaskManager metrics.
 RabbitMQ metrics however can handle situations where the TaskManager restarts, see Note.
 
 > [!NOTE]
@@ -44,13 +46,13 @@ Here 2 possible strategies are described.
 
 Scaling based on load means if the system reaches a certain percentage more workers are scaled up.
 And if the percentage falls below another percentage workers are scaled down.
-Scaling based on the Taskmanager the `aer.taskmanager.work.load` metric is to be used.
+Scaling based on the Taskmanager `aer.taskmanager.work.load` metric is to be used.
 
 It is also possible to scale based on the RabbitMQ metrics.
 But that would require some additional calculation to get the load value.
-To calculate the load use the following formule:
+To calculate the load use the following formula:
 ((`rabbitmq_detailed_queue_messages` - `rabbitmq_detailed_queue_messages_ready`) / `rabbitmq_detailed_queue_messages_consumers`) * 100.
-The metrics the attribute value `aerius.worker.<worker type>` of the `rabbitmq_queue` should be used for this.
+The metric value `aerius.worker.<worker type>` for attribute `rabbitmq_queue` should be used for this.
 
 Scaling on percentage works best when scaling percentages are close to 100%
 or the total number of workers that can be scaled up to is not that high (below 100).
@@ -65,9 +67,9 @@ Scaling based on idle workers means if there are less than a certain amount for 
 And if the amount of idle workers exceeds a certain value the system scales down.
 
 To scale based on the RabbitMQ metrics the following calculation must be used.
-To calculate the load use the following formule:
+To calculate the load use the following formula:
 `rabbitmq_detailed_queue_messages_consumers`- (`rabbitmq_detailed_queue_messages` - `rabbitmq_detailed_queue_messages_ready`)
-The metrics the attribute value `aerius.worker.<worker type>` of the `rabbitmq_queue` should be used for this.
+The metric value `aerius.worker.<worker type>` for attribute `rabbitmq_queue` should be used for this.
 
 ## Metrics
 
@@ -82,7 +84,6 @@ These metrics are all defined with the `nl.aerius.TaskManager` instrumentation s
 | `aer.taskmanager.worker_size`<sup>1</sup>           | gauge     | The sum of idle workers + occupied workers.                          |
 | `aer.taskmanager.current_worker_size`<sup>1</sup>   | gauge     | The number of workers based on what RabbitMQ reports.                |
 | `aer.taskmanager.running_worker_size`<sup>1</sup>   | gauge     | The number of workers that are occupied.                             |
-| `aer.taskmanager.free_worker_size`<sup>1</sup>      | gauge     | The number of workers that are idle.                                 |
 | `aer.taskmanager.running_client_size`<sup>2</sup>   | gauge     | The number of workers that are occupied for a specific client queue. |
 | `aer.taskmanager.dispatched`<sup>1</sup>            | histogram | The number of tasks dispatched.                                      |
 | `aer.taskmanager.dispatched.wait`<sup>1</sup>       | histogram | The average wait time of tasks dispatched.                           |
