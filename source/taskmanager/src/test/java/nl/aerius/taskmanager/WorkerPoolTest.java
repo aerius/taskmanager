@@ -96,8 +96,7 @@ class WorkerPoolTest {
     assertEquals(5, workerPool.getRunningWorkerSize(), "Check if workerPool size is still 5");
     assertEquals(10, workerPool.getWorkerSize(), "Internal worker size should still match reported number of workers");
     IntStream.range(1, 6).forEach(a -> workerPool.onWorkerFinished("", null));
-    //    workerPool.onNumberOfWorkersUpdate(10, 0);
-    assertEquals(0, workerPool.getRunningWorkerSize(), "After unknonw tasks received running size should be 0");
+    assertEquals(0, workerPool.getRunningWorkerSize(), "After unknown tasks received running size should be 0");
     assertEquals(10, workerPool.getWorkerSize(), "Internal worker size should still match reported number of workers");
   }
 
