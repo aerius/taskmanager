@@ -17,7 +17,8 @@
 package nl.aerius.taskmanager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,9 +30,12 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import nl.aerius.taskmanager.MockTaskScheduler.MockSchedulerFactory;
 import nl.aerius.taskmanager.adaptor.AdaptorFactory;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
+import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 import nl.aerius.taskmanager.domain.RabbitMQQueueType;
@@ -44,7 +48,9 @@ class TaskManagerTest {
 
   private static ExecutorService executor;
   private static ScheduledExecutorService scheduledExecutorService;
+
   private final PriorityTaskSchedulerFileHandler handler = new PriorityTaskSchedulerFileHandler();
+
   private PriorityTaskSchedule schedule;
   private TaskManager<PriorityTaskQueue, PriorityTaskSchedule> taskManager;
 
@@ -54,7 +60,14 @@ class TaskManagerTest {
     scheduledExecutorService = Executors.newScheduledThreadPool(1);
     final AdaptorFactory factory = new MockAdaptorFactory();
     final MockSchedulerFactory schedulerFactory = new MockTaskScheduler.MockSchedulerFactory();
-    taskManager = new TaskManager<>(executor, scheduledExecutorService, factory, schedulerFactory, factory.createWorkerSizeProvider());
+    final WorkerSizeProviderProxy workerSizeProvider = factory.createWorkerSizeProvider();
+
+    doAnswer(a -> {
+      // This will unblock the startup guard
+      ((WorkerSizeObserver) a.getArgument(1)).onNumberOfWorkersUpdate(0, 0);
+      return null;
+    }).when(workerSizeProvider).addObserver(any(), any());
+    taskManager = new TaskManager<>(executor, scheduledExecutorService, factory, schedulerFactory, workerSizeProvider);
     schedule = handler.read(new File(getClass().getClassLoader().getResource("queue/priority-task-scheduler.ops.json").getFile()));
   }
 
@@ -67,25 +80,35 @@ class TaskManagerTest {
   }
 
   @Test
+  @Timeout(value = 2, unit = TimeUnit.SECONDS)
   void testAddScheduler() throws InterruptedException {
-    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
+    updateTaskScheduler();
     assertEquals(RabbitMQQueueType.STREAM, schedule.getQueueType(), "Should have queueType STREAM");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
   @Test
+  @Timeout(value = 2, unit = TimeUnit.SECONDS)
   void testModifyQueue() throws InterruptedException {
-    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
+    updateTaskScheduler();
     schedule.getQueues().get(0).setPriority(30);
-    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
+    updateTaskScheduler();
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
   @Test
+  @Timeout(value = 2, unit = TimeUnit.SECONDS)
   void testRemoveQueue() throws InterruptedException {
-    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler running");
+    updateTaskScheduler();
     schedule.getQueues().remove(0);
-    assertTrue(taskManager.updateTaskScheduler(schedule), "TaskScheduler updated");
+    updateTaskScheduler();
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
+  }
+
+  private void updateTaskScheduler() throws InterruptedException {
+    taskManager.updateTaskScheduler(schedule);
+    while(!taskManager.isRunning(schedule.getWorkerQueueName())) {
+      Thread.sleep(300);
+    }
   }
 }

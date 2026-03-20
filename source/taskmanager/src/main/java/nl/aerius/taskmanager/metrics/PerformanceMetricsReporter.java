@@ -31,8 +31,9 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleGauge;
 import io.opentelemetry.api.metrics.Meter;
 
-import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
+import nl.aerius.taskmanager.StartupGuard;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
+import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.client.TaskMetrics;
 import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 import nl.aerius.taskmanager.metrics.DurationMetric.DurationMetricValue;
@@ -52,7 +53,7 @@ import nl.aerius.taskmanager.metrics.DurationMetric.DurationMetricValue;
  *
  * - Average load (in percentage) of all workers (of a certain type) together.
  */
-public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueWatchDogListener {
+public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueWatchDogListener, WorkerSizeObserver {
 
   private static final Logger LOG = LoggerFactory.getLogger(PerformanceMetricsReporter.class);
 
@@ -77,9 +78,10 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   private final DurationMetric workWorkerMetrics;
   private final LoadMetric loadMetrics = new LoadMetric();
 
+  private final StartupGuard startupGuard;
+
   private final Meter meter;
   private final String queueGroupName;
-  private final WorkerMetrics workerMetrics;
   private final DoubleGauge loadGauge;
 
   private final Attributes workerAttributes;
@@ -87,11 +89,13 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   // as it doesn't have any metrics on it anymore.
   private final Set<String> dispatchedTasks = new HashSet<>();
 
+  private int numberOfWorkers;
+
   public PerformanceMetricsReporter(final ScheduledExecutorService newScheduledThreadPool, final String queueGroupName, final Meter meter,
-      final WorkerMetrics workerMetrics) {
+      final StartupGuard startupGuard) {
     this.queueGroupName = queueGroupName;
     this.meter = meter;
-    this.workerMetrics = workerMetrics;
+    this.startupGuard = startupGuard;
 
     // Gauges for measuring number of tasks, and average duration time it took before a task was send to to the worker.
     // Measures by worker and per queue to the worker
@@ -136,7 +140,7 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     taskMetrics.determineDuration();
     dispatchedQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     dispatchedWorkerMetrics.register(taskMetrics);
-    loadMetrics.register(1, workerMetrics.getReportedWorkerSize());
+    loadMetrics.register(1, numberOfWorkers);
   }
 
   @Override
@@ -145,8 +149,15 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     taskMetrics.determineDuration();
     workQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     workWorkerMetrics.register(taskMetrics);
-    if (dispatchedTasks.remove(messageId)) {
-      loadMetrics.register(-1, workerMetrics.getReportedWorkerSize());
+    loadMetrics.register(-1, numberOfWorkers);
+  }
+
+  @Override
+  public synchronized void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
+    this.numberOfWorkers = numberOfWorkers;
+    if (!startupGuard.isOpen() && numberOfMessages > 0) {
+      LOG.info("Queue {} will be started with {} messages already on the queue.", queueGroupName, numberOfMessages);
+      loadMetrics.register(numberOfMessages, numberOfWorkers);
     }
   }
 
@@ -195,9 +206,11 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   }
 
   private void workLoad() {
-    final double load = loadMetrics.process();
+    if (startupGuard.isOpen()) {
+      final double load = loadMetrics.process();
 
-    loadGauge.set(load, workerAttributes);
-    LOG.debug("Workload for '{}' is: {}%", queueGroupName, Math.round(load));
+      loadGauge.set(load, workerAttributes);
+      LOG.debug("Workload for '{}' is: {}%", queueGroupName, Math.round(load));
+    }
   }
 }
