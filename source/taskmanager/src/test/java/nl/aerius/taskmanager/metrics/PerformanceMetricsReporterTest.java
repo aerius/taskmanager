@@ -65,7 +65,8 @@ class PerformanceMetricsReporterTest {
   private @Mock Meter mockedMeter;
   private @Mock ScheduledExecutorService scheduledExecutorService;
   private @Captor ArgumentCaptor<Runnable> methodCaptor;
-  private @Captor ArgumentCaptor<Double> durationCaptor;
+  private @Captor ArgumentCaptor<Double> doubleValue1Captor;
+  private @Captor ArgumentCaptor<Double> doubleValue2Captor;
 
   private StartupGuard startupGuard;
   private PerformanceMetricsReporter reporter;
@@ -109,11 +110,11 @@ class PerformanceMetricsReporterTest {
 
   private void assertGaugeCalls(final String label, final String type, final double expected, final Predicate<Double> duration) {
     verify(mockedGauges.get("aer.taskmanager." + label)).set(eq(expected), any());
-    verify(mockedGauges.get("aer.taskmanager.%s.%s".formatted(label, type))).set(durationCaptor.capture(), any());
+    verify(mockedGauges.get("aer.taskmanager.%s.%s".formatted(label, type))).set(doubleValue1Captor.capture(), any());
     verify(mockedGauges.get("aer.taskmanager.%s.queue".formatted(label))).set(eq(expected), any());
-    verify(mockedGauges.get("aer.taskmanager.%s.queue.%s".formatted(label, type))).set(durationCaptor.capture(), any());
-    durationCaptor.getAllValues()
-        .forEach(v -> assertTrue(duration.test(v), "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
+    verify(mockedGauges.get("aer.taskmanager.%s.queue.%s".formatted(label, type))).set(doubleValue1Captor.capture(), any());
+    doubleValue1Captor.getAllValues()
+    .forEach(v -> assertTrue(duration.test(v), "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
   }
 
   @Test
@@ -124,8 +125,10 @@ class PerformanceMetricsReporterTest {
     methodCaptor.getValue().run();
     Thread.sleep(10); // Add a bit of delay to get some time frame between these 2 run calls.
     methodCaptor.getValue().run();
-    verify(mockedGauges.get("aer.taskmanager.work.load"), times(2)).set(durationCaptor.capture(), any());
-    assertEquals(75.0, durationCaptor.getAllValues().get(1), "Expected workload of 75%");
+    verify(mockedGauges.get("aer.taskmanager.work.load"), times(2)).set(doubleValue1Captor.capture(), any());
+    assertEquals(75.0, doubleValue1Captor.getAllValues().get(1), "Expected workload of 50%");
+    verify(mockedGauges.get("aer.taskmanager.work.free"), times(2)).set(doubleValue2Captor.capture(), any());
+    assertEquals(2.0, doubleValue2Captor.getAllValues().get(1), "Expected number of free workers to be 4 - 2");
   }
 
   @Test
@@ -140,8 +143,8 @@ class PerformanceMetricsReporterTest {
     assertGaugeCalls("dispatched", "wait", 0.0, v -> v == 0.0);
 
     // Verify load metric have been reset.
-    verify(mockedGauges.get("aer.taskmanager.work.load"), times(1)).set(durationCaptor.capture(), any());
-    assertEquals(0.0, durationCaptor.getAllValues().get(0), 1E-5, "Expected to have no workload anymore");
+    verify(mockedGauges.get("aer.taskmanager.work.load"), times(1)).set(doubleValue1Captor.capture(), any());
+    assertEquals(0.0, doubleValue1Captor.getAllValues().get(0), 1E-5, "Expected to have no workload anymore");
   }
 
   private void startUp(final int numberOfWorkers, final int numberOfMessages) {

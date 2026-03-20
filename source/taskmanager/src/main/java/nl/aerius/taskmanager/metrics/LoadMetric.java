@@ -25,6 +25,8 @@ package nl.aerius.taskmanager.metrics;
  */
 class LoadMetric {
 
+  public record AverageLoad(double averageLoad, int averageFree) {}
+
   /**
    * Last time {@link #register(int, int)} was called.
    */
@@ -34,9 +36,15 @@ class LoadMetric {
    */
   private int totalMeasureTime;
   /**
-   * Total registered load time.
+   * Measured load time as the sum of load for specific time moments. Sum of (load * time frame).
+   * Dividing this number by the total time of the time frame will give an average load time.
    */
   private double totalLoad;
+  /**
+   * Measured free workers as the sum of number of free workers for specific time moments. Sum of (free workers * time frame).
+   * Dividing this number by the total time of the time frame will give an average number of free workers.
+   */
+  private long totalFree;
   /**
    * Number of workers running at a time.
    */
@@ -44,19 +52,21 @@ class LoadMetric {
   /**
    * Total number of available workers.
    */
-  private int totalWorkers;
+  private int numberOfWorkers;
 
   /**
    * Register change in number of running workers.
    *
    * @param deltaActiveWorkers number of jobs on the workers being added or subtracted.
-   * @param totalWorkers Total number of available workers
+   * @param numberOfWorkers Number of available workers
    */
-  public synchronized void register(final int deltaActiveWorkers, final int totalWorkers) {
-    this.totalWorkers = totalWorkers;
+  public synchronized void register(final int deltaActiveWorkers, final int numberOfWorkers) {
+    this.numberOfWorkers = numberOfWorkers;
     final long newLast = System.currentTimeMillis();
     final long delta = newLast - last;
-    totalLoad += delta * (totalWorkers > 0 ? (runningWorkers / (double) totalWorkers) : 0);
+
+    totalLoad += delta * (numberOfWorkers > 0 ? (runningWorkers / (double) numberOfWorkers) : 0);
+    totalFree += delta * Math.max(0, numberOfWorkers - runningWorkers);
     totalMeasureTime += delta;
     last = newLast;
     runningWorkers += deltaActiveWorkers;
@@ -75,13 +85,15 @@ class LoadMetric {
    *
    * @return Average load of the workers since the last time this method was called
    */
-  public synchronized double process() {
+  public synchronized AverageLoad process() {
     // Call register here to set the end time this moment. This will calculate workers running up till now as being active.
-    register(0, totalWorkers);
-    final double averageLoad = (totalLoad * 100.0) / totalMeasureTime;
+    register(0, numberOfWorkers);
+    final double averageLoad = totalMeasureTime > 0 ? (totalLoad * 100.0) / totalMeasureTime : 0;
+    final int averageFree = totalMeasureTime > 0 ? (int) Math.floor(totalFree / totalMeasureTime) : 0;
 
     totalMeasureTime = 0;
     totalLoad = 0;
-    return averageLoad;
+    totalFree = 0;
+    return new AverageLoad(averageLoad, averageFree);
   }
 }
