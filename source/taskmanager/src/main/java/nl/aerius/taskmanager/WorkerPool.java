@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
-import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.domain.QueueWatchDogListener;
@@ -34,6 +33,7 @@ import nl.aerius.taskmanager.domain.Task;
 import nl.aerius.taskmanager.domain.TaskRecord;
 import nl.aerius.taskmanager.domain.WorkerUpdateHandler;
 import nl.aerius.taskmanager.exception.NoFreeWorkersException;
+import nl.aerius.taskmanager.metrics.UsageMetricsProvider;
 
 /**
  * Class to manage workers. Contains a list of all available workers, which are: free workers, reserved workers and running workers.
@@ -41,7 +41,7 @@ import nl.aerius.taskmanager.exception.NoFreeWorkersException;
  * <p>Reserved workers are workers that are waiting for a task to become available on the queue.
  * <p>Running workers are workers for that are busy running the task and are waiting for the task to finish.
  */
-class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMetrics, QueueWatchDogListener {
+class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, UsageMetricsProvider, QueueWatchDogListener {
 
   private static final Logger LOG = LoggerFactory.getLogger(WorkerPool.class);
 
@@ -84,22 +84,32 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMet
     LOG.trace("[{}][taskId:{}] Task sent", workerQueueName, task.getId());
   }
 
-  public int getWorkerSize() {
+  @Override
+  public String getWorkerQueueName() {
+    return workerQueueName;
+  }
+
+  @Override
+  public int getNumberOfWorkers() {
     synchronized (this) {
       return freeWorkers.availablePermits() + runningWorkers.size() + initialUnaccountedWorkers;
     }
   }
 
-  @Override
   public int getReportedWorkerSize() {
     return totalReportedWorkers;
   }
 
   @Override
-  public int getRunningWorkerSize() {
+  public int getNumberOfUsedWorkers() {
     synchronized (this) {
       return runningWorkers.size() + initialUnaccountedWorkers;
     }
+  }
+
+  @Override
+  public int getNumberOfFreeWorkers() {
+    return freeWorkers.availablePermits();
   }
 
   @Override
@@ -165,6 +175,17 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMet
     }
   }
 
+  @Override
+  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesInProgress) {
+    synchronized (this) {
+      if (!firstUpdateReceived) {
+        initialUnaccountedWorkers = numberOfMessages;
+        firstUpdateReceived = true;
+      }
+      updateNumberOfWorkers(numberOfWorkers);
+    }
+  }
+
   /**
    * Sets the number of workers which are actually available. This number should
    * be determined on the number of workers that are actually in operation.
@@ -175,23 +196,11 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, WorkerMet
    * workers matches the actual number.
    *
    * @param numberOfWorkers Actual size of number of workers in operation
-   * @param numberOfMessages Actual total number of messages on the queue
    */
-  @Override
-  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
-    synchronized (this) {
-      if (!firstUpdateReceived) {
-        initialUnaccountedWorkers = numberOfMessages;
-        firstUpdateReceived = true;
-      }
-      updateNumberOfWorkers(numberOfWorkers);
-    }
-  }
-
   private void updateNumberOfWorkers(final int numberOfWorkers) {
     final int previousTotalReportedWorkers = totalReportedWorkers;
     totalReportedWorkers = numberOfWorkers;
-    final int deltaWorkers = totalReportedWorkers - getWorkerSize();
+    final int deltaWorkers = totalReportedWorkers - getNumberOfWorkers();
 
     if (deltaWorkers > 0) {
       freeWorkers.release(deltaWorkers);

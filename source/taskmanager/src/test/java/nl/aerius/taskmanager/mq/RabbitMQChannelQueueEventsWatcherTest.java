@@ -16,7 +16,6 @@
  */
 package nl.aerius.taskmanager.mq;
 
-import static nl.aerius.taskmanager.client.mq.RabbitMQWorkerMonitor.HEADER_PARAM_QUEUE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -51,6 +50,7 @@ import nl.aerius.taskmanager.client.BrokerConnectionFactory;
  */
 class RabbitMQChannelQueueEventsWatcherTest {
   private static final String TEST_QUEUENAME = "test";
+  private static final String HEADER_PARAM_QUEUE = "queue";
 
   private static ExecutorService executor;
 

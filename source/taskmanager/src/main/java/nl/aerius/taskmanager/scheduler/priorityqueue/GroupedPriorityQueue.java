@@ -77,6 +77,10 @@ class GroupedPriorityQueue implements Queue<Task> {
     return task;
   }
 
+  public synchronized int getGroupSize() {
+    return groupedQueue.entrySet().stream().mapToInt(e -> e.getValue().size()).sum();
+  }
+
   @Override
   public Stream<Task> stream() {
     return queue.stream();

@@ -35,9 +35,9 @@ class StartupGuardTest {
     final StartupGuard guard = new StartupGuard();
 
     assertFalse(guard.isOpen(), "Guard should not be open.");
-    guard.onNumberOfWorkersUpdate(0, 1);
+    guard.onNumberOfWorkersUpdate(0, 1, 0);
     assertTrue(guard.isOpen(), "Guard should be open when onNumberOfWorkersUpdate is called.");
-    guard.onNumberOfWorkersUpdate(0, 1);
+    guard.onNumberOfWorkersUpdate(0, 1, 0);
     assertTrue(guard.isOpen(), "Guard should still remain open onNumberOfWorkersUpdate has been called.");
   }
 
@@ -60,7 +60,7 @@ class StartupGuardTest {
     // First wait for first semaphore to be unlocked.
     waitForStart.acquire();
     assertFalse(guard.isOpen(), "Guard should not be open.");
-    guard.onNumberOfWorkersUpdate(1, 1);
+    guard.onNumberOfWorkersUpdate(1, 1, 0);
     // Wait for semaphore that is called after waitForOpen is unlocked.
     waitForOpen.acquire();
     assertTrue(guard.isOpen(), "Guard should now be open.");

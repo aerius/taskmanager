@@ -25,6 +25,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.ObservableDoubleGauge;
 
 import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
+import nl.aerius.taskmanager.metrics.UsageMetricsProvider;
 
 /**
  * Set up metric collection for this worker pool with the given type name.
@@ -35,9 +36,13 @@ public final class WorkerPoolMetrics {
 
   private enum WorkerPoolMetricType {
     // @formatter:off
-    WORKER_SIZE(WorkerPool::getWorkerSize, "Number of workers based on internal state of taskmanager"),
-    CURRENT_WORKER_SIZE(WorkerPool::getReportedWorkerSize, "Current number of workers according to taskmanager"),
-    RUNNING_WORKER_SIZE(WorkerPool::getRunningWorkerSize, "Running (or occupied) number of workers according to taskmanager");
+    WORKER_SIZE(UsageMetricsProvider::getNumberOfWorkers, "Number of workers based on internal state of taskmanager"),
+    @Deprecated
+    CURRENT_WORKER_SIZE(WorkerPool::getReportedWorkerSize,
+        "Current number of workers according to taskmanager (deprecated replaced with 'aer.taskmanager.workerppol.worker.usage')"),
+    @Deprecated
+    RUNNING_WORKER_SIZE(UsageMetricsProvider::getNumberOfUsedWorkers,
+        "Used number of workers according to taskmanager (deprecated replaced with 'aer.taskmanager.workerppol.worker.usage')");
     // @formatter:on
 
     private final Function<WorkerPool, Integer> function;
@@ -68,12 +73,13 @@ public final class WorkerPoolMetrics {
 
   public static void setupMetrics(final WorkerPool workerPool, final String workerQueueName) {
     final Attributes attributes = OpenTelemetryMetrics.workerAttributes(workerQueueName);
+
     for (final WorkerPoolMetricType metricType : WorkerPoolMetricType.values()) {
       REGISTERED_METRICS.put(gaugeIdentifier(workerQueueName, metricType),
           OpenTelemetryMetrics.METER.gaugeBuilder(metricType.getGaugeName())
-              .setDescription(metricType.getDescription())
-              .buildWithCallback(
-                  result -> result.record(metricType.getValue(workerPool), attributes)));
+          .setDescription(metricType.getDescription())
+          .buildWithCallback(
+              result -> result.record(metricType.getValue(workerPool), attributes)));
     }
   }
 

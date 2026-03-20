@@ -16,7 +16,6 @@
  */
 package nl.aerius.taskmanager.metrics;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -25,7 +24,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
@@ -46,7 +44,6 @@ import io.opentelemetry.api.metrics.DoubleGauge;
 import io.opentelemetry.api.metrics.DoubleGaugeBuilder;
 import io.opentelemetry.api.metrics.Meter;
 
-import nl.aerius.taskmanager.StartupGuard;
 import nl.aerius.taskmanager.client.TaskMetrics;
 
 /**
@@ -68,7 +65,6 @@ class PerformanceMetricsReporterTest {
   private @Captor ArgumentCaptor<Double> doubleValue1Captor;
   private @Captor ArgumentCaptor<Double> doubleValue2Captor;
 
-  private StartupGuard startupGuard;
   private PerformanceMetricsReporter reporter;
 
   @BeforeEach
@@ -83,15 +79,14 @@ class PerformanceMetricsReporterTest {
       return mockGaugeBuilder;
     }).when(mockedMeter).gaugeBuilder(any());
     lenient().doReturn(mockGaugeBuilder).when(mockGaugeBuilder).setDescription(any());
-    startupGuard = new StartupGuard();
 
-    reporter = new PerformanceMetricsReporter(scheduledExecutorService, QUEUE_GROUP_NAME, mockedMeter, startupGuard);
-    verify(scheduledExecutorService).scheduleWithFixedDelay(methodCaptor.capture(), anyLong(), anyLong(), any(TimeUnit.class));
+    reporter = new PerformanceMetricsReporter(scheduledExecutorService, QUEUE_GROUP_NAME, mockedMeter);
+    verify(scheduledExecutorService).scheduleWithFixedDelay(methodCaptor.capture(), anyLong(), anyLong(),
+        any(TimeUnit.class));
   }
 
   @Test
   void testOnWorkDispatched() {
-    startUp(10, 0);
     reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkDispatched("2", createMap(QUEUE_2, 200L));
     methodCaptor.getValue().run();
@@ -100,7 +95,6 @@ class PerformanceMetricsReporterTest {
 
   @Test
   void testOnWorkerFinished() {
-    startUp(2, 0);
     reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkerFinished("1", createMap(QUEUE_1, 100L));
     reporter.onWorkerFinished("2", createMap(QUEUE_2, 200L));
@@ -112,28 +106,14 @@ class PerformanceMetricsReporterTest {
     verify(mockedGauges.get("aer.taskmanager." + label)).set(eq(expected), any());
     verify(mockedGauges.get("aer.taskmanager.%s.%s".formatted(label, type))).set(doubleValue1Captor.capture(), any());
     verify(mockedGauges.get("aer.taskmanager.%s.queue".formatted(label))).set(eq(expected), any());
-    verify(mockedGauges.get("aer.taskmanager.%s.queue.%s".formatted(label, type))).set(doubleValue1Captor.capture(), any());
+    verify(mockedGauges.get("aer.taskmanager.%s.queue.%s".formatted(label, type))).set(doubleValue1Captor.capture(),
+        any());
     doubleValue1Captor.getAllValues()
     .forEach(v -> assertTrue(duration.test(v), "Duration should report at least 100.0 as it is the offset of the start time, but was " + v));
   }
 
   @Test
-  void testWorkLoad() throws InterruptedException {
-    startUp(4, 1);
-    reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
-    reporter.onWorkDispatched("2", createMap(QUEUE_2, 200L));
-    methodCaptor.getValue().run();
-    Thread.sleep(10); // Add a bit of delay to get some time frame between these 2 run calls.
-    methodCaptor.getValue().run();
-    verify(mockedGauges.get("aer.taskmanager.work.load"), times(2)).set(doubleValue1Captor.capture(), any());
-    assertEquals(75.0, doubleValue1Captor.getAllValues().get(1), "Expected workload of 50%");
-    verify(mockedGauges.get("aer.taskmanager.work.free"), times(2)).set(doubleValue2Captor.capture(), any());
-    assertEquals(2.0, doubleValue2Captor.getAllValues().get(1), "Expected number of free workers to be 4 - 2");
-  }
-
-  @Test
   void testReset() throws InterruptedException {
-    startUp(4, 1);
     reporter.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     reporter.onWorkDispatched("2", createMap(QUEUE_2, 200L));
     Thread.sleep(2); // Add a bit of delay to get some time frame between updates..
@@ -141,15 +121,6 @@ class PerformanceMetricsReporterTest {
     methodCaptor.getValue().run();
     // Verify dispatched metrics have been reset.
     assertGaugeCalls("dispatched", "wait", 0.0, v -> v == 0.0);
-
-    // Verify load metric have been reset.
-    verify(mockedGauges.get("aer.taskmanager.work.load"), times(1)).set(doubleValue1Captor.capture(), any());
-    assertEquals(0.0, doubleValue1Captor.getAllValues().get(0), 1E-5, "Expected to have no workload anymore");
-  }
-
-  private void startUp(final int numberOfWorkers, final int numberOfMessages) {
-    reporter.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
-    startupGuard.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
   }
 
   private Map<String, Object> createMap(final String queueName, final long duration) {

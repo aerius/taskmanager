@@ -14,19 +14,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.adaptor;
+package nl.aerius.taskmanager.metrics;
 
 /**
- * Interface called to observer the number of workers.
+ *
  */
-public interface WorkerSizeObserver {
+public interface UsageMetricsProvider {
 
-  /**
-   * Gives the number of workers processes connected on the queue.
-   *
-   * @param numberOfWorkers number of number of workers processes
-   * @param numberOfMessages Total number of messages on the queue
-   * @param numberOfMessagesInProgress Number of messages being processed by the workers
-   */
-  void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, int numberOfMessagesInProgress);
+  String getWorkerQueueName();
+
+  int getNumberOfWorkers();
+
+  int getNumberOfUsedWorkers();
+
+  int getNumberOfFreeWorkers();
+
+  default int getNumberOfWaiting() {
+    return 0;
+  }
 }

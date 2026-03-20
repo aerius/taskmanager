@@ -31,13 +31,10 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleGauge;
 import io.opentelemetry.api.metrics.Meter;
 
-import nl.aerius.taskmanager.StartupGuard;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
-import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.client.TaskMetrics;
 import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 import nl.aerius.taskmanager.metrics.DurationMetric.DurationMetricValue;
-import nl.aerius.taskmanager.metrics.LoadMetric.AverageLoad;
 
 /**
  * Reports the following open telemetry metrics:
@@ -54,7 +51,7 @@ import nl.aerius.taskmanager.metrics.LoadMetric.AverageLoad;
  *
  * - Average load (in percentage) of all workers (of a certain type) together.
  */
-public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueWatchDogListener, WorkerSizeObserver {
+public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueWatchDogListener {
 
   private static final Logger LOG = LoggerFactory.getLogger(PerformanceMetricsReporter.class);
 
@@ -77,32 +74,19 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
   private final DurationMetric dispatchedWorkerMetrics;
   private final Map<String, DurationMetric> workQueueMetrics = new HashMap<>();
   private final DurationMetric workWorkerMetrics;
-  private final LoadMetric loadMetrics = new LoadMetric();
-
-  private final StartupGuard startupGuard;
 
   private final Meter meter;
   private final String queueGroupName;
-  private final DoubleGauge loadGauge;
-  private final DoubleGauge limitGauge;
-  private final DoubleGauge usageGauge;
 
-  private final Attributes workerAttributes;
+  private final Attributes attributesWorker;
+
   // Keep track of dispatched tasks, because when taskmanager restarts it should not register tasks already on the queue
   // as it doesn't have any metrics on it anymore.
   private final Set<String> dispatchedTasks = new HashSet<>();
 
-  private final Attributes usageUsedAttributes;
-
-  private final Attributes usageFreeAttributes;
-
-  private int numberOfWorkers;
-
-  public PerformanceMetricsReporter(final ScheduledExecutorService newScheduledThreadPool, final String queueGroupName, final Meter meter,
-      final StartupGuard startupGuard) {
+  public PerformanceMetricsReporter(final ScheduledExecutorService newScheduledThreadPool, final String queueGroupName, final Meter meter) {
     this.queueGroupName = queueGroupName;
     this.meter = meter;
-    this.startupGuard = startupGuard;
 
     // Gauges for measuring number of tasks, and average duration time it took before a task was send to to the worker.
     // Measures by worker and per queue to the worker
@@ -124,16 +108,9 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     workQueueDurationGauge = createGauge("aer.taskmanager.work.queue.duration",
         "Average duration time a task from a queue took to process on a worker, including wait time.");
 
-    // Average load time (in percentage) of the work load on all workers together.
-    loadGauge = meter.gaugeBuilder("aer.taskmanager.work.load").setDescription("Percentage of workers used in the timeframe.").build();
-    limitGauge = meter.gaugeBuilder("aer.taskmanager.workers.limit").setDescription("Average number of free workers in the timeframe.").build();
-    usageGauge = meter.gaugeBuilder("aer.taskmanager.workers.usage").setDescription("Average number of free workers in the timeframe.").build();
-
-    workerAttributes = OpenTelemetryMetrics.workerAttributes(queueGroupName);
-    usageUsedAttributes = OpenTelemetryMetrics.workerAttributes(queueGroupName, "state", "used");
-    usageFreeAttributes = OpenTelemetryMetrics.workerAttributes(queueGroupName, "state", "free");
-    dispatchedWorkerMetrics = new DurationMetric(workerAttributes);
-    workWorkerMetrics = new DurationMetric(workerAttributes);
+    attributesWorker = OpenTelemetryMetrics.workerAttributes(queueGroupName);
+    dispatchedWorkerMetrics = new DurationMetric(attributesWorker);
+    workWorkerMetrics = new DurationMetric(attributesWorker);
     newScheduledThreadPool.scheduleWithFixedDelay(this::update, 1, UPDATE_TIME_SECONDS, TimeUnit.SECONDS);
   }
 
@@ -151,7 +128,7 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     taskMetrics.determineDuration();
     dispatchedQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     dispatchedWorkerMetrics.register(taskMetrics);
-    loadMetrics.register(1, numberOfWorkers);
+
   }
 
   @Override
@@ -160,16 +137,7 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     taskMetrics.determineDuration();
     workQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     workWorkerMetrics.register(taskMetrics);
-    loadMetrics.register(-1, numberOfWorkers);
-  }
 
-  @Override
-  public synchronized void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
-    this.numberOfWorkers = numberOfWorkers;
-    if (!startupGuard.isOpen() && numberOfMessages > 0) {
-      LOG.info("Queue {} will be started with {} messages already on the queue.", queueGroupName, numberOfMessages);
-      loadMetrics.register(numberOfMessages, numberOfWorkers);
-    }
   }
 
   @Override
@@ -178,7 +146,6 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     dispatchedQueueMetrics.entrySet().forEach(e -> e.getValue().process());
     dispatchedWorkerMetrics.process();
     // work metrics not needed to be reset because they are about work already done.
-    loadMetrics.reset();
   }
 
   private DurationMetric createQueueDurationMetric(final TaskMetrics taskMetrics) {
@@ -191,7 +158,6 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
       metrics(DISPATCH, dispatchedQueueCountGauge, dispatchedQueueWaitGauge, queueGroupName, dispatchedWorkerMetrics);
       metrics(WORK, workQueueMetrics, workWorkerCountGauge, workWorkerDurationGauge);
       metrics(WORK, workQueueCountGauge, workQueueDurationGauge, queueGroupName, workWorkerMetrics);
-      workLoad();
     } catch (final RuntimeException e) {
       LOG.error("Update metrics failed.", e);
     }
@@ -213,18 +179,6 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     averageGauge.set(metric.avgDuration(), metrics.getAttributes());
     if (count > 0) {
       LOG.debug("{} for {}: {} ms/task (#tasks: {})", prefixText, name, metric.avgDuration(), count);
-    }
-  }
-
-  private void workLoad() {
-    if (startupGuard.isOpen()) {
-      final AverageLoad load = loadMetrics.process();
-
-      loadGauge.set(load.averageLoad(), workerAttributes);
-      limitGauge.set(load.averageLimit(), workerAttributes);
-      usageGauge.set(load.averageUsed(), usageUsedAttributes);
-      usageGauge.set(load.averageFree(), usageFreeAttributes);
-      LOG.info("Workload for '{}' is: {}", queueGroupName, load);
     }
   }
 }

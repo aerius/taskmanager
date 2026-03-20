@@ -24,7 +24,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.Meter;
 
 /**
- * Class to help with opntelemetry metrics within the taskmanager.
+ * Class to help with Open Telemetry metrics within the TaskManager.
  */
 public final class OpenTelemetryMetrics {
 
@@ -43,10 +43,26 @@ public final class OpenTelemetryMetrics {
         .build();
   }
 
+  public static Attributes workerAttributes(final String workerType, final String atttributeName, final String attributeValue) {
+    return Attributes.builder()
+        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerType))
+        .put(atttributeName, attributeValue)
+        .build();
+  }
+
   public static Attributes queueAttributes(final String workerQueueName, final String queueName) {
     return Attributes.builder()
         .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerQueueName))
         .put(QUEUE_ATTRIBUTE, queueName)
+        .build();
+  }
+
+  public static Attributes queueAttributes(final String workerQueueName, final String queueName, final String atttributeName,
+      final String attributeValue) {
+    return Attributes.builder()
+        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerQueueName))
+        .put(QUEUE_ATTRIBUTE, queueName)
+        .put(atttributeName, attributeValue)
         .build();
   }
 

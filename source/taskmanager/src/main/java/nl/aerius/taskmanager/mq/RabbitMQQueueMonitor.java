@@ -56,6 +56,7 @@ import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
 public class RabbitMQQueueMonitor {
 
   private static final Logger LOG = LoggerFactory.getLogger(RabbitMQQueueMonitor.class);
+
   private static final int TIMEOUT = (int) TimeUnit.SECONDS.toMillis(3);
 
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -117,8 +118,9 @@ public class RabbitMQQueueMonitor {
       } else {
         final int numberOfWorkers = getJsonIntPrimitive(jsonObject, "consumers");
         final int numberOfMessages = getJsonIntPrimitive(jsonObject, "messages");
+        final int numberOfMessagesInProgress = getJsonIntPrimitive(jsonObject, "messages_unacknowledged");
 
-        observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
+        observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages, numberOfMessagesInProgress);
         LOG.trace("[{}] active workers:{}", queueName, numberOfWorkers);
       }
     } catch (final URISyntaxException | IOException e) {

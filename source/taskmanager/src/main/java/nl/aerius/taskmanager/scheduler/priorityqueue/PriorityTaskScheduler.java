@@ -187,17 +187,20 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   }
 
   @Override
-  public void updateQueue(final PriorityTaskQueue queue) {
+  public void updateQueue(final PriorityTaskQueue priorityTaskQueue) {
     lock.lock();
     try {
-      final String queueName = queue.getQueueName();
+      final String queueName = priorityTaskQueue.getQueueName();
       if (!priorityQueueMap.containsKey(queueName)) {
         metrics.addMetric(() -> priorityQueueMap.onWorkerByQueue(queueName), workerQueueName, queueName);
+        if (this.queue instanceof final GroupedPriorityQueue gpq) {
+          metrics.addMetricWaiting(() -> gpq.getGroupSize(), workerQueueName, queueName);
+        }
       }
-      final PriorityTaskQueue old = priorityQueueMap.put(queueName, queue);
+      final PriorityTaskQueue old = priorityQueueMap.put(queueName, priorityTaskQueue);
 
-      if (old != null && !old.equals(queue)) {
-        LOG.info("Queue {} was updated with new values: {}", queueName, queue);
+      if (old != null && !old.equals(priorityTaskQueue)) {
+        LOG.info("Queue {} was updated with new values: {}", queueName, priorityTaskQueue);
       }
     } finally {
       lock.unlock();

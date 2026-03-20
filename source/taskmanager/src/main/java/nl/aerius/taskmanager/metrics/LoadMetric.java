@@ -16,6 +16,8 @@
  */
 package nl.aerius.taskmanager.metrics;
 
+import java.util.function.ToDoubleBiFunction;
+
 /**
  * Class to keep track of work load per worker type.
  * Each time a new task is added (dispatched) or removed (work finished) the number of running workers is counted and calculated how long
@@ -25,8 +27,6 @@ package nl.aerius.taskmanager.metrics;
  */
 class LoadMetric {
 
-  public record AverageLoad(double averageLoad, int averageFree) {}
-
   /**
    * Last time {@link #register(int, int)} was called.
    */
@@ -34,49 +34,50 @@ class LoadMetric {
   /**
    * Total measured time since the last time {@link #process()} was called.
    */
-  private int totalMeasureTime;
-  /**
-   * Measured load time as the sum of load for specific time moments. Sum of (load * time frame).
-   * Dividing this number by the total time of the time frame will give an average load time.
-   */
-  private double totalLoad;
+  private long totalMeasureTime;
   /**
    * Measured free workers as the sum of number of free workers for specific time moments. Sum of (free workers * time frame).
    * Dividing this number by the total time of the time frame will give an average number of free workers.
    */
-  private long totalFree;
+  private double total;
   /**
    * Number of workers running at a time.
    */
-  private int runningWorkers;
+  private int usedWorkers;
   /**
    * Total number of available workers.
    */
   private int numberOfWorkers;
+  private final ToDoubleBiFunction<Integer, Integer> countFunction;
+  private final ToDoubleBiFunction<Double, Long> sumFunction;
+
+  public LoadMetric(final ToDoubleBiFunction<Integer, Integer> countFunction, final ToDoubleBiFunction<Double, Long> sumFunction) {
+    this.countFunction = countFunction;
+    this.sumFunction = sumFunction;
+  }
 
   /**
    * Register change in number of running workers.
    *
-   * @param deltaActiveWorkers number of jobs on the workers being added or subtracted.
+   * @param deltaUsedWorkers number of jobs on the workers being added or subtracted.
    * @param numberOfWorkers Number of available workers
    */
-  public synchronized void register(final int deltaActiveWorkers, final int numberOfWorkers) {
+  public synchronized void register(final int deltaUsedWorkers, final int numberOfWorkers) {
     this.numberOfWorkers = numberOfWorkers;
     final long newLast = System.currentTimeMillis();
     final long delta = newLast - last;
 
-    totalLoad += delta * (numberOfWorkers > 0 ? (runningWorkers / (double) numberOfWorkers) : 0);
-    totalFree += delta * Math.max(0, numberOfWorkers - runningWorkers);
+    total += delta * countFunction.applyAsDouble(numberOfWorkers, usedWorkers);
     totalMeasureTime += delta;
     last = newLast;
-    runningWorkers += deltaActiveWorkers;
+    usedWorkers += deltaUsedWorkers;
   }
 
   /**
    * Resets the metric state. Sets running workers to 0, and resets the average load time by calling process.
    */
   public synchronized void reset() {
-    runningWorkers = 0;
+    usedWorkers = 0;
     process();
   }
 
@@ -85,15 +86,13 @@ class LoadMetric {
    *
    * @return Average load of the workers since the last time this method was called
    */
-  public synchronized AverageLoad process() {
+  public synchronized double process() {
     // Call register here to set the end time this moment. This will calculate workers running up till now as being active.
     register(0, numberOfWorkers);
-    final double averageLoad = totalMeasureTime > 0 ? (totalLoad * 100.0) / totalMeasureTime : 0;
-    final int averageFree = totalMeasureTime > 0 ? (int) Math.floor(totalFree / totalMeasureTime) : 0;
+    final double averageTotal = totalMeasureTime > 0 ? sumFunction.applyAsDouble(total, totalMeasureTime) : 0;
 
     totalMeasureTime = 0;
-    totalLoad = 0;
-    totalFree = 0;
-    return new AverageLoad(averageLoad, averageFree);
+    total = 0;
+    return averageTotal;
   }
 }
