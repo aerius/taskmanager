@@ -75,11 +75,11 @@ public interface WorkerProducer {
   /**
    * Interface to retrieve metrics about the current worker sizes.
    */
-  interface WorkerMetrics {
+  public interface WorkerMetrics {
     /**
      * @return Returns the number of workers currently busy.
      */
-    int getRunningWorkerSize();
+    int getNumberOfUsedWorkers();
 
     /**
      * @return Returns the number total number of workers based on what the queue reports as being active.

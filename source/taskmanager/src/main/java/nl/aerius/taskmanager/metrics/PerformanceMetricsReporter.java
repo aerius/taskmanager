@@ -128,7 +128,6 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     taskMetrics.determineDuration();
     dispatchedQueueMetrics.computeIfAbsent(taskMetrics.queueName(), k -> createQueueDurationMetric(taskMetrics)).register(taskMetrics);
     dispatchedWorkerMetrics.register(taskMetrics);
-
   }
 
   @Override
@@ -145,7 +144,6 @@ public class PerformanceMetricsReporter implements WorkerProducerHandler, QueueW
     dispatchedTasks.clear();
     dispatchedQueueMetrics.entrySet().forEach(e -> e.getValue().process());
     dispatchedWorkerMetrics.process();
-    // work metrics not needed to be reset because they are about work already done.
   }
 
   private DurationMetric createQueueDurationMetric(final TaskMetrics taskMetrics) {

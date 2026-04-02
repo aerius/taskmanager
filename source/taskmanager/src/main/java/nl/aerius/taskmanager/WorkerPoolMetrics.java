@@ -64,7 +64,6 @@ public final class WorkerPoolMetrics {
     String getDescription() {
       return description;
     }
-
   }
 
   private WorkerPoolMetrics() {
@@ -77,9 +76,9 @@ public final class WorkerPoolMetrics {
     for (final WorkerPoolMetricType metricType : WorkerPoolMetricType.values()) {
       REGISTERED_METRICS.put(gaugeIdentifier(workerQueueName, metricType),
           OpenTelemetryMetrics.METER.gaugeBuilder(metricType.getGaugeName())
-          .setDescription(metricType.getDescription())
-          .buildWithCallback(
-              result -> result.record(metricType.getValue(workerPool), attributes)));
+              .setDescription(metricType.getDescription())
+              .buildWithCallback(
+                  result -> result.record(metricType.getValue(workerPool), attributes)));
     }
   }
 

@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
 import nl.aerius.taskmanager.client.BrokerConnectionFactory;
@@ -54,6 +55,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   private final ScheduledExecutorService executorService;
   private final BrokerConnectionFactory factory;
   private final RabbitMQChannelQueueEventsWatcher channelQueueEventsWatcher;
+  private final RabbitMQWorkerEventProducer eventProducer;
   /**
    * The time in seconds between each scheduled update.
    */
@@ -76,6 +78,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     this.factory = factory;
     channelQueueEventsWatcher = new RabbitMQChannelQueueEventsWatcher(factory, this);
     refreshRateSeconds = factory.getConnectionConfiguration().getBrokerManagementRefreshRate();
+    eventProducer = new RabbitMQWorkerEventProducer(executorService, factory);
     refreshDelayBeforeUpdateSeconds = Math.min(refreshRateSeconds / 2, DELAY_BEFORE_UPDATE_TIME_SECONDS);
   }
 
@@ -91,6 +94,9 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
       }
     }
     observers.computeIfAbsent(workerQueueName, k -> new WorkerSizeObserverComposite()).add(observer);
+    if (observer instanceof WorkerMetrics) {
+      eventProducer.addMetrics(workerQueueName, (WorkerMetrics) observer);
+    }
   }
 
   /**
@@ -110,12 +116,14 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     if (monitor != null) {
       monitor.shutdown();
     }
+    eventProducer.removeMetrics(workerQueueName);
     return observers.remove(workerQueueName) != null;
   }
 
   @Override
   public void start() throws IOException {
     channelQueueEventsWatcher.start();
+    eventProducer.start();
     if (refreshRateSeconds > 0) {
       running = true;
       executorService.scheduleWithFixedDelay(this::updateWorkerQueueState, INITIAL_DELAY_SECONDS, refreshRateSeconds, TimeUnit.SECONDS);
@@ -127,6 +135,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     for (final String key : new ArrayList<>(observers.keySet())) {
       removeObserver(key);
     }
+    eventProducer.shutdown();
     channelQueueEventsWatcher.shutdown();
   }
 

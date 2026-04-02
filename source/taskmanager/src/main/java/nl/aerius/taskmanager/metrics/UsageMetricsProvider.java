@@ -17,18 +17,34 @@
 package nl.aerius.taskmanager.metrics;
 
 /**
- *
+ * Interface for providers that collect usage metrics. Each implementation can use a different way or algorithm to calculate the metrics.
+ * This to provide insights in different areas to be able to identify possible issues with the Task Manager performance.
  */
 public interface UsageMetricsProvider {
 
+  /**
+   * @return The name of the worker queue these metrics are for
+   */
   String getWorkerQueueName();
 
+  /**
+   * @return The total number of workers available
+   */
   int getNumberOfWorkers();
 
+  /**
+   * @return The number of workers that are in use
+   */
   int getNumberOfUsedWorkers();
 
+  /**
+   * @return The number of workers not being used
+   */
   int getNumberOfFreeWorkers();
 
+  /**
+   * @return The number of tasks that are waiting to be processed. The backlog for the worker
+   */
   default int getNumberOfWaiting() {
     return 0;
   }

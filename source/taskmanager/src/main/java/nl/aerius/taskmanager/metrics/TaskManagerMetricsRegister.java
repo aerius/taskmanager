@@ -27,7 +27,10 @@ import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.domain.QueueWatchDogListener;
 
 /**
- *
+ * This class provides the input for the {@link TaskManagerUsageMetricsProvider}. It will register updates on the amount of worker/workers from
+ * different sources. It also make sure the update will not be started before startup guard gives a green light.
+ * Note the startup guard doesn't have to be used in the {@link #onWorkDispatched(String, Map)} and {@link #onWorkerFinished(String, Map)} because
+ * these methods won't be called before the scheduling is started.
  */
 public class TaskManagerMetricsRegister implements WorkerProducerHandler, WorkerSizeObserver, QueueWatchDogListener {
 

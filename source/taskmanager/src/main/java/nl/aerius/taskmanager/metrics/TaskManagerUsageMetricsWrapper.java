@@ -19,8 +19,8 @@ package nl.aerius.taskmanager.metrics;
 import io.opentelemetry.api.metrics.Meter;
 
 /**
- * Class that wraps all Task Manager usage metrics.
- * TaskSchedulerBuckets should register their metric providers with this class.
+ * Class that wraps all Task Manager usage metrics reporters. TaskSchedulerBuckets should add the metric providers to this class.
+ * Each of those providers added is for a specific worker queue. The {@link UsageMetricsWrapper} will manager metrics per worker queue.
  */
 public class TaskManagerUsageMetricsWrapper {
 

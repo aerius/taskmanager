@@ -122,7 +122,13 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     taskManagerMetrics.close();
   }
 
-  public TaskScheduleBucket getTaskScheduleBucket(final String queueName) {
+  /**
+   * Returns the {@link TaskScheduleBucket}. Intended to be used in tests.
+   *
+   * @param queueName queue to get the bucket for
+   * @return the bucket for the given queue name
+   */
+  TaskScheduleBucket getTaskScheduleBucket(final String queueName) {
     return buckets.get(queueName);
   }
 
@@ -227,9 +233,6 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       });
     }
 
-    public boolean hasTaskConsumer(final String queueName) {
-      return taskConsumers.containsKey(queueName);
-    }
 
     /**
      * Removes a task consumer with the given queue name.
@@ -248,6 +251,16 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       taskManagerMetrics.remove(workerQueueName);
       WorkerPoolMetrics.removeMetrics(workerQueueName);
       taskConsumers.forEach((k, v) -> v.shutdown());
+    }
+
+    /**
+     * Test method to check if there is a task consumer for the given queue name.
+     *
+     * @param queueName name of the queue to check
+     * @return true if the queue is present
+     */
+    boolean hasTaskConsumer(final String queueName) {
+      return taskConsumers.containsKey(queueName);
     }
   }
 }

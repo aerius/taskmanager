@@ -52,7 +52,7 @@ class UsageMetricsReporter {
     for (final Map.Entry<String, UsageMetric> entry : metricsMap.entrySet()) {
       final UsageMetric metric = entry.getValue();
 
-      measurement.record(metric.metricSupplier.getAsDouble(), metric.attributes());
+      measurement.record(metric.metricSupplier().getAsDouble(), metric.attributes());
     }
     LOG.debug("Workload for {}", measurement);
   }

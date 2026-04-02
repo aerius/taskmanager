@@ -108,11 +108,11 @@ Second the `aer.taskmanager.workerpool.worker.*` metrics are the internally used
 These metrics should be close to the other metrics, but can be used to detect issues in case the TaskManager doesn't seem to operate as expected.
 Third the `aer.rabbitmq.worker.*`  metrics are the values as received from the RabbitMQ api.
 These metrics could also be obtained by directly reading the RabbitMQ api, but specifically for the usage don't require additional logic to get the usage metrics.
-In general these metrics should report the same values, but due to timing (e.g. the moment the measure is taken there can be differences).
+In general these metrics should report the same values, but due to timing (e.g. the moment the measure is taken) there can be differences.
 
-##### Deprecated metrics:
+##### Deprecated metrics
 
-The following metrics have be replaced by the more standardized naming mentioned above
+The following metrics have been replaced by the more standardized naming mentioned above
 
 | Metric name                                           | type      | description                                                          | Replaced by                                |
 |-------------------------------------------------------|-----------|----------------------------------------------------------------------|--------------------------------------------|
@@ -120,6 +120,8 @@ The following metrics have be replaced by the more standardized naming mentioned
 | `aer.taskmanager.current_worker_size`<sup>1</sup>     | gauge     | The number of workers based on what RabbitMQ reports.                | `aer.rabbitmq.worker.limit`                |
 | `aer.taskmanager.running_worker_size`<sup>1</sup>     | gauge     | The number of workers that are occupied.                             | `aer.taskmanager.workerpool.worker..usage` |
 | `aer.taskmanager.running_client_size`<sup>3</sup>     | gauge     | The number of workers that are occupied for a specific client queue. | `aer.taskmanager.client.queue.usage`       |
+
+##### Metric attributes
 
 The workers have different attributes to distinguish specific metrics.
 * <sup>1</sup> have attribute `worker_type`.

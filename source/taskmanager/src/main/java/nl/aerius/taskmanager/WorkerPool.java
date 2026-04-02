@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
+import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerProducerHandler;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.domain.QueueWatchDogListener;
@@ -41,7 +42,7 @@ import nl.aerius.taskmanager.metrics.UsageMetricsProvider;
  * <p>Reserved workers are workers that are waiting for a task to become available on the queue.
  * <p>Running workers are workers for that are busy running the task and are waiting for the task to finish.
  */
-class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, UsageMetricsProvider, QueueWatchDogListener {
+class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, UsageMetricsProvider, QueueWatchDogListener, WorkerMetrics {
 
   private static final Logger LOG = LoggerFactory.getLogger(WorkerPool.class);
 
@@ -96,6 +97,7 @@ class WorkerPool implements WorkerSizeObserver, WorkerProducerHandler, UsageMetr
     }
   }
 
+  @Override
   public int getReportedWorkerSize() {
     return totalReportedWorkers;
   }
