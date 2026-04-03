@@ -22,8 +22,8 @@ import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 
 /**
  * Class to be used at startup. The Scheduler should not start before it is known how many messages are still on the queue.
- * This to register any work that is still on the queuue and to properly calculate load metrics.
- * Because the Taskmanager is not aware of the tasks already on the queue and therefore otherwise these messaages won't be counted in the metrics.
+ * This to register any work that is still on the queue and to properly calculate load metrics.
+ * Because the Task Manager is not aware of the tasks already on the queue and therefore otherwise these messages won't be counted in the metrics.
  * This can result in the metrics being skewed, and thereby negatively reporting load metrics.
  */
 public class StartupGuard implements WorkerSizeObserver {
@@ -47,7 +47,7 @@ public class StartupGuard implements WorkerSizeObserver {
   }
 
   @Override
-  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
+  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesInProgress) {
     synchronized (openSemaphore) {
       if (!open) {
         open = true;

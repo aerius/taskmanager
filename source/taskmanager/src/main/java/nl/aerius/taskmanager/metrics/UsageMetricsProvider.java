@@ -1,0 +1,51 @@
+/*
+ * Copyright the State of the Netherlands
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+ */
+package nl.aerius.taskmanager.metrics;
+
+/**
+ * Interface for providers that collect usage metrics. Each implementation can use a different way or algorithm to calculate the metrics.
+ * This to provide insights in different areas to be able to identify possible issues with the Task Manager performance.
+ */
+public interface UsageMetricsProvider {
+
+  /**
+   * @return The name of the worker queue these metrics are for
+   */
+  String getWorkerQueueName();
+
+  /**
+   * @return The total number of workers available
+   */
+  int getNumberOfWorkers();
+
+  /**
+   * @return The number of workers that are in use
+   */
+  int getNumberOfUsedWorkers();
+
+  /**
+   * @return The number of workers not being used
+   */
+  int getNumberOfFreeWorkers();
+
+  /**
+   * @return The number of tasks that are waiting to be processed. The backlog for the worker
+   */
+  default int getNumberOfWaiting() {
+    return 0;
+  }
+}

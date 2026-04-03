@@ -178,10 +178,10 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     }
 
     @Override
-    public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages) {
+    public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesInProgress) {
       for (final WorkerSizeObserver observer : observers) {
         try {
-          observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages);
+          observer.onNumberOfWorkersUpdate(numberOfWorkers, numberOfMessages, numberOfMessagesInProgress);
         } catch (final RuntimeException e) {
           LOG.error("RuntimeException during onNumberOfWorkersUpdate in {}", observer.getClass(), e);
         }

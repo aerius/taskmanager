@@ -42,6 +42,10 @@ import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
 import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
 import nl.aerius.taskmanager.metrics.PerformanceMetricsReporter;
+import nl.aerius.taskmanager.metrics.RabbitMQUsageMetricsProvider;
+import nl.aerius.taskmanager.metrics.TaskManagerMetricsRegister;
+import nl.aerius.taskmanager.metrics.TaskManagerUsageMetricsProvider;
+import nl.aerius.taskmanager.metrics.TaskManagerUsageMetricsWrapper;
 import nl.aerius.taskmanager.scheduler.TaskScheduler;
 import nl.aerius.taskmanager.scheduler.TaskScheduler.TaskSchedulerFactory;
 
@@ -58,6 +62,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
   private final TaskSchedulerFactory<T, S> schedulerFactory;
   private final WorkerSizeProviderProxy workerSizeObserverProxy;
   private final Map<String, TaskScheduleBucket> buckets = new HashMap<>();
+  private final TaskManagerUsageMetricsWrapper taskManagerMetrics;
 
   public TaskManager(final ExecutorService executorService, final ScheduledExecutorService scheduledExecutorService, final AdaptorFactory factory,
       final TaskSchedulerFactory<T, S> schedulerFactory, final WorkerSizeProviderProxy workerSizeObserverProxy) {
@@ -66,6 +71,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     this.factory = factory;
     this.schedulerFactory = schedulerFactory;
     this.workerSizeObserverProxy = workerSizeObserverProxy;
+    this.taskManagerMetrics = new TaskManagerUsageMetricsWrapper(OpenTelemetryMetrics.METER);
   }
 
   /**
@@ -78,6 +84,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     // Set up scheduler with worker pool
     final String workerQueueName = schedule.getWorkerQueueName();
     final QueueConfig workerQueueConfig = new QueueConfig(workerQueueName, schedule.isDurable(), schedule.isEagerFetch(), schedule.getQueueType());
+
     if (!buckets.containsKey(workerQueueName)) {
       LOG.info("Added scheduler for worker queue {}", workerQueueName);
       buckets.put(workerQueueName, new TaskScheduleBucket(workerQueueConfig));
@@ -112,9 +119,20 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
   public void shutdown() {
     buckets.forEach((k, v) -> v.shutdown());
     buckets.clear();
+    taskManagerMetrics.close();
   }
 
-  private class TaskScheduleBucket {
+  /**
+   * Returns the {@link TaskScheduleBucket}. Intended to be used in tests.
+   *
+   * @param queueName queue to get the bucket for
+   * @return the bucket for the given queue name
+   */
+  TaskScheduleBucket getTaskScheduleBucket(final String queueName) {
+    return buckets.get(queueName);
+  }
+
+  class TaskScheduleBucket {
     private final TaskDispatcher dispatcher;
     private final WorkerProducer workerProducer;
     private final Map<String, TaskConsumer> taskConsumers = new HashMap<>();
@@ -129,17 +147,23 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       taskScheduler = schedulerFactory.createScheduler(queueConfig);
       workerProducer = factory.createWorkerProducer(queueConfig);
       final WorkerPool workerPool = new WorkerPool(workerQueueName, workerProducer, taskScheduler);
+      final TaskManagerUsageMetricsProvider taskManagerUsageMetrics = new TaskManagerUsageMetricsProvider(workerQueueName);
+      final TaskManagerMetricsRegister taskManagerMetricsRegister = new TaskManagerMetricsRegister(taskManagerUsageMetrics, startupGuard);
       final PerformanceMetricsReporter reporter = new PerformanceMetricsReporter(scheduledExecutorService, queueConfig.queueName(),
-          OpenTelemetryMetrics.METER, startupGuard);
+          OpenTelemetryMetrics.METER);
 
       watchDog.addQueueWatchDogListener(workerPool);
       watchDog.addQueueWatchDogListener(taskScheduler);
       watchDog.addQueueWatchDogListener(reporter);
+      watchDog.addQueueWatchDogListener(taskManagerMetricsRegister);
 
       workerProducer.addWorkerProducerHandler(reporter);
+      workerProducer.addWorkerProducerHandler(taskManagerMetricsRegister);
       workerProducer.addWorkerProducerHandler(watchDog);
 
-      workerSizeObserverProxy.addObserver(workerQueueName, reporter);
+      final RabbitMQUsageMetricsProvider rabbitMQWorkerSizeObserver = new RabbitMQUsageMetricsProvider(workerQueueName);
+      workerSizeObserverProxy.addObserver(workerQueueName, rabbitMQWorkerSizeObserver);
+      workerSizeObserverProxy.addObserver(workerQueueName, taskManagerMetricsRegister);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerSizeObserverProxy.addObserver(workerQueueName, watchDog);
       // startup Guard should be the last observer added as it will unlock the task dispatcher
@@ -158,6 +182,9 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
           // Wait for worker queue to be empty.
           startupGuard.waitForOpen();
           LOG.info("Starting task scheduler {}: {}", taskScheduler.getClass().getSimpleName(), queueConfig);
+          taskManagerMetrics.addRabbitMQUsageMetricsProvider(rabbitMQWorkerSizeObserver);
+          taskManagerMetrics.addWorkerPoolUsageMetricsProvider(workerPool);
+          taskManagerMetrics.addTaskManagerUsageMetricsProvider(taskManagerUsageMetrics);
           dispatcher.run();
         } catch (final InterruptedException e) {
           Thread.currentThread().interrupt();
@@ -206,6 +233,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       });
     }
 
+
     /**
      * Removes a task consumer with the given queue name.
      *
@@ -220,8 +248,19 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
     public void shutdown() {
       dispatcher.shutdown();
       workerProducer.shutdown();
+      taskManagerMetrics.remove(workerQueueName);
       WorkerPoolMetrics.removeMetrics(workerQueueName);
       taskConsumers.forEach((k, v) -> v.shutdown());
+    }
+
+    /**
+     * Test method to check if there is a task consumer for the given queue name.
+     *
+     * @param queueName name of the queue to check
+     * @return true if the queue is present
+     */
+    boolean hasTaskConsumer(final String queueName) {
+      return taskConsumers.containsKey(queueName);
     }
   }
 }

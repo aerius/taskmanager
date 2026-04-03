@@ -17,6 +17,8 @@
 package nl.aerius.taskmanager;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
@@ -64,7 +66,7 @@ class TaskManagerTest {
 
     doAnswer(a -> {
       // This will unblock the startup guard
-      ((WorkerSizeObserver) a.getArgument(1)).onNumberOfWorkersUpdate(0, 0);
+      ((WorkerSizeObserver) a.getArgument(1)).onNumberOfWorkersUpdate(0, 0, 0);
       return null;
     }).when(workerSizeProvider).addObserver(any(), any());
     taskManager = new TaskManager<>(executor, scheduledExecutorService, factory, schedulerFactory, workerSizeProvider);
@@ -91,8 +93,13 @@ class TaskManagerTest {
   @Timeout(value = 2, unit = TimeUnit.SECONDS)
   void testModifyQueue() throws InterruptedException {
     updateTaskScheduler();
-    schedule.getQueues().get(0).setPriority(30);
+    final PriorityTaskQueue queue = schedule.getQueues().get(0);
+
+    assertTrue(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(queue.getQueueName()), "Queue should be present");
+    queue.setPriority(30);
     updateTaskScheduler();
+    assertTrue(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(queue.getQueueName()),
+        "Queue should be still present");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
@@ -100,14 +107,18 @@ class TaskManagerTest {
   @Timeout(value = 2, unit = TimeUnit.SECONDS)
   void testRemoveQueue() throws InterruptedException {
     updateTaskScheduler();
-    schedule.getQueues().remove(0);
+    assertTrue(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(schedule.getQueues().get(0).getQueueName()),
+        "Queue should be present");
+    final PriorityTaskQueue queue = schedule.getQueues().remove(0);
     updateTaskScheduler();
+    assertFalse(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(queue.getQueueName()),
+        "Queue should have been removed");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
 
   private void updateTaskScheduler() throws InterruptedException {
     taskManager.updateTaskScheduler(schedule);
-    while(!taskManager.isRunning(schedule.getWorkerQueueName())) {
+    while (!taskManager.isRunning(schedule.getWorkerQueueName())) {
       Thread.sleep(300);
     }
   }

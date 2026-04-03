@@ -77,22 +77,56 @@ The metric value `aerius.worker.<worker type>` for attribute `rabbitmq_queue` sh
 
 The TaskManager defines a few custom metrics for OpenTelemetry to capture.
 These metrics are all defined with the `nl.aerius.TaskManager` instrumentation scope.
+The metrics about availability of workers use the Open Telemetry standard for reporting such metrics.
+Therefore `.limit` gives the total number of workers available.
+And `.usage` gives the metrics about how the workers are used.
+The usage metrics have an attribute `state` that identifies if the metric is for `used` or `free` amount of workers.
+Additional `aer.rabbitmq.worker.usage` records a third state `waiting`.
+And `aer.taskmanager.client.queue.usage` has states `used` and `waiting` that provides information on tasks send to the TaskManager.
+This shows the number of tasks on the worker queue that are not yet picked up by any worker.
 
-| metric name                                         | type      | description                                                          |
-|-----------------------------------------------------|-----------|----------------------------------------------------------------------|
-| `aer.taskmanager.work.load`<sup>1</sup>             | gauge     | Percentage of workers occupied.                                      |
-| `aer.taskmanager.worker_size`<sup>1</sup>           | gauge     | The sum of idle workers + occupied workers.                          |
-| `aer.taskmanager.current_worker_size`<sup>1</sup>   | gauge     | The number of workers based on what RabbitMQ reports.                |
-| `aer.taskmanager.running_worker_size`<sup>1</sup>   | gauge     | The number of workers that are occupied.                             |
-| `aer.taskmanager.running_client_size`<sup>2</sup>   | gauge     | The number of workers that are occupied for a specific client queue. |
-| `aer.taskmanager.dispatched`<sup>1</sup>            | histogram | The number of tasks dispatched.                                      |
-| `aer.taskmanager.dispatched.wait`<sup>1</sup>       | histogram | The average wait time of tasks dispatched.                           |
-| `aer.taskmanager.dispatched.queue`<sup>2</sup>      | histogram | The number of tasks dispatched per client queue.                     |
-| `aer.taskmanager.dispatched.queue.wait`<sup>2</sup> | histogram | The average wait time of tasks dispatched per client queue.          |
+
+| metric name                                           | type      | description                                                             |
+|-------------------------------------------------------|-----------|-------------------------------------------------------------------------|
+| `aer.taskmanager.work.load`<sup>1</sup>               | gauge     | Percentage of workers occupied.                                         |
+| `aer.taskmanager.worker.limit`<sup>1</sup>            | gauge     | Weighted total number of workers based on tasks send to workers.        |
+| `aer.taskmanager.worker.usage`<sup>2</sup>            | gauge     | Weighted usage of workers based on tasks send to workers.               |
+| `aer.taskmanager.workerpool.worker.limit`<sup>1</sup> | gauge     | TaskManager internal total number of workers.                           |
+| `aer.taskmanager.workerpool.worker.usage`<sup>2</sup> | gauge     | TaskManager internal usage of workers.                                  |
+| `aer.taskmanager.client.queue.usage`<sup>2</sup>      | gauge     | TaskManager internal metrics on client queue usage.                     |
+| `aer.rabbitmq.worker.limit`<sup>1</sup>               | gauge     | Total number of workers available as reported by RabbitMQ               |
+| `aer.rabbitmq.worker.usage`<sup>2</sup>               | gauge     | Usage o the workers based on the messages on the RabbitMQ worker queue. |
+| `aer.taskmanager.dispatched`<sup>1</sup>              | histogram | The number of tasks dispatched.                                         |
+| `aer.taskmanager.dispatched.wait`<sup>1</sup>         | histogram | The average wait time of tasks dispatched.                              |
+| `aer.taskmanager.dispatched.queue`<sup>3</sup>        | histogram | The number of tasks dispatched per client queue.                        |
+| `aer.taskmanager.dispatched.queue.wait`<sup>3/sup>    | histogram | The average wait time of tasks dispatched per client queue.             |
+
+Basically there are 3 metric groups that report similar information.
+First the `aer.taskmanager.worker.*` metrics are a weighted value based on when tasks are send to the workers.
+These metrics should give the most accurate value about usage of the workers.
+Second the `aer.taskmanager.workerpool.worker.*` metrics are the internally used values to base scheduling priorities on.
+These metrics should be close to the other metrics, but can be used to detect issues in case the TaskManager doesn't seem to operate as expected.
+Third the `aer.rabbitmq.worker.*`  metrics are the values as received from the RabbitMQ api.
+These metrics could also be obtained by directly reading the RabbitMQ api, but specifically for the usage don't require additional logic to get the usage metrics.
+In general these metrics should report the same values, but due to timing (e.g. the moment the measure is taken) there can be differences.
+
+##### Deprecated metrics
+
+The following metrics have been replaced by the more standardized naming mentioned above
+
+| Metric name                                           | type      | description                                                          | Replaced by                                |
+|-------------------------------------------------------|-----------|----------------------------------------------------------------------|--------------------------------------------|
+| `aer.taskmanager.worker_size`<sup>1</sup>             | gauge     | The sum of idle workers + occupied workers.                          | `aer.taskmanager.workerpool.worker.limit`  |
+| `aer.taskmanager.current_worker_size`<sup>1</sup>     | gauge     | The number of workers based on what RabbitMQ reports.                | `aer.rabbitmq.worker.limit`                |
+| `aer.taskmanager.running_worker_size`<sup>1</sup>     | gauge     | The number of workers that are occupied.                             | `aer.taskmanager.workerpool.worker..usage` |
+| `aer.taskmanager.running_client_size`<sup>3</sup>     | gauge     | The number of workers that are occupied for a specific client queue. | `aer.taskmanager.client.queue.usage`       |
+
+##### Metric attributes
 
 The workers have different attributes to distinguish specific metrics.
 * <sup>1</sup> have attribute `worker_type`.
-* <sup>2</sup> have attribute `worker_type` and `queue_name`.
+* <sup>2</sup> have attribute `worker_type` and `state`. `state` can have the value `used`, `free` or `waiting`.
+* <sup>3</sup> have attribute `worker_type` and `queue_name`.
 
 `worker_type` is the type of worker, e.g. `ops`.
 `queue_name` is the originating queue the task initially was put on, e.g. `...calculator_ui_small`.
@@ -102,6 +136,9 @@ The workers have different attributes to distinguish specific metrics.
 > The size and load metrics calculate a weighted average within that time frame taking into account the time span of each measure point within the time frame.
 
 ### RabbitMQ metrics
+
+Besides the RabbitMQ metrics reported by the TaskManager it is also possible to get the metrics from RabbitMQ directly.
+To read those metrics the following metrics are available:
 
 | metric name                                         | type  | description                                                        |
 |-----------------------------------------------------|-------|--------------------------------------------------------------------|

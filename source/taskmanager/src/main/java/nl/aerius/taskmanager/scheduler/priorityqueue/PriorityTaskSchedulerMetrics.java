@@ -18,6 +18,7 @@ package nl.aerius.taskmanager.scheduler.priorityqueue;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.IntSupplier;
 
 import io.opentelemetry.api.metrics.ObservableDoubleGauge;
@@ -29,10 +30,17 @@ import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
  */
 class PriorityTaskSchedulerMetrics {
 
-  private static final String METRIC_PREFIX = "aer.taskmanager.running_client_size";
+  /**
+   * @deprecated replaced by "aer.taskmanager.client.queue" metric.
+   */
+  @Deprecated
+  private static final String METRIC_PREFIX_LEGACY = "aer.taskmanager.running_client_size";
+  private static final String METRIC_PREFIX = "aer.taskmanager.client.queue";
   private static final String DESCRIPTION = "Number of tasks running for the client queue ";
 
   private final Map<String, ObservableDoubleGauge> metrics = new HashMap<>();
+  private final Map<String, ObservableDoubleGauge> usageMetrics = new HashMap<>();
+  private final Map<String, ObservableDoubleGauge> waitingMetrics = new HashMap<>();
 
   /**
    * Adds collecting metrics to count the number of active tasks by client queue.
@@ -43,10 +51,32 @@ class PriorityTaskSchedulerMetrics {
    */
   public void addMetric(final IntSupplier countSupplier, final String workerQueueName, final String clientQueueName) {
     metrics.put(clientQueueName, OpenTelemetryMetrics.METER
-        .gaugeBuilder(METRIC_PREFIX)
-        .setDescription(DESCRIPTION)
+        .gaugeBuilder(METRIC_PREFIX_LEGACY)
+        .setDescription(DESCRIPTION + clientQueueName)
         .buildWithCallback(
-            result -> result.record(countSupplier.getAsInt(), OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName))));
+            result -> result.record(countSupplier.getAsInt(),
+                OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName, "state", "used"))));
+    metrics.put(clientQueueName, OpenTelemetryMetrics.METER
+        .gaugeBuilder(METRIC_PREFIX)
+        .setDescription(DESCRIPTION + clientQueueName)
+        .buildWithCallback(
+            result -> result.record(countSupplier.getAsInt(),
+                OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName, "state", "used"))));
+  }
+
+  /**
+   *
+   * @param countSupplier
+   * @param workerQueueName
+   * @param clientQueueName
+   */
+  public void addMetricWaiting(final IntSupplier countSupplier, final String workerQueueName, final String clientQueueName) {
+    waitingMetrics.put(clientQueueName, OpenTelemetryMetrics.METER
+        .gaugeBuilder(METRIC_PREFIX)
+        .setDescription(DESCRIPTION + clientQueueName)
+        .buildWithCallback(
+            result -> result.record(countSupplier.getAsInt(),
+                OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName, "state", "waiting"))));
   }
 
   /**
@@ -55,8 +85,8 @@ class PriorityTaskSchedulerMetrics {
    * @param clienQueueName
    */
   public void removeMetric(final String clienQueueName) {
-    if (metrics.containsKey(clienQueueName)) {
-      metrics.remove(clienQueueName).close();
-    }
+    Optional.ofNullable(metrics.remove(clienQueueName)).ifPresent(ObservableDoubleGauge::close);
+    Optional.ofNullable(usageMetrics.remove(clienQueueName)).ifPresent(ObservableDoubleGauge::close);
+    Optional.ofNullable(waitingMetrics.remove(clienQueueName)).ifPresent(ObservableDoubleGauge::close);
   }
 }
