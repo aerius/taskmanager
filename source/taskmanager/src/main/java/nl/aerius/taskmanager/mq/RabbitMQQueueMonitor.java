@@ -112,7 +112,7 @@ public class RabbitMQQueueMonitor {
 
     try {
       final JsonNode jsonObject = getJsonResultFromApi(apiPath);
-
+      LOG.info("Making RabbitMQ api call: {}", apiPath);
       if (jsonObject == null) {
         LOG.error("Queue configuration from RabbitMQ admin json get call returned null.");
       } else {

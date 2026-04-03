@@ -50,15 +50,18 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   private final Lock lock = new ReentrantLock();
   private final Condition nextTaskCondition = lock.newCondition();
   private final String workerQueueName;
+  private final int maxWorkersAvailable;
+
   private int numberOfWorkers;
 
   /**
    * Constructs scheduler for given configuration.
    */
   PriorityTaskScheduler(final PriorityQueueMap<?> priorityQueueKeyMap, final Function<Comparator<Task>, Queue<Task>> queueCreator,
-      final String workerQueueName) {
+      final String workerQueueName, final int maxWorkersAvailable) {
     this.priorityQueueMap = priorityQueueKeyMap;
     this.workerQueueName = workerQueueName;
+    this.maxWorkersAvailable = maxWorkersAvailable;
     queue = queueCreator.apply(this);
   }
 
@@ -148,12 +151,22 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   }
 
   private int getFreeWorkers() {
-    return numberOfWorkers - priorityQueueMap.onWorkerTotal();
+    return calculateNumberOfWorkers() - priorityQueueMap.onWorkerTotal();
   }
 
   private boolean hasCapacityRemaining(final TaskRecord taskRecord) {
     return (numberOfWorkers > 0)
-        && ((((double) priorityQueueMap.onWorker(taskRecord)) / numberOfWorkers) < priorityQueueMap.get(taskRecord).getMaxCapacityUse());
+        && ((((double) priorityQueueMap.onWorker(taskRecord)) / calculateNumberOfWorkers()) < priorityQueueMap.get(taskRecord).getMaxCapacityUse());
+  }
+
+  /**
+   * Returns the number of workers that are available or the number of configured maximum numbers that are potential available. Which ever number
+   * is the highest. This number can be used to see if tasks can still be scheduled. If there is still room for more workers to be started
+   * (i.e. max is not reached) than a task should be able to be scheduled it it doesn't have reach it maximum relative to the total potential
+   * workers, not the actual number of workers running.
+   */
+  private int calculateNumberOfWorkers() {
+    return Math.max(numberOfWorkers, maxWorkersAvailable);
   }
 
   @Override
