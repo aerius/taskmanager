@@ -20,10 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 /**
  * Base class for a single schedule configuration.
  * @param <T> specific task queue configuration class
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
+@JsonSubTypes({@JsonSubTypes.Type(PriorityTaskSchedule.class)})
 public class TaskSchedule<T extends TaskQueue> {
 
   private String workerQueueName;
@@ -31,6 +36,11 @@ public class TaskSchedule<T extends TaskQueue> {
   private Boolean durable;
 
   private Boolean eagerFetch;
+
+  /*
+   * Maximum number of workers available when the system is fully scaled.
+   */
+  private int maxWorkersAvailable;
 
   private RabbitMQQueueType queueType;
 
@@ -75,4 +85,19 @@ public class TaskSchedule<T extends TaskQueue> {
   public void setQueueType(final String queueType) {
     this.queueType = RabbitMQQueueType.valueOf(queueType.toUpperCase(Locale.ROOT));
   }
+
+  public int getMaxWorkersAvailable() {
+    return maxWorkersAvailable;
+  }
+
+  public void setMaxWorkersAvailable(final int maxWorkersAvailable) {
+    this.maxWorkersAvailable = maxWorkersAvailable;
+  }
+
+  @Override
+  public String toString() {
+    return "workerQueueName=" + workerQueueName + ", durable=" + durable + ", eagerFetch=" + eagerFetch + ", maxWorkersAvailable="
+        + maxWorkersAvailable + ", queueType=" + queueType;
+  }
+
 }
