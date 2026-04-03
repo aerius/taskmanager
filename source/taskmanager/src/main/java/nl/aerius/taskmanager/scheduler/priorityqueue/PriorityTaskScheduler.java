@@ -50,15 +50,18 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   private final Lock lock = new ReentrantLock();
   private final Condition nextTaskCondition = lock.newCondition();
   private final String workerQueueName;
+  private final int maxWorkersAvailable;
+
   private int numberOfWorkers;
 
   /**
    * Constructs scheduler for given configuration.
    */
   PriorityTaskScheduler(final PriorityQueueMap<?> priorityQueueKeyMap, final Function<Comparator<Task>, Queue<Task>> queueCreator,
-      final String workerQueueName) {
+      final String workerQueueName, final int maxWorkersAvailable) {
     this.priorityQueueMap = priorityQueueKeyMap;
     this.workerQueueName = workerQueueName;
+    this.maxWorkersAvailable = maxWorkersAvailable;
     queue = queueCreator.apply(this);
   }
 
@@ -136,7 +139,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
    * @return true if this task is next in line
    */
   private boolean isTaskNext(final TaskRecord taskRecord) {
-    final boolean taskNext = (numberOfWorkers == 1) || ((getFreeWorkers() > 1) && hasCapacityRemaining(taskRecord))
+    final boolean taskNext = (numberOfWorkers == 1) || ((getPotentialFreeWorkers() > 1) && hasCapacityRemaining(taskRecord))
         || (priorityQueueMap.onWorker(taskRecord) == 0);
 
     if (!taskNext) {
@@ -147,13 +150,22 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
     return taskNext;
   }
 
-  private int getFreeWorkers() {
-    return numberOfWorkers - priorityQueueMap.onWorkerTotal();
+  private int getPotentialFreeWorkers() {
+    return potentialNumberOfWorkers() - priorityQueueMap.onWorkerTotal();
   }
 
   private boolean hasCapacityRemaining(final TaskRecord taskRecord) {
     return (numberOfWorkers > 0)
-        && ((((double) priorityQueueMap.onWorker(taskRecord)) / numberOfWorkers) < priorityQueueMap.get(taskRecord).getMaxCapacityUse());
+        && ((((double) priorityQueueMap.onWorker(taskRecord)) / potentialNumberOfWorkers()) < priorityQueueMap.get(taskRecord).getMaxCapacityUse());
+  }
+
+  /**
+   * Returns the number of workers that are available or the number of configured maximum numbers that are potential available. Which ever number
+   * is the highest. This number can be used to check if tasks can still be scheduled. If the actual number of workers is lower than the
+   * max workers that can be scaled up, the maximum to be scaled up should be used. Otherwise the real number of workers should be used.
+   */
+  private int potentialNumberOfWorkers() {
+    return Math.max(numberOfWorkers, maxWorkersAvailable);
   }
 
   @Override
@@ -242,7 +254,7 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
 
   private int compareWith1Worker(final TaskRecord taskRecord1, final TaskRecord taskRecord2) {
     int cmp = 0;
-    if ((numberOfWorkers == 1) || (getFreeWorkers() == 1)) {
+    if ((numberOfWorkers == 1) || (getPotentialFreeWorkers() == 1)) {
       cmp = compareTaskOnQueue(taskRecord1, taskRecord2);
       if (cmp == 0) {
         cmp = comparePriority(taskRecord1, taskRecord2);
