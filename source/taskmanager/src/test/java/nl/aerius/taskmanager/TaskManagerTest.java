@@ -110,6 +110,8 @@ class TaskManagerTest {
     assertTrue(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(schedule.getQueues().get(0).getQueueName()),
         "Queue should be present");
     final PriorityTaskQueue queue = schedule.getQueues().remove(0);
+
+    assertEquals("calculation_ui", queue.getQueueName(), "Not the expected queue name of the removed queue");
     updateTaskScheduler();
     assertFalse(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(queue.getQueueName()),
         "Queue should have been removed");

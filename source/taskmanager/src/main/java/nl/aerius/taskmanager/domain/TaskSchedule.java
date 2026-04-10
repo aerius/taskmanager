@@ -17,8 +17,10 @@
 package nl.aerius.taskmanager.domain;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Base class for a single schedule configuration.
@@ -39,7 +41,13 @@ public class TaskSchedule<T extends TaskQueue> {
 
   private RabbitMQQueueType queueType;
 
+  /**
+   * @deprecated Replaced by clientQueues for easier overriding with environment variables. Because list requires index, while map can use key name.
+   */
+  @Deprecated
   private List<T> queues = new ArrayList<>();
+
+  private Map<String, T> clientQueues = new HashMap<>();
 
   public String getWorkerQueueName() {
     return workerQueueName;
@@ -50,11 +58,23 @@ public class TaskSchedule<T extends TaskQueue> {
   }
 
   public List<T> getQueues() {
+    // Either queues or clientQueues should be used.
+    if (!clientQueues.isEmpty()) {
+      queues = new ArrayList<>(clientQueues.entrySet().stream().map(e -> {
+        e.getValue().setQueueName(e.getKey());
+        return e.getValue();
+      }).toList());
+      clientQueues.clear();
+    }
     return queues;
   }
 
   public void setQueues(final List<T> queues) {
     this.queues = queues;
+  }
+
+  public void setClientQueues(final Map<String, T> clientQueues) {
+    this.clientQueues = clientQueues;
   }
 
   public void setDurable(final boolean durable) {
@@ -94,5 +114,4 @@ public class TaskSchedule<T extends TaskQueue> {
     return "workerQueueName=" + workerQueueName + ", durable=" + durable + ", eagerFetch=" + eagerFetch + ", maxWorkersAvailable="
         + maxWorkersAvailable + ", queueType=" + queueType;
   }
-
 }

@@ -95,14 +95,13 @@ The json format of the configuration files is as follows:
   "eagerFetch" : <true|false>,
   "queueType": <classic|quorum|stream>,
   "maxWorkersAvailable": <number>,
-  "queues": [
-    {
-      "queueName": "<client queue name>",
+  "clientQueues": {
+    '<client queue name>': {
       "priority": <int>,
       "maxCapacityUse": <value between 0 and 1>
     },
     ...
-  ]
+  }
 }
 ```
 
@@ -139,28 +138,28 @@ Until the system is scaled up more resources for a specific queue could be claim
 But this should only be temporary, unless `maxWorkersAvailable` is wrongly specified, and doesn't match the actual available resources.
 When more workers would be available than was configured as `maxWorkersAvailable` the scheduler will assign workers proportionally to the `maxCapacityUse` based on the actual number of workers available.
 
-In `queues` there can be 1 or more queue configurations.
-Each queue configuration consists of 3 parameters:
+In `clientQueues` there can be 1 or more queue configurations for the client queues.
+Each configuration entry should have as key the postfix of the client queue of which the task manager constructs the full queue name using the worker queue name.
+For example when the `workerQueueName` is `ops` the client queue name is `aerius.ops.calculator_ui`.
+The key to use should be `calculator_ui`.
+The content of the configuration should have 2 parameters:
 
-- `queueName`: The postfix of the client queue of which the task manager constructs the full queue name using the worker queue name.
-  So `calculator_ui` becomes `aerius.ops.calculator_ui`, when the `workerQueueName` is `ops`.
 - `priority`: A positive int value determining the priority of the tasks.
   A higher number means a higher priority.
 - `maxCapacityUse`: A number between 0 and 1 that limits the amount of tasks that are concurrently run for the queue based on the available number of workers.
   For example if the value is `0.6` and there are `10` workers.
   This would mean a maximum of `6` workers will be given a tasks from this queue.
 
-### Overriding queue configuration
+### Overriding queue configuration settings
 
-Queue configuration for a specific worker can be overridden by creating an environment variable.
-When an environment variable exists with a matching worker queue name, that configuration is used instead of the file.
+Each queue configuration value can be overridden with an environment variable.
+The environment variable should have the following format: `AERIUS_PTS_<worker_queue_name>_<path_to_property>`.
+For example to override `maxWorkersAvailable` for the `ops` worker queue the environment variable should be named: `AERIUS_PTS_OPS_MAXWORKERSAVAILABLE`.
+It will print in the log if a configuration property was overridden by an environment variable.
 
-```
-AERIUS_PRIORITY_TASK_SCHEDULER_{WORKER QUEUE NAME} = {
-  "workerQueueName": "<type of the queue>",
-  "queues": [...]
-}
-```
+> [!NOTE]
+> When configuration files are updated when the Task Manager is running the configuration is reloaded.
+> However if a environment variable is set to override a certain property the environment will always take precedent over the value set in the file.
 
 ## Building the Task Manager
 
