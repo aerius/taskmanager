@@ -134,8 +134,9 @@ This is useful because when worker resources are automatically scaled it can cau
 For example if worker scaling is based on the percentage workers being used it can mean the system will never scale up because the `maxCapacityUse` for certain input queues will never exceed the scaling threshold percentage.
 Especially when the system runs with a low number of workers the `maxCapacityUse` is easily reached before the scaling threshold is reached.
 By setting `maxWorkersAvailable` the scheduler will determine if tasks already have reached the `maxCapacityUse` value based on the `maxWorkersAvailable` value and not the actual number of workers running.
-It will than schedule tasks beyond the `maxCapacityUse` assuming this would trigger the system to scale up if needed,
-and only for a short amount of time claim more resources for a specific queue than would be allowed by the `maxCapacityUse` percentage.
+It will then schedule tasks beyond the `maxCapacityUse` assuming this will trigger the system to scale up as needed.
+Until the system is scaled up more resources for a specific queue could be claimed than would be allowed by the `maxCapacityUse` percentage.
+But this should only be temporary, unless `maxWorkersAvailable` is wrongly specified, and doesn't match the actual available resources.
 When more workers would be available than was configured as `maxWorkersAvailable` the scheduler will assign workers proportionally to the `maxCapacityUse` based on the actual number of workers available.
 
 In `queues` there can be 1 or more queue configurations.

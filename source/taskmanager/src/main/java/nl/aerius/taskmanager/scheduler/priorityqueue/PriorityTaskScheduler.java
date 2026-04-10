@@ -160,9 +160,8 @@ class PriorityTaskScheduler implements TaskScheduler<PriorityTaskQueue>, Compara
   }
 
   /**
-   * Returns the number of workers that are available or the number of configured maximum numbers that are potential available. Which ever number
-   * is the highest. This number can be used to check if tasks can still be scheduled. If the actual number of workers is lower than the
-   * max workers that can be scaled up, the maximum to be scaled up should be used. Otherwise the real number of workers should be used.
+   * Returns the number of (potential) workers available. It returns the maximum of either the max number of workers as put in the configuration
+   * or the actual number of workers.
    */
   private int potentialNumberOfWorkers() {
     return Math.max(numberOfWorkers, maxWorkersAvailable);
