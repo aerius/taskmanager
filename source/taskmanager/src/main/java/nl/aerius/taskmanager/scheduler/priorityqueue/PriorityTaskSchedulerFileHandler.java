@@ -43,6 +43,9 @@ public class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurat
   }
 
   private PriorityTaskSchedule readFromFile(final ObjectMapper objectMapper, final File file) throws IOException {
-    return objectMapper.readValue(file, PriorityTaskSchedule.class);
+    final PriorityTaskScheduleFile schedule = objectMapper.readValue(file, PriorityTaskScheduleFile.class);
+
+    schedule.updateQueues();
+    return schedule;
   }
 }

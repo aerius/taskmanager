@@ -54,8 +54,7 @@ public class EnvOverrideBeanDeserializerModifier extends BeanDeserializerModifie
     final SimpleModule module = new SimpleModule();
 
     module.setDeserializerModifier(new EnvOverrideBeanDeserializerModifier(prefix, getEnv));
-    return new ObjectMapper()
-        .registerModule(module);
+    return new ObjectMapper().registerModule(module);
   }
 
   @Override

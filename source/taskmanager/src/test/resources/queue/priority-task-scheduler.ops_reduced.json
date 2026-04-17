@@ -1,0 +1,38 @@
+{
+  "workerQueueName": "ops",
+  "queueType": "stream",
+  "clientQueues": {
+    "calculation_ui": {
+      "priority": 2,
+      "maxCapacityUse": 0.8
+    },
+    "paa_export": {
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    "connect_paa_export": {
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    "gml_export": {
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    "connect_gml_export": {
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    "custom_jobs": {
+      "priority": 0,
+      "maxCapacityUse": 0.8
+    },
+    "permit": {
+      "priority": 1,
+      "maxCapacityUse": 0.8
+    },
+    "melding": {
+      "priority": 3,
+      "maxCapacityUse": 0.8
+    }
+  }
+}

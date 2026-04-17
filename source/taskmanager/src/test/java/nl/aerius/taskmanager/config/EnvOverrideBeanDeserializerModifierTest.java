@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
+import nl.aerius.taskmanager.scheduler.priorityqueue.PriorityTaskScheduleFile;
 
 /**
  * Test class for {@link EnvOverrideBeanDeserializerModifier}.
@@ -48,8 +49,9 @@ class EnvOverrideBeanDeserializerModifierTest {
   @Test
   void testOverrideWithEnv() throws JsonMappingException, JsonProcessingException {
     final ObjectMapper objectMapper = EnvOverrideBeanDeserializerModifier.objectMapper("AERIUS.pts", this::envVariableMapper);
-    final PriorityTaskSchedule schedule = objectMapper.readValue(SCHEDULE, PriorityTaskSchedule.class);
+    final PriorityTaskSchedule schedule = objectMapper.readValue(SCHEDULE, PriorityTaskScheduleFile.class);
 
+    ((PriorityTaskScheduleFile) schedule).updateQueues();
     assertEquals("ops", schedule.getWorkerQueueName(), "Worker queue name should be overriden");
     assertEquals(10, schedule.getQueues().get(0).getPriority(), "Queue priority should be overriden");
     assertEquals(100, schedule.getMaxWorkersAvailable(), "Max workers available not set, but with environment variable should be 100");
