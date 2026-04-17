@@ -39,36 +39,36 @@ public final class OpenTelemetryMetrics {
 
   public static Attributes workerAttributes(final String workerType) {
     return Attributes.builder()
-        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerType))
+        .put(WORKER_TYPE_ATTRIBUTE, onlyLastPart(workerType))
         .build();
   }
 
   public static Attributes workerAttributes(final String workerType, final String atttributeName, final String attributeValue) {
     return Attributes.builder()
-        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerType))
+        .put(WORKER_TYPE_ATTRIBUTE, onlyLastPart(workerType))
         .put(atttributeName, attributeValue)
         .build();
   }
 
   public static Attributes queueAttributes(final String workerQueueName, final String queueName) {
     return Attributes.builder()
-        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerQueueName))
-        .put(QUEUE_ATTRIBUTE, queueName)
+        .put(WORKER_TYPE_ATTRIBUTE, onlyLastPart(workerQueueName))
+        .put(QUEUE_ATTRIBUTE, onlyLastPart(queueName))
         .build();
   }
 
   public static Attributes queueAttributes(final String workerQueueName, final String queueName, final String atttributeName,
       final String attributeValue) {
     return Attributes.builder()
-        .put(WORKER_TYPE_ATTRIBUTE, workerIdentifier(workerQueueName))
-        .put(QUEUE_ATTRIBUTE, queueName)
+        .put(WORKER_TYPE_ATTRIBUTE, onlyLastPart(workerQueueName))
+        .put(QUEUE_ATTRIBUTE, onlyLastPart(queueName))
         .put(atttributeName, attributeValue)
         .build();
   }
 
-  private static String workerIdentifier(final String workerQueueName) {
-    final int workerTypeIndex = workerQueueName.lastIndexOf('.');
+  private static String onlyLastPart(final String name) {
+    final int lastIndex = name.lastIndexOf('.');
 
-    return (workerTypeIndex > 0 ? workerQueueName.substring(workerTypeIndex + 1) : workerQueueName).toLowerCase(Locale.ROOT);
+    return (lastIndex < 0 ? name : name.substring(lastIndex + 1)).toLowerCase(Locale.ROOT);
   }
 }

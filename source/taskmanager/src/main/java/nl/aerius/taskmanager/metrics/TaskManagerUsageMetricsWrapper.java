@@ -33,7 +33,7 @@ public class TaskManagerUsageMetricsWrapper {
     rabbitMQUsageMetrics = new UsageMetricsWrapper(meter, "aer.rabbitmq", true);
     workerPoolUsageMetrics = new UsageMetricsWrapper(meter, "aer.taskmanager.workerpool", false);
     taskManagerUsageMetrics = new UsageMetricsWrapper(meter, "aer.taskmanager", false);
-    loadUsageMetricsReporter = new UsageMetricsReporter(meter, "aer.taskmanager.worker.load", "");
+    loadUsageMetricsReporter = new UsageMetricsReporter(meter, "aer.taskmanager.worker.load", "Report average worker load");
   }
 
   /**

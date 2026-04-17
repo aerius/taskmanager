@@ -36,7 +36,7 @@ class PriorityTaskSchedulerMetrics {
   @Deprecated
   private static final String METRIC_PREFIX_LEGACY = "aer.taskmanager.running_client_size";
   private static final String METRIC_PREFIX = "aer.taskmanager.client.queue";
-  private static final String DESCRIPTION = "Number of tasks running for the client queue ";
+  private static final String DESCRIPTION = "Number of tasks running on client queues";
 
   private final Map<String, ObservableDoubleGauge> metrics = new HashMap<>();
   private final Map<String, ObservableDoubleGauge> usageMetrics = new HashMap<>();
@@ -52,13 +52,13 @@ class PriorityTaskSchedulerMetrics {
   public void addMetric(final IntSupplier countSupplier, final String workerQueueName, final String clientQueueName) {
     metrics.put(clientQueueName, OpenTelemetryMetrics.METER
         .gaugeBuilder(METRIC_PREFIX_LEGACY)
-        .setDescription(DESCRIPTION + clientQueueName)
+        .setDescription(DESCRIPTION)
         .buildWithCallback(
             result -> result.record(countSupplier.getAsInt(),
                 OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName, "state", "used"))));
     metrics.put(clientQueueName, OpenTelemetryMetrics.METER
         .gaugeBuilder(METRIC_PREFIX)
-        .setDescription(DESCRIPTION + clientQueueName)
+        .setDescription(DESCRIPTION)
         .buildWithCallback(
             result -> result.record(countSupplier.getAsInt(),
                 OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName, "state", "used"))));
