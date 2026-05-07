@@ -18,14 +18,10 @@ package nl.aerius.taskmanager.scheduler.priorityqueue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import nl.aerius.taskmanager.config.EnvOverrideBeanDeserializerModifier;
 import nl.aerius.taskmanager.domain.PriorityTaskQueue;
 import nl.aerius.taskmanager.domain.PriorityTaskSchedule;
 import nl.aerius.taskmanager.scheduler.SchedulerFileConfigurationHandler;
@@ -35,31 +31,21 @@ import nl.aerius.taskmanager.scheduler.SchedulerFileConfigurationHandler;
  */
 public class PriorityTaskSchedulerFileHandler implements SchedulerFileConfigurationHandler<PriorityTaskQueue, PriorityTaskSchedule> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PriorityTaskSchedulerFileHandler.class);
-
-  private static final String ENV_PREFIX = "AERIUS_PRIORITY_TASK_SCHEDULER_";
+  private static final String PREFIX = "AERIUS_PTS_";
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Override
   public PriorityTaskSchedule read(final File file) throws IOException {
-    final PriorityTaskSchedule fileSchedule = readFromFile(file);
-    final PriorityTaskSchedule environmentSchedule = readFromEnvironment(fileSchedule.getWorkerQueueName());
-    return environmentSchedule == null ? fileSchedule : environmentSchedule;
+    final PriorityTaskSchedule fileSchedule = readFromFile(objectMapper, file);
+
+    return readFromFile(EnvOverrideBeanDeserializerModifier.objectMapper(PREFIX + fileSchedule.getWorkerQueueName()), file);
   }
 
-  private PriorityTaskSchedule readFromFile(final File file) throws IOException {
-    return objectMapper.readValue(file, PriorityTaskSchedule.class);
-  }
+  private PriorityTaskSchedule readFromFile(final ObjectMapper objectMapper, final File file) throws IOException {
+    final PriorityTaskScheduleFile schedule = objectMapper.readValue(file, PriorityTaskScheduleFile.class);
 
-  private PriorityTaskSchedule readFromEnvironment(final String workerQueueName) throws JsonProcessingException {
-    final String environmentKey = ENV_PREFIX + workerQueueName.toUpperCase(Locale.ROOT);
-    final String environmentValue = System.getenv(environmentKey);
-
-    if (environmentValue != null) {
-      LOG.info("Using configuration for worker queue {} from environment", workerQueueName);
-      return objectMapper.readValue(environmentValue, PriorityTaskSchedule.class);
-    }
-    return null;
+    schedule.updateQueues();
+    return schedule;
   }
 }

@@ -32,7 +32,7 @@ public class TaskSchedule<T extends TaskQueue> {
 
   private Boolean eagerFetch;
 
-  /*
+  /**
    * Maximum number of workers available when the system is fully scaled.
    */
   private int maxWorkersAvailable;
@@ -56,7 +56,6 @@ public class TaskSchedule<T extends TaskQueue> {
   public void setQueues(final List<T> queues) {
     this.queues = queues;
   }
-
   public void setDurable(final boolean durable) {
     this.durable = durable;
   }
@@ -94,5 +93,4 @@ public class TaskSchedule<T extends TaskQueue> {
     return "workerQueueName=" + workerQueueName + ", durable=" + durable + ", eagerFetch=" + eagerFetch + ", maxWorkersAvailable="
         + maxWorkersAvailable + ", queueType=" + queueType;
   }
-
 }

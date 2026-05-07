@@ -1,45 +1,38 @@
 {
-  "workerQueueName": "asrm2",
-  "queues": [
-    {
-      "queueName": "calculation_ui",
+  "workerQueueName": "ops",
+  "queueType": "stream",
+  "clientQueues": {
+    "calculation_ui": {
       "priority": 2,
       "maxCapacityUse": 0.8
     },
-    {
-      "queueName": "paa_export",
+    "paa_export": {
       "priority": 0,
       "maxCapacityUse": 0.8
     },
-    {
-      "queueName": "connect_paa_export",
+    "connect_paa_export": {
       "priority": 0,
       "maxCapacityUse": 0.8
     },
-    {
-      "queueName": "gml_export",
+    "gml_export": {
       "priority": 0,
       "maxCapacityUse": 0.8
     },
-    {
-      "queueName": "connect_gml_export",
+    "connect_gml_export": {
       "priority": 0,
       "maxCapacityUse": 0.8
     },
-    {
-      "queueName": "custom_jobs",
+    "custom_jobs": {
       "priority": 0,
       "maxCapacityUse": 0.8
     },
-    {
-      "queueName": "permit",
+    "permit": {
       "priority": 1,
       "maxCapacityUse": 0.8
     },
-    {
-      "queueName": "melding",
+    "melding": {
       "priority": 3,
       "maxCapacityUse": 0.8
     }
-  ]
+  }
 }

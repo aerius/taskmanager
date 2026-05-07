@@ -105,13 +105,14 @@ class TaskManagerTest {
 
   @Test
   @Timeout(value = 2, unit = TimeUnit.SECONDS)
-  void testRemoveQueue() throws InterruptedException {
+  void testRemoveQueue() throws InterruptedException, IOException {
     updateTaskScheduler();
     assertTrue(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(schedule.getQueues().get(0).getQueueName()),
         "Queue should be present");
-    final PriorityTaskQueue queue = schedule.getQueues().remove(0);
+    schedule = handler.read(new File(getClass().getClassLoader().getResource("queue/priority-task-scheduler.ops_reduced.json").getFile()));
+
     updateTaskScheduler();
-    assertFalse(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer(queue.getQueueName()),
+    assertFalse(taskManager.getTaskScheduleBucket(schedule.getWorkerQueueName()).hasTaskConsumer("ops"),
         "Queue should have been removed");
     taskManager.removeTaskScheduler(schedule.getWorkerQueueName());
   }
