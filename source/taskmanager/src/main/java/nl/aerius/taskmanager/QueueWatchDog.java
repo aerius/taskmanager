@@ -18,10 +18,10 @@ package nl.aerius.taskmanager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +46,7 @@ class QueueWatchDog implements WorkerSizeObserver, WorkerProducerHandler {
 
   private final String workerQueueName;
   private final List<QueueWatchDogListener> listeners = new ArrayList<>();
-  private final Set<String> runningTasks = new HashSet<>();
+  private final Set<String> runningTasks = ConcurrentHashMap.newKeySet();
 
   private LocalDateTime firstProblem;
 
@@ -55,12 +55,16 @@ class QueueWatchDog implements WorkerSizeObserver, WorkerProducerHandler {
   }
 
   public void addQueueWatchDogListener(final QueueWatchDogListener listener) {
-    listeners.add(listener);
+    synchronized (runningTasks) {
+      listeners.add(listener);
+    }
   }
 
   @Override
   public void onWorkDispatched(final String messageId, final Map<String, Object> messageMetaData) {
-    runningTasks.add(messageId);
+    synchronized (runningTasks) {
+      runningTasks.add(messageId);
+    }
   }
 
   @Override
@@ -70,11 +74,13 @@ class QueueWatchDog implements WorkerSizeObserver, WorkerProducerHandler {
 
   @Override
   public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesInProgress) {
-    if (isItDead(!runningTasks.isEmpty(), numberOfMessages)) {
-      LOG.info("It looks like some tasks are zombies on {} worker queue. All tasks in state running are released (running:{}).", workerQueueName,
-          runningTasks.size());
-      runningTasks.clear();
-      listeners.forEach(QueueWatchDogListener::reset);
+    synchronized (runningTasks) {
+      if (isItDead(!runningTasks.isEmpty(), numberOfMessages)) {
+        LOG.info("It looks like some tasks are zombies on {} worker queue. All tasks in state running are released (running:{}).", workerQueueName,
+            runningTasks.size());
+        runningTasks.clear();
+        listeners.forEach(QueueWatchDogListener::reset);
+      }
     }
   }
 
