@@ -69,9 +69,11 @@ class QueueWatchDog implements WorkerSizeObserver, WorkerProducerHandler {
   }
 
   @Override
-  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, int numberOfMessagesInProgress) {
+  public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesInProgress) {
     if (isItDead(!runningTasks.isEmpty(), numberOfMessages)) {
-      LOG.info("It looks like some tasks are zombies on {} worker queue, so all tasks currently in state running are released.", workerQueueName);
+      LOG.info("It looks like some tasks are zombies on {} worker queue. All tasks in state running are released (running:{}).", workerQueueName,
+          runningTasks.size());
+      runningTasks.clear();
       listeners.forEach(QueueWatchDogListener::reset);
     }
   }

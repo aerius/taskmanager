@@ -101,6 +101,8 @@ class EnvOverrideDeserializer<T> extends StdDeserializer<T> implements Resolvabl
         node.put(entry.getKey(), envValue);
       } else if (entry.getValue().isObject()) {
         applyEnvOverrides((ObjectNode) entry.getValue(), fieldPath, resolveFieldType(targetClass, entry.getKey()));
+      } else {
+        LOG.debug("Unexpected entry value (in parentPath: {}) that is not an object: {}", parentPath, entry.getValue());
       }
     }
   }
