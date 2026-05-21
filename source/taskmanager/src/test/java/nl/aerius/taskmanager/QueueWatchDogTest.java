@@ -63,6 +63,9 @@ class QueueWatchDogTest {
     now.set(now.get().plusMinutes(20));
     qwd.onNumberOfWorkersUpdate(0, numberOfMessages, 0);
     verify(listener, times(expected)).reset();
+    // Call update again. This should not trigger reset again because we just called reset.
+    qwd.onNumberOfWorkersUpdate(0, numberOfMessages, 0);
+    verify(listener, times(expected)).reset();
   }
 
   private static List<Arguments> isDeadTests() {

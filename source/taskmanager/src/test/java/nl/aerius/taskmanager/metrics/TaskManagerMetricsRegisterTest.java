@@ -61,7 +61,7 @@ public class TaskManagerMetricsRegisterTest {
     startUp(10, 0);
     register.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     register.onWorkDispatched("2", createMap(QUEUE_2, 200L));
-    verifytaskManagerUsageMetricsProvider(2, 2);
+    verifyTaskManagerUsageMetricsProvider(2, 2);
   }
 
   @Test
@@ -70,7 +70,7 @@ public class TaskManagerMetricsRegisterTest {
     register.onWorkDispatched("1", createMap(QUEUE_1, 100L));
     register.onWorkerFinished("1", createMap(QUEUE_1, 100L));
     register.onWorkerFinished("2", createMap(QUEUE_2, 200L));
-    verifytaskManagerUsageMetricsProvider(3, -1);
+    verifyTaskManagerUsageMetricsProvider(2, 0);
   }
 
   @Test
@@ -85,7 +85,7 @@ public class TaskManagerMetricsRegisterTest {
     verify(taskManagerUsageMetricsProvider, times(1)).reset();
   }
 
-  private void verifytaskManagerUsageMetricsProvider(final int times, final int sum) {
+  private void verifyTaskManagerUsageMetricsProvider(final int times, final int sum) {
     verify(taskManagerUsageMetricsProvider, times(times)).register(taskManagerUsagerMetricsProviderCaptor.capture(),
         anyInt());
     assertEquals(sum, taskManagerUsagerMetricsProviderCaptor.getAllValues().stream().mapToInt(Integer::intValue).sum(),

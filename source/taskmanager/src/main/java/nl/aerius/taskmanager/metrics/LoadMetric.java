@@ -70,7 +70,7 @@ class LoadMetric {
     total += delta * countFunction.applyAsDouble(numberOfWorkers, usedWorkers);
     totalMeasureTime += delta;
     last = newLast;
-    usedWorkers += deltaUsedWorkers;
+    usedWorkers = Math.max(0, usedWorkers + deltaUsedWorkers);
   }
 
   /**

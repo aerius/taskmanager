@@ -17,6 +17,8 @@
 package nl.aerius.taskmanager.metrics;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,9 @@ public class TaskManagerMetricsRegister implements WorkerProducerHandler, Worker
 
   private final TaskManagerUsageMetricsProvider taskManagerUsageMetricsProvider;
   private final StartupGuard startupGuard;
+  // Keep track of dispatched tasks, because when taskmanager restarts it should not register tasks already on the queue
+  // as it doesn't have any metrics on it anymore.
+  private final Set<String> dispatchedTasks = ConcurrentHashMap.newKeySet();
 
   private int numberOfWorkers;
 
@@ -48,12 +53,19 @@ public class TaskManagerMetricsRegister implements WorkerProducerHandler, Worker
 
   @Override
   public void onWorkDispatched(final String messageId, final Map<String, Object> messageMetaData) {
-    taskManagerUsageMetricsProvider.register(1, numberOfWorkers);
+    synchronized (dispatchedTasks) {
+      dispatchedTasks.add(messageId);
+      taskManagerUsageMetricsProvider.register(1, numberOfWorkers);
+    }
   }
 
   @Override
   public void onWorkerFinished(final String messageId, final Map<String, Object> messageMetaData) {
-    taskManagerUsageMetricsProvider.register(-1, numberOfWorkers);
+    synchronized (dispatchedTasks) {
+      if (dispatchedTasks.remove(messageId)) {
+        taskManagerUsageMetricsProvider.register(-1, numberOfWorkers);
+      }
+    }
   }
 
   @Override
@@ -68,6 +80,9 @@ public class TaskManagerMetricsRegister implements WorkerProducerHandler, Worker
 
   @Override
   public void reset() {
-    taskManagerUsageMetricsProvider.reset();
+    synchronized (dispatchedTasks) {
+      dispatchedTasks.clear();
+      taskManagerUsageMetricsProvider.reset();
+    }
   }
 }
