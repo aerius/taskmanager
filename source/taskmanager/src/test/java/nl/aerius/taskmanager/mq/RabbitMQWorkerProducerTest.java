@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -76,9 +78,25 @@ class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
     assertArrayEquals(sendBody, data.getData(), "Test if body send");
   }
 
-  @Test
+  @ParameterizedTest
   @Timeout(value = 5, unit = TimeUnit.SECONDS)
-  void testRestart() throws IOException {
+  @CsvSource({
+    // After shutdown completed signal not by the application channels should be recreated.
+    "false,false,2",
+    // After shutdown completed signal not by the application, but explicit shutdown was called channels should NOT be recreated.
+    "false,true,1",
+    // After shutdown completed signal by the application channels should NOT be recreated.
+    "true,false,1",
+    // After shutdown completed signal by the application and explicit shutdown was called channels should NOT be recreated.
+    "true,true,1"
+  })
+  /**
+   *
+   * @param initiatedByApplication if true as if shutdown initiated by the application
+   * @param shutdown if true if application called shutdown
+   * @param times number of times create/open channel should have been called
+   */
+  void testRestart(final boolean initiatedByApplication, final boolean shutdown, final int times) throws IOException {
     final Connection connection = factory.getConnection();
     final WorkerProducer wp = createWorkerProducer();
 
@@ -86,25 +104,17 @@ class RabbitMQWorkerProducerTest extends AbstractRabbitMQTest {
       // First start which should create the channels.
       wp.start();
       verify(connection, times(1)).createChannel(); // worker channel
-      verify(connection, times(1)).openChannel();   // worker reply channel
-      // Second call if shutdown was done, but not by application so channels should be recreated.
-      assertShutdownCreatesNewChannelsCorrectly(rwp, false);
-      // Third call if shutdown was done by application, channels should not be recreated.
-      assertShutdownCreatesNewChannelsCorrectly(rwp, true);
-      // Forth call shutdown, after that it should also not create new channels.
-      wp.shutdown();
-      assertShutdownCreatesNewChannelsCorrectly(rwp, false);
+      verify(connection, times(1)).openChannel(); // worker reply channel
+
+      if (shutdown) {
+        wp.shutdown();
+      }
+      rwp.shutdownCompleted(new ShutdownSignalException(false, initiatedByApplication, null, wp));
+      verify(connection, times(times)).createChannel();
+      verify(connection, times(times)).openChannel();
     } else {
       fail("Expected worker producer to be of type RabbitMQWorkerProducer, but was: " + wp.getClass());
     }
-  }
-
-  private void assertShutdownCreatesNewChannelsCorrectly(final RabbitMQWorkerProducer wp, final boolean initiatedByApplication) throws IOException {
-    final Connection connection = factory.getConnection();
-
-    wp.shutdownCompleted(new ShutdownSignalException(false, initiatedByApplication, null, wp));
-    verify(connection, times(2)).createChannel();
-    verify(connection, times(2)).openChannel();
   }
 
   private WorkerProducer createWorkerProducer() {
