@@ -33,6 +33,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.ShutdownListener;
 import com.rabbitmq.client.ShutdownSignalException;
 
 import nl.aerius.taskmanager.adaptor.WorkerProducer;
@@ -45,7 +46,7 @@ import nl.aerius.taskmanager.domain.RabbitMQQueueType;
 /**
  * RabbitMQ implementation of a {@link WorkerProducer}.
  */
-class RabbitMQWorkerProducer implements WorkerProducer {
+class RabbitMQWorkerProducer implements WorkerProducer, ShutdownListener {
 
   protected static final String WORKER_REPLY_AFFIX = ".reply";
 
@@ -77,14 +78,8 @@ class RabbitMQWorkerProducer implements WorkerProducer {
   }
 
   @Override
-  public void start() {
-    tryStartReplyConsumer();
-  }
-
-  @Override
   public void dispatchMessage(final Message message) throws IOException {
     final RabbitMQMessage rabbitMQMessage = (RabbitMQMessage) message;
-    ensureChanne();
     final BasicProperties.Builder forwardBuilder = rabbitMQMessage.getProperties().builder();
     // new header map (even in case of existing headers, original can be a UnmodifiableMap)
     final Map<String, Object> headers = rabbitMQMessage.getProperties().getHeaders() == null
@@ -110,13 +105,6 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     }
   }
 
-  private synchronized void ensureChanne() throws IOException {
-    if (channel == null || !channel.isOpen()) {
-      channel = factory.getConnection().createChannel();
-      channel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, queueType));
-    }
-  }
-
   @Override
   public void shutdown() {
     isShutdown = true;
@@ -138,19 +126,21 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     return workerQueueName + WORKER_REPLY_AFFIX;
   }
 
-  private void tryStartReplyConsumer() {
+  @Override
+  public void start() {
     boolean warn = true;
     while (!isShutdown) {
       Connection connection = null;
       try {
         connection = factory.getConnection();
+        startWorkerChannel(connection);
         if (startReplyConsumer(connection)) {
           LOG.info("Successfully (re)started reply consumer for queue {}", workerQueueName);
           return;
         }
       } catch (final ShutdownSignalException | IOException e1) {
         if (warn) {
-          LOG.warn("(Re)starting reply consumer for queue {} failed, retrying in a while: {}", workerQueueName,
+          LOG.warn("(Re)starting worker/reply consumer for queue {} failed, retrying in a while: {}", workerQueueName,
               Optional.ofNullable(e1.getMessage()).orElse(Optional.ofNullable(e1.getCause()).map(Throwable::getMessage).orElse("Unknown")));
           LOG.trace("(Re)starting failed with exception:", e1);
           warn = false;
@@ -162,12 +152,11 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     }
   }
 
-  private static void delayRetry(final int retryTime) {
-    try {
-      Thread.sleep(TimeUnit.SECONDS.toMillis(retryTime));
-    } catch (final InterruptedException ex) {
-      LOG.debug("Waiting interrupted", ex);
-      Thread.currentThread().interrupt();
+  private synchronized void startWorkerChannel(final Connection connection) throws IOException {
+    if (channel == null || !channel.isOpen()) {
+      channel = connection.createChannel();
+      channel.addShutdownListener(this);
+      channel.queueDeclare(workerQueueName, durable, false, false, RabbitMQQueueUtil.queueDeclareArguments(durable, queueType));
     }
   }
 
@@ -196,11 +185,28 @@ class RabbitMQWorkerProducer implements WorkerProducer {
     return true;
   }
 
+  private static void delayRetry(final int retryTime) {
+    try {
+      Thread.sleep(TimeUnit.SECONDS.toMillis(retryTime));
+    } catch (final InterruptedException ex) {
+      LOG.debug("Waiting interrupted", ex);
+      Thread.currentThread().interrupt();
+    }
+  }
+
   private static void handleWorkFinished(final WorkerProducerHandler handler, final BasicProperties properties) {
     try {
       handler.onWorkerFinished(properties.getMessageId(), properties.getHeaders());
     } catch (final RuntimeException e) {
       LOG.error("Runtime exception during handleWorkFinished of {}", handler.getClass(), e);
+    }
+  }
+
+  @Override
+  public void shutdownCompleted(final ShutdownSignalException cause) {
+    if (!cause.isInitiatedByApplication()) {
+      channel = null;
+      start();
     }
   }
 }
