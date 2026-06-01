@@ -94,7 +94,6 @@ This shows the number of tasks on the worker queue that are not yet picked up by
 | `aer.taskmanager.work.queue`<sup>3</sup>              | gauge     | Count the number task from a queue processed on a worker.                  |
 | `aer.taskmanager.work.queue.duration`<sup>3</sup>     | gauge     | Average duration a task from a queue took to process, including wait time. |
 | `aer.taskmanager.worker.limit`<sup>1</sup>            | gauge     | Weighted total number of workers based on tasks send to workers.           |
-| `aer.taskmanager.worker.limit`<sup>1</sup>            | gauge     | Weighted total number of workers based on tasks send to workers.           |
 | `aer.taskmanager.worker.usage`<sup>2</sup>            | gauge     | Weighted usage of workers based on tasks send to workers.                  |
 | `aer.taskmanager.workerpool.worker.limit`<sup>1</sup> | gauge     | TaskManager internal total number of workers.                              |
 | `aer.taskmanager.workerpool.worker.usage`<sup>2</sup> | gauge     | TaskManager internal usage of workers.                                     |
