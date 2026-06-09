@@ -36,9 +36,9 @@ class OpenTelemetryMetricsTest {
 
   @Test
   void testQueueAttributes() {
-    final Attributes attributes = OpenTelemetryMetrics.queueAttributes("aer.worker.OPS", "calculator");
+    final Attributes attributes = OpenTelemetryMetrics.queueAttributes("aer.worker.OPS", "aer.calculator.calculator_ui_small");
 
     assertEquals("ops", attributes.get(OpenTelemetryMetrics.WORKER_TYPE_ATTRIBUTE), "Should have expected worker type attribute");
-    assertEquals("calculator", attributes.get(OpenTelemetryMetrics.QUEUE_ATTRIBUTE), "Should have expected queue name attribute");
+    assertEquals("calculator_ui_small", attributes.get(OpenTelemetryMetrics.QUEUE_ATTRIBUTE), "Should have expected queue name attribute");
   }
 }

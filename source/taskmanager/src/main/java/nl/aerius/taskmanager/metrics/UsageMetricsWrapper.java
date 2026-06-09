@@ -30,8 +30,8 @@ class UsageMetricsWrapper {
 
   public UsageMetricsWrapper(final Meter meter, final String metricPrefix, final boolean hasWaiting) {
     this.hasWaiting = hasWaiting;
-    limitReporter = new UsageMetricsReporter(meter, metricPrefix + ".worker.limit", "");
-    usageReporter = new UsageMetricsReporter(meter, metricPrefix + ".worker.usage", "");
+    limitReporter = new UsageMetricsReporter(meter, metricPrefix + ".worker.limit", "Report nunber of workers available");
+    usageReporter = new UsageMetricsReporter(meter, metricPrefix + ".worker.usage", "Report worker usage");
   }
 
   public void add(final UsageMetricsProvider provider) {
