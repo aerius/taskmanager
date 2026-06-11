@@ -16,8 +16,11 @@
  */
 package nl.aerius.taskmanager.metrics;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.DoubleSupplier;
 
 import org.slf4j.Logger;
@@ -38,7 +41,7 @@ class UsageMetricsReporter {
 
   private record UsageMetric(DoubleSupplier metricSupplier, Attributes attributes) {}
 
-  private final Map<String, UsageMetric> metricsMap = new HashMap<>();
+  private final Map<String, List<UsageMetric>> metricsMap = new HashMap<>();
   private final ObservableDoubleGauge gauge;
 
   public UsageMetricsReporter(final Meter meter, final String metricName, final String description) {
@@ -49,12 +52,12 @@ class UsageMetricsReporter {
   }
 
   private void recordMetrics(final ObservableDoubleMeasurement measurement) {
-    for (final Map.Entry<String, UsageMetric> entry : metricsMap.entrySet()) {
-      final UsageMetric metric = entry.getValue();
+    for (final Entry<String, List<UsageMetric>> workerMetrics : metricsMap.entrySet()) {
+      for (final UsageMetric metric : workerMetrics.getValue()) {
 
-      measurement.record(metric.metricSupplier().getAsDouble(), metric.attributes());
+        measurement.record(metric.metricSupplier().getAsDouble(), metric.attributes());
+      }
     }
-    LOG.debug("Workload for {}", measurement);
   }
 
   /**
@@ -65,7 +68,7 @@ class UsageMetricsReporter {
    * @param attributes attributes for the metric
    */
   public void addMetrics(final String workerQueueName, final DoubleSupplier metricSupplier, final Attributes attributes) {
-    metricsMap.put(workerQueueName, new UsageMetric(metricSupplier, attributes));
+    metricsMap.computeIfAbsent(workerQueueName, k -> new ArrayList<>()).add(new UsageMetric(metricSupplier, attributes));
   }
 
   /**

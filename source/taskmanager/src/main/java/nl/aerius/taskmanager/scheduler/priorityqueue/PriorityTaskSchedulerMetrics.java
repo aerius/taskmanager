@@ -65,10 +65,11 @@ class PriorityTaskSchedulerMetrics {
   }
 
   /**
+   * Adds collecting metrics to count the number of tasks waiting on the client queue.
    *
-   * @param countSupplier
-   * @param workerQueueName
-   * @param clientQueueName
+   * @param countSupplier supplier that returns the active count for the given client queue name when called
+   * @param workerQueueName worker queue name
+   * @param clientQueueName client queue name
    */
   public void addMetricWaiting(final IntSupplier countSupplier, final String workerQueueName, final String clientQueueName) {
     waitingMetrics.put(clientQueueName, OpenTelemetryMetrics.METER
