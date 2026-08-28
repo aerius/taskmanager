@@ -35,15 +35,24 @@ public final class WorkerPoolMetrics {
   private static final Map<String, ObservableDoubleGauge> REGISTERED_METRICS = new HashMap<>();
 
   private enum WorkerPoolMetricType {
-    // @formatter:off
-    WORKER_SIZE(UsageMetricsProvider::getNumberOfWorkers, "Number of workers based on internal state of taskmanager"),
+    /**
+     * @deprecated Replaced with 'aer.taskmanager.workerpool.worker.limit'.
+     */
+    @Deprecated
+    WORKER_SIZE(UsageMetricsProvider::getNumberOfWorkers,
+        "Number of workers based on internal state of taskmanager (deprecated replaced with 'aer.taskmanager.workerpool.worker.limit')."),
+    /**
+     * @deprecated Replaced with 'aer.taskmanager.workerpool.worker.usage'
+     */
     @Deprecated
     CURRENT_WORKER_SIZE(WorkerPool::getReportedWorkerSize,
-        "Current number of workers according to taskmanager (deprecated replaced with 'aer.taskmanager.workerppol.worker.usage')"),
+        "Current number of workers according to taskmanager (deprecated replaced with 'aer.taskmanager.workerpool.worker.usage')."),
+    /**
+     * @deprecated Replaced with 'aer.taskmanager.workerpool.worker.usage'.
+     */
     @Deprecated
     RUNNING_WORKER_SIZE(UsageMetricsProvider::getNumberOfUsedWorkers,
-        "Used number of workers according to taskmanager (deprecated replaced with 'aer.taskmanager.workerppol.worker.usage')");
-    // @formatter:on
+        "Used number of workers according to taskmanager (deprecated replaced with 'aer.taskmanager.workerpool.worker.usage').");
 
     private final Function<WorkerPool, Integer> function;
     private final String description;

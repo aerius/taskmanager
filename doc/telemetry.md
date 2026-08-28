@@ -122,7 +122,7 @@ The following metrics have been replaced by the more standardized naming mention
 |-------------------------------------------------------|-----------|----------------------------------------------------------------------|--------------------------------------------|
 | `aer.taskmanager.worker_size`<sup>1</sup>             | gauge     | The sum of idle workers + occupied workers.                          | `aer.taskmanager.workerpool.worker.limit`  |
 | `aer.taskmanager.current_worker_size`<sup>1</sup>     | gauge     | The number of workers based on what RabbitMQ reports.                | `aer.rabbitmq.worker.limit`                |
-| `aer.taskmanager.running_worker_size`<sup>1</sup>     | gauge     | The number of workers that are occupied.                             | `aer.taskmanager.workerpool.worker..usage` |
+| `aer.taskmanager.running_worker_size`<sup>1</sup>     | gauge     | The number of workers that are occupied.                             | `aer.taskmanager.workerpool.worker.usage` |
 | `aer.taskmanager.running_client_size`<sup>3</sup>     | gauge     | The number of workers that are occupied for a specific client queue. | `aer.taskmanager.client.queue.usage`       |
 
 ##### Metric attributes

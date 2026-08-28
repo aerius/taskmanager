@@ -17,6 +17,7 @@
 package nl.aerius.taskmanager;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 
@@ -28,6 +29,7 @@ import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
  */
 public class StartupGuard implements WorkerSizeObserver {
 
+  private final ReentrantLock lock = new ReentrantLock();
   private final Semaphore openSemaphore = new Semaphore(0);
 
   private boolean open;
@@ -48,11 +50,14 @@ public class StartupGuard implements WorkerSizeObserver {
 
   @Override
   public void onNumberOfWorkersUpdate(final int numberOfWorkers, final int numberOfMessages, final int numberOfMessagesInProgress) {
-    synchronized (openSemaphore) {
+    lock.lock();
+    try {
       if (!open) {
         open = true;
         openSemaphore.release();
       }
+    } finally {
+      lock.unlock();
     }
   }
 }
