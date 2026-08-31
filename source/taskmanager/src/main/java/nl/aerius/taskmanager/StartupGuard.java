@@ -22,10 +22,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 
 /**
- * Class to be used at startup. The Scheduler should not start before it is known how many messages are still on the queue.
- * This to register any work that is still on the queue and to properly calculate load metrics.
- * Because the Task Manager is not aware of the tasks already on the queue and therefore otherwise these messages won't be counted in the metrics.
- * This can result in the metrics being skewed, and thereby negatively reporting load metrics.
+ * Class to be used at startup. The Scheduler should not start before the number of messages on the queue is zero.
+ * Because the Task Manager has no information of the tasks already on the queue and therefore there is no tracking information of those messages.
+ * As all tracking information only lives in memory and is reset when the Task Manager is restarted.
  */
 public class StartupGuard implements WorkerSizeObserver {
 
