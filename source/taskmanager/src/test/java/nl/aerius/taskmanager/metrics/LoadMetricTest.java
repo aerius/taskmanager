@@ -59,8 +59,8 @@ class LoadMetricTest {
     loadMetric.register(5, 10);
     loadMetric.process();
     verify(countFunction, times(2)).applyAsDouble(countWorkersCaptor.capture(),countUsedWorkersCaptor.capture());
-    assertEquals(10, countWorkersCaptor.getValue(), "Should got original number of workers");
-    assertEquals(5, countUsedWorkersCaptor.getValue(), "Should got original number of used workers");
+    assertEquals(10, countWorkersCaptor.getValue(), "Should get original number of workers");
+    assertEquals(5, countUsedWorkersCaptor.getValue(), "Should get original number of used workers");
   }
 
   @Test
@@ -69,8 +69,8 @@ class LoadMetricTest {
     loadMetric.register(0, 10);
     // 2nd call to register should not trigger updating internal state.
     verify(countFunction, times(1)).applyAsDouble(countWorkersCaptor.capture(), countUsedWorkersCaptor.capture());
-    assertEquals(0, countWorkersCaptor.getValue(), "Should got inital number of workers, which was 0");
-    assertEquals(0, countUsedWorkersCaptor.getValue(), "Should got inital number of used workers, which was 0");
+    assertEquals(0, countWorkersCaptor.getValue(), "Should get inital number of workers, which was 0");
+    assertEquals(0, countUsedWorkersCaptor.getValue(), "Should get inital number of used workers, which was 0");
     loadMetric.register(0, 5);
     // call with changed number of workers should trigger update state.
     verify(countFunction, times(2)).applyAsDouble(any(), any());
@@ -91,6 +91,6 @@ class LoadMetricTest {
     assertEquals(0, countUsedWorkersCaptor.getValue(), "Reset has set used number to 0, so that is at is expected here.");
     loadMetric.register(8, 10);
     verify(countFunction, times(4)).applyAsDouble(any(), countUsedWorkersCaptor.capture());
-    assertEquals(0, countUsedWorkersCaptor.getValue(), "This call should get prevoious value of 0 used workers");
+    assertEquals(0, countUsedWorkersCaptor.getValue(), "This call should get previous value of 0 used workers");
   }
 }
