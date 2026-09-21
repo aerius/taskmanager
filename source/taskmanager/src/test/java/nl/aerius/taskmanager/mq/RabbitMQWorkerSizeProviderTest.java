@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -52,15 +53,15 @@ class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
   @Override
   @BeforeEach
   void setUp() throws Exception {
-    brokerManagementRefreshRate = 5;
+    brokerManagementRefreshRate = 1;
     super.setUp();
     provider = new RabbitMQWorkerSizeProvider(executor, factory, mockMonitor);
   }
 
   @Test
   @Timeout(value = 10, unit = TimeUnit.SECONDS)
-  void testTriggerWorkerQueueState() throws InterruptedException {
-    doReturn(new RabbitMQQueueStatus(1, 2, 3)).when(mockMonitor).getWorkerQueueState(TEST_QUEUE);
+  void testTriggerWorkerQueueState() throws InterruptedException, IOException {
+    doReturn(Map.of(TEST_QUEUE, new RabbitMQQueueStatus(1, 2, 3))).when(mockMonitor).getWorkerQueueStates();
     final CountDownLatch latch = new CountDownLatch(1);
     final WorkerSizeObserver observer = mock(WorkerSizeObserver.class);
 
@@ -69,11 +70,9 @@ class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
       return null;
     }).when(observer).onNumberOfWorkersUpdate(any());
     provider.addObserver(TEST_QUEUE, observer);
-    // Call twice, which should result in only 1 call to updateWorkerQueueState
-    provider.triggerWorkerQueueState(TEST_QUEUE);
-    provider.triggerWorkerQueueState(TEST_QUEUE);
+    provider.start();
     latch.await();
-    verify(mockMonitor).getWorkerQueueState(TEST_QUEUE);
+    verify(mockMonitor).getWorkerQueueStates();
     verify(observer).onNumberOfWorkersUpdate(any());
   }
 

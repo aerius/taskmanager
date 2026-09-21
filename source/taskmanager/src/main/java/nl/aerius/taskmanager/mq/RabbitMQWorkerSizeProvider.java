@@ -23,9 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,31 +46,17 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   /**
    * Delay first read from the RabittMQ admin to give the taskmanager some time to start up and register all observers.
    */
-  private static final int INITIAL_DELAY_SECONDS = 10;
-  /**
-   * The minimum time before the RabbitMQ management api is fetched again to get an update on the queue state.
-   */
-  private static final long DELAY_BEFORE_UPDATE_TIME_SECONDS = 15;
+  private static final int INITIAL_DELAY_SECONDS = 5;
 
   private final ScheduledExecutorService executorService;
-  private final RabbitMQChannelQueueEventsWatcher channelQueueEventsWatcher;
   private final RabbitMQWorkerEventProducer eventProducer;
   /**
    * The time in seconds between each scheduled update.
    */
   private final long refreshRateSeconds;
-  /**
-   * The time delay in seconds before the update call is made.
-   */
-  private final long refreshDelayBeforeUpdateSeconds;
 
-  private final Object sync = new Object();
-
-  private final Map<String, ScheduledFuture<?>> lastRuns = new HashMap<>();
   private final Map<String, WorkerSizeObserverComposite> observers = new HashMap<>();
   private final RabbitMQQueueMonitor monitor;
-  // Map to keep track of the last known states of the queues as retrieved form the RabbitMQ admin API.
-  private Map<String, RabbitMQQueueStatus> lastKnownQueueStates = new HashMap<>();
   private boolean running;
 
   public RabbitMQWorkerSizeProvider(final ScheduledExecutorService executorService, final BrokerConnectionFactory factory) {
@@ -83,10 +67,8 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
       final RabbitMQQueueMonitor monitor) {
     this.executorService = executorService;
     this.monitor = monitor;
-    channelQueueEventsWatcher = new RabbitMQChannelQueueEventsWatcher(factory, this);
     refreshRateSeconds = factory.getConnectionConfiguration().getBrokerManagementRefreshRate();
     eventProducer = new RabbitMQWorkerEventProducer(executorService, factory);
-    refreshDelayBeforeUpdateSeconds = Math.min(refreshRateSeconds / 2, DELAY_BEFORE_UPDATE_TIME_SECONDS);
   }
 
   @Override
@@ -105,7 +87,6 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
 
   @Override
   public void start() throws IOException {
-    channelQueueEventsWatcher.start();
     eventProducer.start();
     if (refreshRateSeconds > 0) {
       running = true;
@@ -115,58 +96,28 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
 
   @Override
   public void shutdown() {
+    running = false;
     for (final String key : new ArrayList<>(observers.keySet())) {
       removeObserver(key);
     }
     eventProducer.shutdown();
-    channelQueueEventsWatcher.shutdown();
   }
 
   private void updateWorkerQueueState() {
     if (running) {
       try {
-        lastKnownQueueStates = new HashMap<>(monitor.getWorkerQueueStates());
-        observers.forEach((q, v) -> scheduledUpdateWorkerQueueState(q, () -> lastKnownQueueStates.get(q)));
+        final Map<String, RabbitMQQueueStatus> queueStates = new HashMap<>(monitor.getWorkerQueueStates());
+        observers.forEach((q, v) -> updateWorkerQueueState(q, queueStates.get(q)));
       } catch (final RuntimeException e) {
         LOG.error("Runtime error during updateWorkerQueueState", e);
       }
     }
   }
 
-  @Override
-  public void triggerWorkerQueueState(final String queueName) {
-    if (!observers.containsKey(queueName)) {
-      return;
-    }
-    scheduledUpdateWorkerQueueState(queueName, () -> monitor.getWorkerQueueState(queueName));
-  }
-
-  private void scheduledUpdateWorkerQueueState(final String queueName, final Supplier<RabbitMQQueueStatus> statusSupplier) {
-    // This uses a delayed update. It schedules a task to run in x-seconds.
-    // If a new update is received before the schedule has run it will cancel the current schedule and reschedule.
-    // This is mainly for when multiple events are triggered to not trigger a call for every event,
-    // and also to manage the events trigger in combination with the scheduled process.
-    synchronized (sync) {
-      Optional.ofNullable(lastRuns.get(queueName)).ifPresent(f -> f.cancel(false));
-      final Runnable updateTask = () -> updateWorkerQueueState(queueName, statusSupplier);
-
-      lastRuns.put(queueName, executorService.schedule(updateTask, refreshDelayBeforeUpdateSeconds, TimeUnit.SECONDS));
-    }
-  }
-
-  private void updateWorkerQueueState(final String queueName, final Supplier<RabbitMQQueueStatus> statusSupplier) {
-    synchronized (sync) {
-      try {
-        Optional.ofNullable(statusSupplier.get())
-            .ifPresent(s -> {
-              lastKnownQueueStates.put(queueName, s);
-              lastRuns.remove(queueName);
-              Optional.ofNullable(observers.get(queueName)).ifPresent(observer -> observer.onNumberOfWorkersUpdate(s));
-            });
-      } catch (final RuntimeException e) {
-        LOG.error("RuntimeException during updateWorkerQueueState", e);
-      }
-    }
+  private void updateWorkerQueueState(final String queueName, final RabbitMQQueueStatus queueStatus) {
+    Optional.ofNullable(queueStatus).ifPresent(s -> {
+      Optional.ofNullable(observers.get(queueName)).ifPresent(observer -> observer.onNumberOfWorkersUpdate(queueStatus));
+    });
   }
 
   private static class WorkerSizeObserverComposite implements WorkerSizeObserver {

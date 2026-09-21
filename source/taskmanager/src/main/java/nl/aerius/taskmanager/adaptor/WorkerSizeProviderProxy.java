@@ -40,13 +40,6 @@ public interface WorkerSizeProviderProxy {
   boolean removeObserver(String workerQueueName);
 
   /**
-   * Triggers to get the worker queue state.
-   *
-   * @param queueName name of the worker queue
-   */
-  void triggerWorkerQueueState(final String queueName);
-
-  /**
    * Starts the worker size provider.
    *
    * @throws IOException Throws IOException in case of communication problems with RabbitMQ

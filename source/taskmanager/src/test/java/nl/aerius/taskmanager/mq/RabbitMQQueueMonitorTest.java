@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,39 +35,30 @@ import nl.aerius.taskmanager.domain.RabbitMQQueueStatus;
  */
 class RabbitMQQueueMonitorTest {
 
+  private static final String FILENAME = "queue_aerius.txt";
   private static final String DUMMY = "dummy";
   private static final String QUEUENAME = "aerius.worker.ops";
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  void testGetWorkerQueueState() {
-    assertRabbitMQQueueMonitor("queue_aerius.worker.ops.txt", 4, 3, 5, rpm -> rpm.getWorkerQueueState(DUMMY));
-  }
-
-  @Test
   void testGetWorkerQueueStates() {
-    assertRabbitMQQueueMonitor("queue_aerius.txt", 51, 10, 30, rpm -> rpm.getWorkerQueueStates().get(QUEUENAME));
-  }
-
-  private void assertRabbitMQQueueMonitor(final String filename, final int expectedConsumers, final int expectedMessages,
-      final int expectedUnacknowledged, final Function<RabbitMQQueueMonitor, RabbitMQQueueStatus> collector) {
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost(DUMMY).brokerPort(0).brokerUsername(DUMMY).brokerPassword(DUMMY).build();
     final RabbitMQQueueMonitor rpm = new RabbitMQQueueMonitor(configuration) {
       @Override
       protected JsonNode getJsonResultFromApi(final String apiPath) throws IOException {
-        try (final InputStream fr = getClass().getResourceAsStream(filename);
+        try (final InputStream fr = getClass().getResourceAsStream(FILENAME);
             final InputStreamReader is = new InputStreamReader(fr)) {
           return objectMapper.readTree(is);
         }
       }
     };
     try {
-      final RabbitMQQueueStatus status = collector.apply(rpm);
+      final RabbitMQQueueStatus status = rpm.getWorkerQueueStates().get(QUEUENAME);
 
-      assertEquals(expectedConsumers, status.consumers(), "Number of workers");
-      assertEquals(expectedMessages, status.messages(), "Number of messages");
-      assertEquals(expectedUnacknowledged, status.unacknowledged(), "Number of unacknowledged");
+      assertEquals(51, status.consumers(), "Number of workers");
+      assertEquals(10, status.messages(), "Number of messages");
+      assertEquals(30, status.unacknowledged(), "Number of unacknowledged");
     } finally {
       rpm.shutdown();
     }

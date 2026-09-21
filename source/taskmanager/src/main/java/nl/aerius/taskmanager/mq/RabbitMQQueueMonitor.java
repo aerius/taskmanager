@@ -108,32 +108,6 @@ class RabbitMQQueueMonitor {
   }
 
   /**
-   * Retrieves the queue status for the given queue from the RabbitMQ admin api.
-   *
-   * @param queueName name of the queue to get the statuss
-   * @return Status of the queue
-   */
-  public RabbitMQQueueStatus getWorkerQueueState(final String queueName) {
-    // Use RabbitMQ HTTP-API.
-    // URL: [host]:[port]/api/queues/[virtualHost]/[QueueName]
-    final String virtualHost = configuration.getBrokerVirtualHost().replace("/", "%2f");
-    final String apiPath = String.format("/api/queues/%s/%s", virtualHost, queueName);
-
-    try {
-      final JsonNode jsonNode = getJsonResultFromApi(apiPath);
-
-      if (jsonNode == null) {
-        LOG.error("Queue configuration from RabbitMQ admin json get call returned null.");
-      } else {
-        return getQueueStatus(jsonNode);
-      }
-    } catch (final URISyntaxException | IOException e) {
-      LOG.info("Error getting RabbitMQ status from admin api: {}", e.getMessage());
-    }
-    return null;
-  }
-
-  /**
    * Retrieves the status for all queues from the RabbitMQ admin api.
    */
   public Map<String, RabbitMQQueueStatus> getWorkerQueueStates() {
