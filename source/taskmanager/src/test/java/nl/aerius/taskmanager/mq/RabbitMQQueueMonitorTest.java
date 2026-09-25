@@ -21,42 +21,44 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
+import nl.aerius.taskmanager.domain.RabbitMQQueueStatus;
 
 /**
  * Test class for {@link RabbitMQQueueMonitor}.
  */
 class RabbitMQQueueMonitorTest {
 
+  private static final String FILENAME = "queue_aerius.txt";
   private static final String DUMMY = "dummy";
+  private static final String QUEUENAME = "aerius.worker.ops";
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  void testGetWorkerQueueState() {
+  void testGetWorkerQueueStates() {
     final ConnectionConfiguration configuration = ConnectionConfiguration.builder()
         .brokerHost(DUMMY).brokerPort(0).brokerUsername(DUMMY).brokerPassword(DUMMY).build();
-    final AtomicInteger workerSize = new AtomicInteger();
-    final WorkerSizeObserver mwps = (numberOfWorkers, numberOfMessages, numberOfMessagesInProgress) -> workerSize.set(numberOfWorkers);
     final RabbitMQQueueMonitor rpm = new RabbitMQQueueMonitor(configuration) {
       @Override
       protected JsonNode getJsonResultFromApi(final String apiPath) throws IOException {
-        try (final InputStream fr = getClass().getResourceAsStream("queue_aerius.worker.ops.txt");
+        try (final InputStream fr = getClass().getResourceAsStream(FILENAME);
             final InputStreamReader is = new InputStreamReader(fr)) {
           return objectMapper.readTree(is);
         }
       }
     };
     try {
-      rpm.updateWorkerQueueState(DUMMY, mwps);
-      assertEquals(4, workerSize.get(), "Number of workers");
+      final RabbitMQQueueStatus status = rpm.getWorkerQueueStates().get(QUEUENAME);
+
+      assertEquals(51, status.consumers(), "Number of workers");
+      assertEquals(10, status.messages(), "Number of messages");
+      assertEquals(30, status.unacknowledged(), "Number of unacknowledged");
     } finally {
       rpm.shutdown();
     }

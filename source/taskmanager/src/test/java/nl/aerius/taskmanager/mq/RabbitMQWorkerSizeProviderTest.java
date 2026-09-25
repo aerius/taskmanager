@@ -18,54 +18,62 @@ package nl.aerius.taskmanager.mq;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
+import nl.aerius.taskmanager.domain.RabbitMQQueueStatus;
 
 /**
  * Test class for {@link RabbitMQWorkerSizeProvider}
  */
+@ExtendWith(MockitoExtension.class)
 class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
 
   private static final String TEST_QUEUE = "test";
+
+  private @Mock RabbitMQQueueMonitor mockMonitor;
 
   private RabbitMQWorkerSizeProvider provider;
 
   @Override
   @BeforeEach
   void setUp() throws Exception {
-    brokerManagementRefreshRate = 5;
+    brokerManagementRefreshRate = 1;
     super.setUp();
-    provider = new RabbitMQWorkerSizeProvider(executor, factory);
+    provider = new RabbitMQWorkerSizeProvider(executor, factory, mockMonitor);
   }
 
   @Test
   @Timeout(value = 10, unit = TimeUnit.SECONDS)
-  void testTriggerWorkerQueueState() throws InterruptedException {
+  void testTriggerWorkerQueueState() throws InterruptedException, IOException {
+    doReturn(Map.of(TEST_QUEUE, new RabbitMQQueueStatus(1, 2, 3))).when(mockMonitor).getWorkerQueueStates();
     final CountDownLatch latch = new CountDownLatch(1);
-    final RabbitMQQueueMonitor mockMonitor = mock(RabbitMQQueueMonitor.class);
+    final WorkerSizeObserver observer = mock(WorkerSizeObserver.class);
 
     doAnswer(inv -> {
       latch.countDown();
       return null;
-    }).when(mockMonitor).updateWorkerQueueState(eq(TEST_QUEUE), any());
-    provider.putMonitor(TEST_QUEUE, mockMonitor);
-    // Call twice, which should result in only 1 call to updateWorkerQueueState
-    provider.triggerWorkerQueueState(TEST_QUEUE);
-    provider.triggerWorkerQueueState(TEST_QUEUE);
+    }).when(observer).onNumberOfWorkersUpdate(any());
+    provider.addObserver(TEST_QUEUE, observer);
+    provider.start();
     latch.await();
-    verify(mockMonitor).updateWorkerQueueState(eq(TEST_QUEUE), any());
+    verify(mockMonitor).getWorkerQueueStates();
+    verify(observer).onNumberOfWorkersUpdate(any());
   }
 
   @Test
