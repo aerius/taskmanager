@@ -54,7 +54,7 @@ class RabbitMQQueueMonitorTest {
       }
     };
     try {
-      final RabbitMQQueueStatus status = rpm.getWorkerQueueStates().get(QUEUENAME);
+      final RabbitMQQueueStatus status = rpm.getQueueStates().get(QUEUENAME);
 
       assertEquals(51, status.consumers(), "Number of workers");
       assertEquals(10, status.messages(), "Number of messages");

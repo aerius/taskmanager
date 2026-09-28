@@ -110,7 +110,7 @@ class RabbitMQQueueMonitor {
   /**
    * Retrieves the status for all queues from the RabbitMQ admin api.
    */
-  public Map<String, RabbitMQQueueStatus> getWorkerQueueStates() {
+  public Map<String, RabbitMQQueueStatus> getQueueStates() {
     try {
       final JsonNode jsonObject = getJsonResultFromApi("/api/queues");
 

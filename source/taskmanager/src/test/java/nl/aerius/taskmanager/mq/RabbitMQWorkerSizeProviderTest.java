@@ -61,7 +61,7 @@ class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
   @Test
   @Timeout(value = 10, unit = TimeUnit.SECONDS)
   void testTriggerWorkerQueueState() throws InterruptedException, IOException {
-    doReturn(Map.of(TEST_QUEUE, new RabbitMQQueueStatus(1, 2, 3))).when(mockMonitor).getWorkerQueueStates();
+    doReturn(Map.of(TEST_QUEUE, new RabbitMQQueueStatus(1, 2, 3))).when(mockMonitor).getQueueStates();
     final CountDownLatch latch = new CountDownLatch(1);
     final WorkerSizeObserver observer = mock(WorkerSizeObserver.class);
 
@@ -72,7 +72,7 @@ class RabbitMQWorkerSizeProviderTest extends AbstractRabbitMQTest {
     provider.addObserver(TEST_QUEUE, observer);
     provider.start();
     latch.await();
-    verify(mockMonitor).getWorkerQueueStates();
+    verify(mockMonitor).getQueueStates();
     verify(observer).onNumberOfWorkersUpdate(any());
   }
 
