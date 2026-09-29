@@ -80,7 +80,7 @@ class RabbitMQClientQueueReporterTest {
     verify(measurement).record(metricCaptor.capture(), attributesCaptor.capture());
 
     assertEquals(20, metricCaptor.getValue().intValue(), "Expected to report the number of messages");
-    assertEquals("some_client_queue", attributesCaptor.getValue().get(AttributeKey.stringKey("client_queue")),
+    assertEquals("some_client_queue", attributesCaptor.getValue().get(AttributeKey.stringKey("queue_name")),
         "Expected the client queue are attribute.");
   }
 

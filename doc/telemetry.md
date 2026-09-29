@@ -82,9 +82,9 @@ Therefore `.limit` gives the total number of workers available.
 And `.usage` gives the metrics about how the workers are used.
 The usage metrics have an attribute `state` that identifies if the metric is for `used` or `free` amount of workers.
 Additional `aer.rabbitmq.worker.usage` records a third state `waiting`.
-And `aer.taskmanager.client.queue.usage` has states `used` and `waiting` that provides information on tasks send to the TaskManager.
-This shows the number of tasks on the worker queue that are not yet picked up by any worker.
-
+The `aer.taskmanager.queue` metrics has state attributes `used` and `waiting` that provides information on tasks picked up by the TaskManager.
+Waiting tasks are only interesting for queues that use `eagerFetch`, because in that configuration all tasks are always picked up from the queue.
+To know the number of waiting tasks for other queues use the metric `aer.rabbitmq.client.queue`.
 
 | metric name                                           | type      | description                                                                |
 |-------------------------------------------------------|-----------|----------------------------------------------------------------------------|
@@ -97,13 +97,14 @@ This shows the number of tasks on the worker queue that are not yet picked up by
 | `aer.taskmanager.worker.usage`<sup>2</sup>            | gauge     | Weighted usage of workers based on tasks send to workers.                  |
 | `aer.taskmanager.workerpool.worker.limit`<sup>1</sup> | gauge     | TaskManager internal total number of workers.                              |
 | `aer.taskmanager.workerpool.worker.usage`<sup>2</sup> | gauge     | TaskManager internal usage of workers.                                     |
-| `aer.taskmanager.client.queue.usage`<sup>2</sup>      | gauge     | TaskManager internal metrics on client queue usage.                        |
+| `aer.taskmanager.queue`<sup>4</sup>                   | gauge     | TaskManager internal metrics on client queue usage.                        |
 | `aer.rabbitmq.worker.limit`<sup>1</sup>               | gauge     | Total number of workers available as reported by RabbitMQ                  |
-| `aer.rabbitmq.worker.usage`<sup>2</sup>               | gauge     | Usage o the workers based on the messages on the RabbitMQ worker queue.    |
+| `aer.rabbitmq.worker.usage`<sup>2</sup>               | gauge     | Usage of the workers based on the messages on the RabbitMQ worker queue.   |
+| `aer.rabbitmq.client.queue`<sup>3</sup>               | gauge     | Number of messages on per client queue as reported by RabbitMQ.            |
 | `aer.taskmanager.dispatched`<sup>1</sup>              | histogram | The number of tasks dispatched.                                            |
 | `aer.taskmanager.dispatched.wait`<sup>1</sup>         | histogram | The average wait time of tasks dispatched.                                 |
-| `aer.taskmanager.dispatched.queue`<sup>3</sup>        | histogram | The number of tasks dispatched per client queue.                           |
-| `aer.taskmanager.dispatched.queue.wait`<sup>3</sup>   | histogram | The average wait time of tasks dispatched per client queue.                |
+| `aer.taskmanager.dispatched.queue`<sup>4</sup>        | histogram | The number of tasks dispatched per client queue.                           |
+| `aer.taskmanager.dispatched.queue.wait`<sup>4</sup>   | histogram | The average wait time of tasks dispatched per client queue.                |
 
 Basically there are 3 metric groups that report similar information.
 First the `aer.taskmanager.worker.*` metrics are a weighted value based on when tasks are send to the workers.
@@ -120,9 +121,10 @@ The workers have different attributes to distinguish specific metrics.
 * <sup>1</sup> have attribute `worker_type`.
 * <sup>2</sup> have attribute `worker_type` and `state`. `state` can have the value `used`, `free` or `waiting`.
 * <sup>3</sup> have attribute `worker_type` and `queue_name`.
+* <sup>4</sup> have attribute `worker_type`, `queue_name` and `state`. `state` can have the value `used`, `free` or `waiting`.
 
 `worker_type` is the type of worker, e.g. `ops`.
-`queue_name` is the originating queue the task initially was put on, e.g. `...calculator_ui_small`.
+`queue_name` is the originating queue the task initially was put on, e.g. `calculator_ui_small`.
 
 > [!NOTE]
 > The metrics in the TaskManager operate on a time frame of 1 minute.

@@ -35,22 +35,21 @@ import nl.aerius.taskmanager.domain.RabbitMQQueueStatus;
  */
 public class RabbitMQClientQueueReporter implements ClientQueueObserver {
 
-  private static final String CLIENT_QUEUE_METRIC = "aer.rabbitmq.client_queue";
+  private static final String CLIENT_QUEUE_METRIC = "aer.rabbitmq.client.queue";
   private final String workerQueue;
   private final UsageMetricsReporter clientQueueReporter;
   private final Map<String, Double> queueCounters = new HashMap<>();
 
   public RabbitMQClientQueueReporter(final Meter meter, final String workerQueueName) {
-    this.workerQueue = workerQueueName.substring(workerQueueName.lastIndexOf('.') + 1);
+    this.workerQueue = OpenTelemetryMetrics.onlyLastPart(workerQueueName);
     clientQueueReporter = new UsageMetricsReporter(meter, CLIENT_QUEUE_METRIC, "Number of messages on the RabbitMQ client queues");
   }
 
   @Override
-  public void onClientQueueUpdate(final String fullClientQueueName, final RabbitMQQueueStatus value) {
-    final String clientQueueName = fullClientQueueName.substring(fullClientQueueName.lastIndexOf('.') + 1);
+  public void onClientQueueUpdate(final String clientQueueName, final RabbitMQQueueStatus value) {
     if (!queueCounters.containsKey(clientQueueName)) {
       clientQueueReporter.addMetrics(workerQueue, () -> queueCounters.get(clientQueueName),
-          OpenTelemetryMetrics.workerAttributes(workerQueue, "client_queue", clientQueueName));
+          OpenTelemetryMetrics.queueAttributes(workerQueue, clientQueueName));
     }
     queueCounters.put(clientQueueName, Double.valueOf(value.messages()));
   }
