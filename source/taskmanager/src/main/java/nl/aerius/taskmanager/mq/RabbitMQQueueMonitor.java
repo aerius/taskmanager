@@ -110,25 +110,25 @@ class RabbitMQQueueMonitor {
   /**
    * Retrieves the status for all queues from the RabbitMQ admin api.
    */
-  public Map<String, RabbitMQQueueStatus> getWorkerQueueStates() {
+  public Map<String, RabbitMQQueueStatus> getQueueStates() {
+    final Map<String, RabbitMQQueueStatus> queueStates = new HashMap<>();
+
     try {
       final JsonNode jsonObject = getJsonResultFromApi("/api/queues");
 
-      if (jsonObject == null) {
-        LOG.error("Queue configuration from RabbitMQ admin json get call returned null.");
-      } if (jsonObject instanceof final ArrayNode array) {
-        final Map<String, RabbitMQQueueStatus> queueStates = new HashMap<>();
+      if (jsonObject instanceof final ArrayNode array) {
 
         for (int i = 0; i < array.size(); i++) {
           final JsonNode jsonNode = array.get(i);
           queueStates.put(getJsonString(jsonNode, "name"), getQueueStatus(jsonNode));
         }
-        return queueStates;
+      } else {
+        LOG.error("Queue configuration from RabbitMQ admin json returned an unexpected value.");
       }
     } catch (final URISyntaxException | IOException e) {
       LOG.info("Error getting RabbitMQ status from admin api: {}", e.getMessage());
     }
-    return new HashMap<>();
+    return queueStates;
   }
 
   private static RabbitMQQueueStatus getQueueStatus(final JsonNode jsonNode) {

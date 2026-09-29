@@ -32,6 +32,14 @@ public interface WorkerSizeProviderProxy {
   void addObserver(String workerQueueName, WorkerSizeObserver workerSizeObserver);
 
   /**
+   * Add a ClientQueueObserver.
+   *
+   * @param workerQueueName name of the worker queue the client queues are related too
+   * @param observer observer to be informed
+   */
+  public void addClientObserver(final String workerQueueName, final ClientQueueObserver observer);
+
+  /**
    * Removes the observer for the worker queue.
    *
    * @param workerQueueName name of the worker queue
