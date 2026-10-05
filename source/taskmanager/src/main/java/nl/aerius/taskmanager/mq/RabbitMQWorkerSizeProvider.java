@@ -89,7 +89,10 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   @Override
   public boolean removeObserver(final String queueName) {
     eventProducer.removeMetrics(queueName);
-    return observers.remove(queueName) != null || clientObservers.remove(queueName) != null;
+    final boolean removedQueue = observers.remove(queueName) != null;
+    final boolean removedClientQueue = clientObservers.remove(queueName) != null;
+
+    return removedQueue || removedClientQueue;
   }
 
   @Override
@@ -129,7 +132,9 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   }
 
   private void updateClientQueueState(final ClientQueueObserver observer, final Map<String, RabbitMQQueueStatus> queueStates) {
-    queueStates.entrySet().stream().filter(e -> observer.filter(e.getKey())).forEach(e -> observer.onClientQueueUpdate(e.getKey(), e.getValue()));
+    queueStates.entrySet().stream()
+        .filter(e -> observer.filter(e.getKey()))
+        .forEach(e -> observer.onClientQueueUpdate(e.getKey(), e.getValue()));
   }
 
   private static class WorkerSizeObserverComposite implements WorkerSizeObserver {

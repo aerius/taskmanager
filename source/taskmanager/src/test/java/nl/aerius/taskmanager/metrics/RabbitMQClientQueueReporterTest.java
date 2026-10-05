@@ -81,11 +81,11 @@ class RabbitMQClientQueueReporterTest {
 
     assertEquals(20, metricCaptor.getValue().intValue(), "Expected to report the number of messages");
     assertEquals("some_client_queue", attributesCaptor.getValue().get(AttributeKey.stringKey("queue_name")),
-        "Expected the client queue are attribute.");
+        "Expected the client queue as attribute.");
   }
 
   @Test
-  void testFitler() {
+  void testFilter() {
     assertTrue(reporter.filter("aerius.test.some_client_queue"), "Should return true if queue name contains worker 'test' name");
     assertFalse(reporter.filter("aerius.other.some_client_queue"), "Should return false if queue name doesn't contain worker 'test' name");
   }

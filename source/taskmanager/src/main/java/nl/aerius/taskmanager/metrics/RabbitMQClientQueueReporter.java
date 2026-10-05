@@ -47,11 +47,13 @@ public class RabbitMQClientQueueReporter implements ClientQueueObserver {
 
   @Override
   public void onClientQueueUpdate(final String clientQueueName, final RabbitMQQueueStatus value) {
-    if (!queueCounters.containsKey(clientQueueName)) {
+    final boolean newCounter = !queueCounters.containsKey(clientQueueName);
+
+    queueCounters.put(clientQueueName, Double.valueOf(value.messages()));
+    if (newCounter) {
       clientQueueReporter.addMetrics(workerQueue, () -> queueCounters.get(clientQueueName),
           OpenTelemetryMetrics.queueAttributes(workerQueue, clientQueueName));
     }
-    queueCounters.put(clientQueueName, Double.valueOf(value.messages()));
   }
 
   @Override
