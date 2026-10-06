@@ -47,8 +47,8 @@ class UsageMetricsReporter {
   }
 
   private void recordMetrics(final ObservableDoubleMeasurement measurement) {
-    for (final Entry<String, List<UsageMetric>> workerMetrics : metricsMap.entrySet()) {
-      for (final UsageMetric metric : workerMetrics.getValue()) {
+    for (final Entry<String, List<UsageMetric>> entry : metricsMap.entrySet()) {
+      for (final UsageMetric metric : entry.getValue()) {
 
         measurement.record(metric.metricSupplier().getAsDouble(), metric.attributes());
       }

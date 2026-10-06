@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nl.aerius.taskmanager.adaptor.ClientQueueObserver;
 import nl.aerius.taskmanager.adaptor.WorkerProducer.WorkerMetrics;
 import nl.aerius.taskmanager.adaptor.WorkerSizeObserver;
 import nl.aerius.taskmanager.adaptor.WorkerSizeProviderProxy;
@@ -56,6 +57,7 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   private final long refreshRateSeconds;
 
   private final Map<String, WorkerSizeObserverComposite> observers = new HashMap<>();
+  private final Map<String, ClientQueueObserver> clientObservers = new HashMap<>();
   private final RabbitMQQueueMonitor monitor;
   private boolean running;
 
@@ -72,17 +74,25 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   }
 
   @Override
-  public void addObserver(final String queueName, final WorkerSizeObserver observer) {
-    observers.computeIfAbsent(queueName, k -> new WorkerSizeObserverComposite()).add(observer);
+  public void addObserver(final String workerQueueName, final WorkerSizeObserver observer) {
+    observers.computeIfAbsent(workerQueueName, k -> new WorkerSizeObserverComposite()).add(observer);
     if (observer instanceof WorkerMetrics) {
-      eventProducer.addMetrics(queueName, (WorkerMetrics) observer);
+      eventProducer.addMetrics(workerQueueName, (WorkerMetrics) observer);
     }
+  }
+
+  @Override
+  public void addClientObserver(final String workerQueueName, final ClientQueueObserver observer) {
+    clientObservers.put(workerQueueName, observer);
   }
 
   @Override
   public boolean removeObserver(final String queueName) {
     eventProducer.removeMetrics(queueName);
-    return observers.remove(queueName) != null;
+    final boolean removedQueue = observers.remove(queueName) != null;
+    final boolean removedClientQueue = clientObservers.remove(queueName) != null;
+
+    return removedQueue || removedClientQueue;
   }
 
   @Override
@@ -106,8 +116,9 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
   private void updateWorkerQueueState() {
     if (running) {
       try {
-        final Map<String, RabbitMQQueueStatus> queueStates = new HashMap<>(monitor.getWorkerQueueStates());
+        final Map<String, RabbitMQQueueStatus> queueStates = new HashMap<>(monitor.getQueueStates());
         observers.forEach((q, v) -> updateWorkerQueueState(q, queueStates.get(q)));
+        clientObservers.forEach((q, v) -> updateClientQueueState(v, queueStates));
       } catch (final RuntimeException e) {
         LOG.error("Runtime error during updateWorkerQueueState", e);
       }
@@ -118,6 +129,12 @@ public class RabbitMQWorkerSizeProvider implements WorkerSizeProviderProxy {
     Optional.ofNullable(queueStatus).ifPresent(s -> {
       Optional.ofNullable(observers.get(queueName)).ifPresent(observer -> observer.onNumberOfWorkersUpdate(queueStatus));
     });
+  }
+
+  private void updateClientQueueState(final ClientQueueObserver observer, final Map<String, RabbitMQQueueStatus> queueStates) {
+    queueStates.entrySet().stream()
+        .filter(e -> observer.filter(e.getKey()))
+        .forEach(e -> observer.onClientQueueUpdate(e.getKey(), e.getValue()));
   }
 
   private static class WorkerSizeObserverComposite implements WorkerSizeObserver {

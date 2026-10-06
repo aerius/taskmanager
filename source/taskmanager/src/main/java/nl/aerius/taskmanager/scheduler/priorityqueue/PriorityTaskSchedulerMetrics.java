@@ -31,7 +31,7 @@ import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
  */
 class PriorityTaskSchedulerMetrics {
 
-  private static final String METRIC_PREFIX = "aer.taskmanager.client.queue";
+  private static final String METRIC_NAME = "aer.taskmanager.queue.usage";
   private static final String DESCRIPTION = "Number of tasks running on client queues";
 
   private final Map<String, ObservableDoubleGauge> usageMetrics = new HashMap<>();
@@ -64,7 +64,7 @@ class PriorityTaskSchedulerMetrics {
     final Attributes queueAttributes = OpenTelemetryMetrics.queueAttributes(workerQueueName, clientQueueName, "state", state);
 
     return OpenTelemetryMetrics.METER
-        .gaugeBuilder(METRIC_PREFIX)
+        .gaugeBuilder(METRIC_NAME)
         .setDescription(DESCRIPTION)
         .buildWithCallback(result -> result.record(countSupplier.getAsInt(), queueAttributes));
   }

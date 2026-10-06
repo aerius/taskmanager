@@ -42,6 +42,7 @@ import nl.aerius.taskmanager.domain.TaskQueue;
 import nl.aerius.taskmanager.domain.TaskSchedule;
 import nl.aerius.taskmanager.metrics.OpenTelemetryMetrics;
 import nl.aerius.taskmanager.metrics.PerformanceMetricsReporter;
+import nl.aerius.taskmanager.metrics.RabbitMQClientQueueReporter;
 import nl.aerius.taskmanager.metrics.RabbitMQUsageMetricsProvider;
 import nl.aerius.taskmanager.metrics.TaskManagerMetricsRegister;
 import nl.aerius.taskmanager.metrics.TaskManagerUsageMetricsProvider;
@@ -167,6 +168,7 @@ class TaskManager<T extends TaskQueue, S extends TaskSchedule<T>> {
       workerSizeObserverProxy.addObserver(workerQueueName, taskManagerMetricsRegister);
       workerSizeObserverProxy.addObserver(workerQueueName, workerPool);
       workerSizeObserverProxy.addObserver(workerQueueName, watchDog);
+      workerSizeObserverProxy.addClientObserver(workerQueueName, new RabbitMQClientQueueReporter(OpenTelemetryMetrics.METER, workerQueueName));
       // startup Guard should be the last observer added as it will unlock the task dispatcher
       workerSizeObserverProxy.addObserver(workerQueueName, startupGuard);
 

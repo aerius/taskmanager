@@ -66,7 +66,7 @@ public final class OpenTelemetryMetrics {
         .build();
   }
 
-  private static String onlyLastPart(final String name) {
+  static String onlyLastPart(final String name) {
     final int lastIndex = name.lastIndexOf('.');
 
     return (lastIndex < 0 ? name : name.substring(lastIndex + 1)).toLowerCase(Locale.ROOT);

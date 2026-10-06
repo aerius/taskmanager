@@ -14,27 +14,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-package nl.aerius.taskmanager.client;
+package nl.aerius.taskmanager.adaptor;
+
+import nl.aerius.taskmanager.domain.RabbitMQQueueStatus;
 
 /**
- *
+ * Observer that listens to client queue updates.
  */
-public enum BrokerConnectionEnum {
+public interface ClientQueueObserver {
 
   /**
-   * Task broker host.
+   * Update for the given client queue.
+   *
+   * @param clientQueueName name of the client queue
+   * @param status queue metrics
    */
-  TASK_BROKER_HOST,
+  void onClientQueueUpdate(String clientQueueName, RabbitMQQueueStatus status);
+
   /**
-   * Task broker port.
+   * Returns true if this observer should receive updates for the given client queue.
+   *
+   * @param clientQueueName client queue to check
+   * @return true if should receive updates
    */
-  TASK_BROKER_PORT,
-  /**
-   * Task broker user name.
-   */
-  TASK_BROKER_USERNAME,
-  /**
-   * Task broker password.
-   */
-  TASK_BROKER_PASSWORD;
+  boolean filter(String clientQueueName);
 }
