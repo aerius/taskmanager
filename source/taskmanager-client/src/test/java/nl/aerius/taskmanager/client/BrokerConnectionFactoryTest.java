@@ -16,95 +16,61 @@
  */
 package nl.aerius.taskmanager.client;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import nl.aerius.taskmanager.client.configuration.ConnectionConfiguration;
+import com.rabbitmq.client.Connection;
 
 /**
  * Test for class {@link BrokerConnectionFactory}.
  */
 class BrokerConnectionFactoryTest {
 
-  private static ExecutorService executor;
+  private final ExecutorService executor = mock(ExecutorService.class);
+  private final Connection mockConnection = mock(Connection.class);
+  private BrokerConnectionFactory factory;
 
-  @BeforeAll
-  static void setupClass() {
-    executor = Executors.newSingleThreadExecutor();
-  }
-
-  @AfterAll
-  static void afterClass() {
-    executor.shutdown();
-  }
-
-  @Test
-  void testTaskManagerClientWithoutBrokerHost() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerHost(null);
-
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker host is set.");
+  @BeforeEach
+  void beforeEach() {
+    factory = spy(new BrokerConnectionFactory(executor) {
+      @Override
+      protected Connection createNewConnection() throws IOException, TimeoutException {
+        return mockConnection;
+      }
+    });
   }
 
   @Test
-  void testTaskManagerClientWithEmptyBrokerHost() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerHost("");
+  void testRegisteringAndClose() {
+    final TaskManagerClientSender client1 = new TaskManagerClientSender(factory);
+    final TaskManagerClientSender client2 = new TaskManagerClientSender(factory);
 
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker host is empty.");
+    factory.close();
+    factory.deRegisterClient(client1);
+    factory.deRegisterClient(client2);
+    verify(factory, times(2)).registerClient(any());
+    verify(factory, times(4)).deRegisterClient(any());
   }
 
   @Test
-  void testTaskManagerClientWithoutBrokerUsername() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerUsername(null);
+  void testOpenConnection() {
+    assertSame(mockConnection, factory.getConnection(), "Should return the mocked connection");
 
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker username is set.");
+    doReturn(true).when(mockConnection).isOpen();
+    assertTrue(factory.isOpen(), "Expected an open connection");
   }
 
-  @Test
-  void testTaskManagerClientWithEmptyBrokerUsername() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerUsername("");
-
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker username is empty.");
-  }
-
-  @Test
-  void testTaskManagerClientWithoutBrokerPassword() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerPassword(null);
-
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker password is set.");
-  }
-
-  @Test
-  void testTaskManagerClientWithEmptyBrokerPassword() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerPassword("");
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker password is empty.");
-  }
-
-  @Test
-  void testTaskManagerClientWithoutBrokerVirtualHost() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerVirtualHost(null);
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when no broker virtual host is set.");
-  }
-
-  @Test
-  void testTaskManagerClientWithEmptyBrokerVirtualHost() {
-    final ConnectionConfiguration.Builder builder = getFullConnectionConfigurationBuilder().brokerVirtualHost("");
-
-    assertThrows(IllegalArgumentException.class, () -> builder.build(), "Expected IllegalArgumentException when broker virtual host is empty.");
-  }
-
-  private ConnectionConfiguration.Builder getFullConnectionConfigurationBuilder() {
-    final ConnectionConfiguration.Builder builder = ConnectionConfiguration.builder();
-    builder.brokerHost("localhost");
-    builder.brokerUsername("username");
-    builder.brokerPassword("password");
-    builder.brokerPort(1234);
-    builder.brokerVirtualHost("/");
-    return builder;
-  }
 }
