@@ -171,8 +171,9 @@ public class BrokerConnectionFactory implements AutoCloseable {
    * Shutdown all registered task manager clients.
    */
   private void shutdownTaskManagerClients() {
-    boolean hasElements = false;
-    do {
+    boolean hasElements = true;
+
+    while (hasElements) {
       final TaskManagerClientSender sender;
 
       synchronized (taskManagerClients) {
@@ -183,7 +184,6 @@ public class BrokerConnectionFactory implements AutoCloseable {
         sender.close();
       }
     }
-    while (hasElements);
   }
 
   protected Connection createNewConnection() throws IOException, TimeoutException {

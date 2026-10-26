@@ -59,6 +59,7 @@ class BrokerConnectionFactoryTest {
     final TaskManagerClientSender client2 = new TaskManagerClientSender(factory);
 
     factory.close();
+    // Perform additional deRegister calls on clients that are already deregistered, this should not result in errors thrown.
     factory.deRegisterClient(client1);
     factory.deRegisterClient(client2);
     verify(factory, times(2)).registerClient(any());

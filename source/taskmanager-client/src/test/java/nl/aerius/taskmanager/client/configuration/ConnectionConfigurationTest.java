@@ -16,6 +16,7 @@
  */
 package nl.aerius.taskmanager.client.configuration;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,17 @@ import org.junit.jupiter.api.Test;
  * Test for class {@link ConnectionConfiguration}.
  */
 class ConnectionConfigurationTest {
+
+  @Test
+  void testValidConfiguration() {
+    final ConnectionConfiguration configuration = getFullConnectionConfigurationBuilder().build();
+
+    assertEquals("localhost", configuration.getBrokerHost(), "Not the expected host");
+    assertEquals("username", configuration.getBrokerUsername(), "Not the expected username");
+    assertEquals("password", configuration.getBrokerPassword(), "Not the expected pPassword");
+    assertEquals(1234, configuration.getBrokerPort(), "Not the expected port");
+    assertEquals("/", configuration.getBrokerVirtualHost(), "Not the expected virtualHost");
+  }
 
   @Test
   void testTaskManagerClientWithoutBrokerHost() {
