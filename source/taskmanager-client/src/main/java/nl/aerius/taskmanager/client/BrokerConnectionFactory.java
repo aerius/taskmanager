@@ -137,7 +137,9 @@ public class BrokerConnectionFactory implements AutoCloseable {
    * @param taskManagerClient the taskManagerCient to register
    */
   public void registerClient(final TaskManagerClientSender taskManagerClient) {
-    taskManagerClients.add(taskManagerClient);
+    synchronized (taskManagerClients) {
+      taskManagerClients.add(taskManagerClient);
+    }
   }
 
   /**
@@ -145,7 +147,9 @@ public class BrokerConnectionFactory implements AutoCloseable {
    * @param taskManagerClient the taskManagerCient to remove
    */
   public void deRegisterClient(final TaskManagerClientSender taskManagerClient) {
-    taskManagerClients.remove(taskManagerClient);
+    synchronized (taskManagerClients) {
+      taskManagerClients.remove(taskManagerClient);
+    }
   }
 
   /**
@@ -167,8 +171,18 @@ public class BrokerConnectionFactory implements AutoCloseable {
    * Shutdown all registered task manager clients.
    */
   private void shutdownTaskManagerClients() {
-    for (int i = taskManagerClients.size() - 1; i >= 0; i--) {
-      taskManagerClients.get(i).close();
+    boolean hasElements = true;
+
+    while (hasElements) {
+      final TaskManagerClientSender sender;
+
+      synchronized (taskManagerClients) {
+        hasElements = !taskManagerClients.isEmpty();
+        sender = hasElements ? taskManagerClients.getFirst() : null;
+      }
+      if (sender != null) {
+        sender.close();
+      }
     }
   }
 
