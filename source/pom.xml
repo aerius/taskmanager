@@ -22,7 +22,7 @@
   <parent>
     <groupId>nl.aerius</groupId>
     <artifactId>aerius-root-pom</artifactId>
-    <version>1.4.0</version>
+    <version>1.4.1-SNAPSHOT</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
 
@@ -58,10 +58,8 @@
   </scm>
 
   <properties>
-    <rabbitmq-client.version>5.24.0</rabbitmq-client.version>
     <commons-cli.version>1.9.0</commons-cli.version>
     <httpcomponents-httpclient.version>4.5.14</httpcomponents-httpclient.version>
-    <opentelemetry.version>1.46.0</opentelemetry.version>
 
     <sonar.projectKey>aerius_taskmanager</sonar.projectKey>
 
@@ -71,13 +69,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- RabbitMQ -->
-      <dependency>
-        <groupId>com.rabbitmq</groupId>
-        <artifactId>amqp-client</artifactId>
-        <version>${rabbitmq-client.version}</version>
-      </dependency>
-
       <!-- CLI -->
       <dependency>
         <groupId>commons-cli</groupId>
@@ -91,16 +82,6 @@
         <artifactId>httpclient</artifactId>
         <version>${httpcomponents-httpclient.version}</version>
       </dependency>
-
-      <!-- OpenTelemetry -->
-      <dependency>
-        <groupId>io.opentelemetry</groupId>
-        <artifactId>opentelemetry-bom</artifactId>
-        <version>${opentelemetry.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-
     </dependencies>
   </dependencyManagement>
 
